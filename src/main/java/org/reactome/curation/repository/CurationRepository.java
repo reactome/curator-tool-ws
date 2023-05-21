@@ -15,7 +15,8 @@ import org.springframework.stereotype.Repository;
  */
 public interface CurationRepository extends Neo4jRepository<DatabaseObject, Long>{
     
-    // This is just a test. There is no need to be here.
+    // This is just a test. There is no need to be here and don't use this one
+    // Use the Repositories implemented in graph-core for all queries related stuff.
     @Query("MATCH (a:DatabaseObject{dbId:$dbId})-[r]-(m) RETURN a, COLLECT(r), COLLECT(m)")
     public DatabaseObject findByDbId(Long dbId);
 
