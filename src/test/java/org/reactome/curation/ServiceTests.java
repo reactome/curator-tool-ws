@@ -3,8 +3,11 @@ package org.reactome.curation;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import org.assertj.core.api.Assert;
+import java.util.List;
+
+import org.gk.model.ReactomeJavaConstants;
 import org.junit.jupiter.api.Test;
+import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.service.CurationService;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.domain.model.Figure;
@@ -44,6 +47,21 @@ class ServiceTests {
         for (int i = 0; i < dbIds.length; i++) {
             DatabaseObject obj = curationService.findById(dbIds[i]);
             assertEquals(obj.getClass(), classes[i]);
+        }
+    }
+    
+    @Test
+    public void testGetAttributes() throws Exception {
+        assertNotNull(curationService);
+        String[] clsNames = {
+                ReactomeJavaConstants.EntityWithAccessionedSequence,
+                ReactomeJavaConstants.Pathway,
+                ReactomeJavaConstants.Reaction,
+                ReactomeJavaConstants.ReferenceGeneProduct
+        };
+        for (String clsName : clsNames) {
+            List<CurationAttribute> attributes = curationService.getAttributes(clsName);
+            System.out.println(clsName + ":\n" + attributes);
         }
     }
 

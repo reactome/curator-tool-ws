@@ -1,0 +1,6431 @@
+{
+  "NegativePrecedingEvent" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "reason"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "comment"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "precedingEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "ControlReference" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "literatureReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "NegativeRegulation" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "activity"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "goBiologicalProcess"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "regulator"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "activeUnit"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "summation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "StableIdentifier" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "oldIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "identifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "oldIdentifierVersion"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "history"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "identifierVersion"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "released"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "ModifiedNucleotide" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "coordinate"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "modification"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "referenceSequence"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "CellDevelopmentStep" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "normalReaction"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "authored"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "regulatedBy"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "catalystActivity"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "tissue"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "regulationReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "summation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "output"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "requiredInputComponent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "literatureReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "compartment"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "releaseStatus"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "reviewed"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "relatedSpecies"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "NOMANUALEDIT",
+    "name" : "deletedInstanceDB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredFrom"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "figure"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "systematicName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "disease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "_doRelease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "releaseDate"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "edited"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "isChimeric"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "catalystActivityReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "entityOnOtherCell"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "deletedStableIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "negativePrecedingEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "input"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "entityFunctionalStatus"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "reactionType"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "orthologousEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "species"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "evidenceType"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "goBiologicalProcess"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "hasInteraction"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "precedingEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "revised"
+  } ],
+  "EntitySet" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "authored"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "goCellularComponent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredTo"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "summation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "literatureReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "compartment"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "reviewed"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "relatedSpecies"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "isOrdered"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "inferredFrom"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "figure"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "systematicName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "disease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "edited"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "hasMember"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "cellType"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "species"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "revised"
+  } ],
+  "GO_CellularComponent" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "hasPart"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "ANY_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "accession"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "instanceOf"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "componentOf"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "surroundedBy"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "referenceDatabase"
+  } ],
+  "StableIdentifierHistory" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "identifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "historyStatus"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "identifierVersion"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "PositiveGeneExpressionRegulation" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "activity"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "goBiologicalProcess"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "regulator"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "activeUnit"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "summation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "Book" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "chapterAuthors"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "year"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "author"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "ANY_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "title"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "pages"
+  }, {
+    "defineType" : "ANY_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "ISBN"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "publisher"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ANY_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "chapterTitle"
+  } ],
+  "FragmentReplacedModification" : [ {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "alteredAminoAcidFragment"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "startPositionInReferenceSequence"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "endPositionInReferenceSequence"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "referenceSequence"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "Affiliation" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "address"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "SimpleEntity" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredFrom"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "authored"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "figure"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "systematicName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "disease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "edited"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "referenceEntity"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "goCellularComponent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredTo"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "summation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "literatureReference"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "cellType"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "species"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "compartment"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "reviewed"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "revised"
+  } ],
+  "Publication" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "author"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "title"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "AbstractModifiedResidue" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "referenceSequence"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "CandidateSet" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "authored"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "goCellularComponent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredTo"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "summation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "literatureReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "compartment"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "reviewed"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "relatedSpecies"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "hasCandidate"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "isOrdered"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredFrom"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "figure"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "systematicName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "disease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "edited"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "REQUIRED",
+    "name" : "hasMember"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "cellType"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "species"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "revised"
+  } ],
+  "Polymerisation" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "authored"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "normalReaction"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "regulatedBy"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "REQUIRED",
+    "name" : "catalystActivity"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "regulationReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "summation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "requiredInputComponent"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "output"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "literatureReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "compartment"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "releaseStatus"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "reviewed"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "relatedSpecies"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "NOMANUALEDIT",
+    "name" : "deletedInstanceDB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredFrom"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "figure"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "systematicName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "disease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "edited"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "releaseDate"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "_doRelease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "isChimeric"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "catalystActivityReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "entityOnOtherCell"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "deletedStableIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "negativePrecedingEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "input"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "entityFunctionalStatus"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "orthologousEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "reactionType"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "species"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "evidenceType"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "goBiologicalProcess"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "hasInteraction"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "precedingEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "revised"
+  } ],
+  "Requirement" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "activity"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "goBiologicalProcess"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "regulator"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "activeUnit"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "summation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "_UpdateTracker" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "updatedInstance"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_release"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "action"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "FrontPage" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "frontPageItem"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "FragmentModification" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "startPositionInReferenceSequence"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "endPositionInReferenceSequence"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "referenceSequence"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "Summation" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "literatureReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "text"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "Person" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "figure"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "firstname"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "initial"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "project"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "url"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "affiliation"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "surname"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  } ],
+  "SequenceOntology" : [ {
+    "defineType" : "ANY_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "identifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "synonym"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "referenceDatabase"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "instanceOf"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "ExternalOntology" : [ {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "identifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "synonym"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "referenceDatabase"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "instanceOf"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "InterChainCrosslinkedResidue" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "REQUIRED",
+    "name" : "coordinate"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "equivalentTo"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "REQUIRED",
+    "name" : "secondCoordinate"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "psiMod"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "modification"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "secondReferenceSequence"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "referenceSequence"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "FragmentDeletionModification" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "startPositionInReferenceSequence"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "endPositionInReferenceSequence"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "referenceSequence"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "ReferenceMolecule" : [ {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "identifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "formula"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "referenceDatabase"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "otherIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "ReferenceDatabase" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "resourceIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "accessUrl"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "ANY_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "url"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "RNADrug" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredFrom"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "authored"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "figure"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "disease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "systematicName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "edited"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "referenceEntity"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "goCellularComponent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredTo"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "summation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "literatureReference"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "cellType"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "compartment"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "reviewed"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "revised"
+  } ],
+  "ReferenceSequence" : [ {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "identifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "sequenceLength"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "description"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "species"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "geneName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "checksum"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "referenceDatabase"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "comment"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "secondaryIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "otherIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "keyword"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "isSequenceChanged"
+  } ],
+  "EntityFunctionalStatus" : [ {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "diseaseEntity"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "REQUIRED",
+    "name" : "normalEntity"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "functionalStatus"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "URL" : [ {
+    "defineType" : "ANY_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "uniformResourceLocator"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "author"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "title"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "ReferenceRNASequence" : [ {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "identifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "referenceGene"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "sequenceLength"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "description"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "species"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "geneName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "checksum"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "referenceDatabase"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "comment"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "secondaryIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "otherIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "keyword"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "isSequenceChanged"
+  } ],
+  "Complex" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "authored"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "stoichiometryKnown"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "goCellularComponent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredTo"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "summation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "literatureReference"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "hasComponent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "compartment"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "reviewed"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "relatedSpecies"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "includedLocation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredFrom"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "figure"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "systematicName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "disease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "edited"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "isChimeric"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "entityOnOtherCell"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "cellType"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "species"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "revised"
+  } ],
+  "GroupModifiedResidue" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "REQUIRED",
+    "name" : "coordinate"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "psiMod"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "modification"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "referenceSequence"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "PathwayDiagram" : [ {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "representedPathway"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "width"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "storedATXML"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "height"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "RegulationReference" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "literatureReference"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "regulation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "ReferenceDNASequence" : [ {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "identifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "sequenceLength"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "description"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "species"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "geneName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "checksum"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "referenceDatabase"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "comment"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "secondaryIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "otherIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "keyword"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "isSequenceChanged"
+  } ],
+  "_Release" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "releaseDate"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "releaseNumber"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "NonsenseMutation" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "REQUIRED",
+    "name" : "coordinate"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "psiMod"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "referenceSequence"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "ModifiedResidue" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "REQUIRED",
+    "name" : "coordinate"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "psiMod"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "referenceSequence"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "Taxon" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "ANY_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "superTaxon"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "GO_BiologicalProcess" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "referenceDatabase"
+  }, {
+    "defineType" : "ANY_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "accession"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "Depolymerisation" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "authored"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "normalReaction"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "regulatedBy"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "REQUIRED",
+    "name" : "catalystActivity"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "regulationReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "summation"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "output"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "requiredInputComponent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "literatureReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "compartment"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "releaseStatus"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "reviewed"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "relatedSpecies"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "NOMANUALEDIT",
+    "name" : "deletedInstanceDB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredFrom"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "figure"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "systematicName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "disease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "edited"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "releaseDate"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "_doRelease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "isChimeric"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "catalystActivityReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "entityOnOtherCell"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "deletedStableIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "negativePrecedingEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "input"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "entityFunctionalStatus"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "orthologousEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "reactionType"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "species"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "goBiologicalProcess"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "evidenceType"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "hasInteraction"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "precedingEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "revised"
+  } ],
+  "Reaction" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "authored"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "reverseReaction"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "normalReaction"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "regulatedBy"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "REQUIRED",
+    "name" : "catalystActivity"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "regulationReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "summation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "requiredInputComponent"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "output"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "literatureReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "compartment"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "releaseStatus"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "reviewed"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "relatedSpecies"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "NOMANUALEDIT",
+    "name" : "deletedInstanceDB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredFrom"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "figure"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "systematicName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "disease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "edited"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "releaseDate"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "_doRelease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "isChimeric"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "catalystActivityReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "entityOnOtherCell"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "deletedStableIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "negativePrecedingEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "input"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "entityFunctionalStatus"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "orthologousEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "reactionType"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "species"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "goBiologicalProcess"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "evidenceType"
+  }, {
+    "defineType" : "NONE_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "hasInteraction"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "precedingEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "revised"
+  } ],
+  "CatalystActivity" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "REQUIRED",
+    "name" : "activity"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "physicalEntity"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "activeUnit"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "Figure" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "url"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "ChemicalDrug" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredFrom"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "authored"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "figure"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "disease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "systematicName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "edited"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "referenceEntity"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "goCellularComponent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredTo"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "summation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "literatureReference"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "cellType"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "compartment"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "reviewed"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "revised"
+  } ],
+  "CellLineagePath" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "authored"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "tissue"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "summation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "literatureReference"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "hasEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "compartment"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "releaseStatus"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "reviewed"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "relatedSpecies"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "NOMANUALEDIT",
+    "name" : "deletedInstanceDB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredFrom"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "figure"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "disease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "releaseDate"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "edited"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "_doRelease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "normalPathway"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "deletedStableIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "negativePrecedingEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "lastUpdatedDate"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "orthologousEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "species"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "isCanonical"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "hasEHLD"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "evidenceType"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "goBiologicalProcess"
+  }, {
+    "defineType" : "NONE_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "precedingEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "revised"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "doi"
+  } ],
+  "PsiMod" : [ {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "identifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "synonym"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "referenceDatabase"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "label"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "instanceOf"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "Event" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "authored"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "summation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "literatureReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "releaseStatus"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "reviewed"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "relatedSpecies"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "NOMANUALEDIT",
+    "name" : "deletedInstanceDB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredFrom"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "figure"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "disease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "_doRelease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "releaseDate"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "edited"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "deletedStableIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "negativePrecedingEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "orthologousEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "species"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "evidenceType"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "goBiologicalProcess"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "precedingEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "revised"
+  } ],
+  "BlackBoxEvent" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "authored"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "normalReaction"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "regulatedBy"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "catalystActivity"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "regulationReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "summation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "requiredInputComponent"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "REQUIRED",
+    "name" : "output"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "literatureReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "templateEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "compartment"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "releaseStatus"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "reviewed"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "relatedSpecies"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "NOMANUALEDIT",
+    "name" : "deletedInstanceDB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredFrom"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "figure"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "systematicName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "disease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "releaseDate"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "edited"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "_doRelease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "isChimeric"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "catalystActivityReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "entityOnOtherCell"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "deletedStableIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "negativePrecedingEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "REQUIRED",
+    "name" : "input"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "entityFunctionalStatus"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "orthologousEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "reactionType"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "species"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "goBiologicalProcess"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "evidenceType"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "hasInteraction"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "precedingEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "revised"
+  } ],
+  "Disease" : [ {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "identifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "synonym"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "referenceDatabase"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "instanceOf"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "Compartment" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "hasPart"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "ANY_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "accession"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "componentOf"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "instanceOf"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "surroundedBy"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "referenceDatabase"
+  } ],
+  "Pathway" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "authored"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "summation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "literatureReference"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "hasEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "compartment"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "releaseStatus"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "reviewed"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "relatedSpecies"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "NOMANUALEDIT",
+    "name" : "deletedInstanceDB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredFrom"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "figure"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "disease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "releaseDate"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "edited"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "_doRelease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "normalPathway"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "deletedStableIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "negativePrecedingEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "lastUpdatedDate"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "orthologousEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "species"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "isCanonical"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "hasEHLD"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "evidenceType"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "goBiologicalProcess"
+  }, {
+    "defineType" : "NONE_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "precedingEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "revised"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "doi"
+  } ],
+  "LiteratureReference" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "volume"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "pages"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "journal"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "year"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "author"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "REQUIRED",
+    "name" : "pubMedIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "title"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "_Deleted" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "reason"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "deletedInstance"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "curatorComment"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "replacementInstances"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "deletedInstanceDB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "InstanceEdit" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "dateTime"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "note"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "_applyToAllEditedInstances"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "author"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "DatabaseObject" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "Species" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "ANY_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "superTaxon"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "abbreviation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "Cell" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "organ"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "authored"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "proteinMarker"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "goCellularComponent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "tissue"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredTo"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "summation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "literatureReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "reviewed"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredFrom"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "figure"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "systematicName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "disease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "edited"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "RNAMarker"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "cellType"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "species"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "tissueLayer"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "markerReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "revised"
+  } ],
+  "StableIdentifierReleaseStatus" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "NOMANUALEDIT",
+    "name" : "releaseNumber"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "NOMANUALEDIT",
+    "name" : "status"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "ReferenceGroup" : [ {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "identifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "formula"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "referenceDatabase"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "otherIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "FunctionalStatus" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "functionalStatusType"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "structuralVariant"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "GO_MolecularFunction" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "referenceDatabase"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "ecNumber"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "ANY_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "accession"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "ReactionType" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "DefinedSet" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "authored"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "goCellularComponent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredTo"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "summation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "literatureReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "compartment"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "reviewed"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "relatedSpecies"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "isOrdered"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredFrom"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "figure"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "systematicName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "disease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "edited"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "hasMember"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "cellType"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "species"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "revised"
+  } ],
+  "ReferenceIsoform" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "sequenceLength"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "description"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "isoformParent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "_chainChangeLog"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "geneName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "checksum"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "referenceDatabase"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "secondaryIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "keyword"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "isSequenceChanged"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "identifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "chain"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "referenceGene"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "referenceTranscript"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "species"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "name"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "variantIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "comment"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "otherIdentifier"
+  } ],
+  "TranscriptionalModification" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "referenceSequence"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "IntraChainCrosslinkedResidue" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "REQUIRED",
+    "name" : "coordinate"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "REQUIRED",
+    "name" : "secondCoordinate"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "psiMod"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "modification"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "referenceSequence"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "GeneticallyModifiedResidue" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "referenceSequence"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "DeletedControlledVocabulary" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "ReferenceTherapeutic" : [ {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "identifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "withdrawn"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "inn"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "approvalSource"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "type"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "abbreviation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "approved"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "activeDrugIds"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "referenceDatabase"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "otherIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "prodrugIds"
+  } ],
+  "Anatomy" : [ {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "identifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "synonym"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "referenceDatabase"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "instanceOf"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "ProteinDrug" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredFrom"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "authored"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "figure"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "disease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "systematicName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "edited"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "referenceEntity"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "goCellularComponent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredTo"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "summation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "literatureReference"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "cellType"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "compartment"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "reviewed"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "revised"
+  } ],
+  "ReplacedResidue" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "REQUIRED",
+    "name" : "coordinate"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "psiMod"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "referenceSequence"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "ReactionlikeEvent" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "normalReaction"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "authored"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "regulatedBy"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "catalystActivity"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "regulationReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "summation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "output"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "requiredInputComponent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "literatureReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "compartment"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "releaseStatus"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "reviewed"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "relatedSpecies"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "NOMANUALEDIT",
+    "name" : "deletedInstanceDB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredFrom"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "figure"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "systematicName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "disease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "_doRelease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "releaseDate"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "edited"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "isChimeric"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "catalystActivityReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "entityOnOtherCell"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "deletedStableIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "negativePrecedingEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "input"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "entityFunctionalStatus"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "reactionType"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "orthologousEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "species"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "evidenceType"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "goBiologicalProcess"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "hasInteraction"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "precedingEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "revised"
+  } ],
+  "EntityWithAccessionedSequence" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "authored"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "goCellularComponent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredTo"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "summation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "literatureReference"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "compartment"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "reviewed"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredFrom"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "figure"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "systematicName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "disease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "edited"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "REQUIRED",
+    "name" : "startCoordinate"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "REQUIRED",
+    "name" : "hasModifiedResidue"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "referenceEntity"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "cellType"
+  }, {
+    "defineType" : "NONE_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "species"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "NONE_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "REQUIRED",
+    "name" : "endCoordinate"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "revised"
+  } ],
+  "NegativeGeneExpressionRegulation" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "activity"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "goBiologicalProcess"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "regulator"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "activeUnit"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "summation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "CatalystActivityReference" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "literatureReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "catalystActivity"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "FunctionalStatusType" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "ANY_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "EvidenceType" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "ANY_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "instanceOf"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "FragmentInsertionModification" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "REQUIRED",
+    "name" : "coordinate"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "startPositionInReferenceSequence"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "endPositionInReferenceSequence"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "referenceSequence"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "TranslationalModification" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "REQUIRED",
+    "name" : "coordinate"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "psiMod"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "referenceSequence"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "MarkerReference" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "literatureReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "marker"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "NegativePrecedingEventReason" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "GenomeEncodedEntity" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredFrom"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "authored"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "figure"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "systematicName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "disease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "edited"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "goCellularComponent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredTo"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "summation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "literatureReference"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "cellType"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "species"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "ANY_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "compartment"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "reviewed"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "revised"
+  } ],
+  "ReferenceEntity" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "identifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "referenceDatabase"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "otherIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "DrugActionType" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "instanceOf"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "ReferenceGeneProduct" : [ {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "identifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "chain"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "referenceGene"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "sequenceLength"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "description"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "referenceTranscript"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "_chainChangeLog"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "species"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "geneName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "checksum"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "referenceDatabase"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "comment"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "secondaryIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "otherIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "keyword"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "isSequenceChanged"
+  } ],
+  "FailedReaction" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "normalReaction"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "authored"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "regulatedBy"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "catalystActivity"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "regulationReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "summation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "output"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "requiredInputComponent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "literatureReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "compartment"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "releaseStatus"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "reviewed"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "relatedSpecies"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "NOMANUALEDIT",
+    "name" : "deletedInstanceDB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredFrom"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "figure"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "systematicName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "disease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "edited"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "_doRelease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "releaseDate"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "isChimeric"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "catalystActivityReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "entityOnOtherCell"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "deletedStableIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "negativePrecedingEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "input"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "entityFunctionalStatus"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "orthologousEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "reactionType"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "species"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "evidenceType"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "goBiologicalProcess"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "hasInteraction"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "precedingEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "revised"
+  } ],
+  "CrosslinkedResidue" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "REQUIRED",
+    "name" : "coordinate"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "REQUIRED",
+    "name" : "secondCoordinate"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "psiMod"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "modification"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "referenceSequence"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "Drug" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredFrom"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "authored"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "figure"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "disease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "systematicName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "edited"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "referenceEntity"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "goCellularComponent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredTo"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "summation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "literatureReference"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "cellType"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "compartment"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "reviewed"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "revised"
+  } ],
+  "_DeletedInstance" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "NOMANUALEDIT",
+    "name" : "species"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "NOMANUALEDIT",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "NOMANUALEDIT",
+    "name" : "deletedStableIdentifier"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "NOMANUALEDIT",
+    "name" : "class"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "NOMANUALEDIT",
+    "name" : "deletedInstanceDB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "DatabaseIdentifier" : [ {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "identifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "referenceDatabase"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "Polymer" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "authored"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "repeatedUnit"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "minUnitCount"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "goCellularComponent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredTo"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "summation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "maxUnitCount"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "literatureReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "compartment"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "reviewed"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredFrom"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "figure"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "systematicName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "disease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "edited"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "cellType"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "species"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "revised"
+  } ],
+  "InteractionEvent" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "authored"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "summation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "literatureReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "releaseStatus"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "reviewed"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "relatedSpecies"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "NOMANUALEDIT",
+    "name" : "deletedInstanceDB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredFrom"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "figure"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "disease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "_doRelease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "releaseDate"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "edited"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "deletedStableIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "negativePrecedingEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "orthologousEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "partners"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "species"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "evidenceType"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "goBiologicalProcess"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "precedingEvent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "revised"
+  } ],
+  "PositiveRegulation" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "activity"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "goBiologicalProcess"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "regulator"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "activeUnit"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "summation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "ControlledVocabulary" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "PhysicalEntity" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredFrom"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "authored"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "figure"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "systematicName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "disease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "edited"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "goCellularComponent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredTo"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "summation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "literatureReference"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "cellType"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "reviewed"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "revised"
+  } ],
+  "OtherEntity" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredFrom"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "authored"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "figure"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "systematicName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "disease"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "edited"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "goCellularComponent"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredTo"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "summation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "literatureReference"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "cellType"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "ANY_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "compartment"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "reviewed"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "revised"
+  } ],
+  "CellType" : [ {
+    "defineType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "identifier"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "synonym"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "referenceDatabase"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "instanceOf"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ],
+  "Regulation" : [ {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "DB_ID"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "activity"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_displayName"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "goBiologicalProcess"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "NOTDEFINED",
+    "name" : "regulator"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "defineType" : "ALL_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "activeUnit"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "summation"
+  }, {
+    "defineType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  } ]
+}

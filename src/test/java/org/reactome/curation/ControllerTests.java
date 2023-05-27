@@ -3,8 +3,12 @@ package org.reactome.curation;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import java.util.List;
+
+import org.gk.model.ReactomeJavaConstants;
 import org.junit.jupiter.api.Test;
 import org.reactome.curation.controller.CurationController;
+import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.service.CurationService;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.domain.model.Figure;
@@ -44,6 +48,21 @@ class ControllerTests {
         for (int i = 0; i < dbIds.length; i++) {
             DatabaseObject obj = controller.findByDdId(dbIds[i]);
             assertEquals(obj.getClass(), classes[i]);
+        }
+    }
+    
+    @Test
+    public void testGetAttributes() throws Exception {
+        assertNotNull(controller);
+        String[] clsNames = {
+                ReactomeJavaConstants.EntityWithAccessionedSequence,
+                ReactomeJavaConstants.Pathway,
+                ReactomeJavaConstants.Reaction,
+                ReactomeJavaConstants.ReferenceGeneProduct
+        };
+        for (String clsName : clsNames) {
+            List<CurationAttribute> attributes = controller.getAttributes(clsName);
+            System.out.println(clsName + ":\n" + attributes);
         }
     }
 
