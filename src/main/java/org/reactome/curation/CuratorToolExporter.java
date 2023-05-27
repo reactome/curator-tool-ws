@@ -75,7 +75,7 @@ public class CuratorToolExporter {
                 CurationAttribute curationAtt = new CurationAttribute();
                 curationAtt.setName(att.getName());
                 curationAtt.setCategory(CurationAttribute.Category.getCategory(att.getCategory()));
-                curationAtt.setDefineType(CurationAttribute.DefiningType.getDefiningType(att.getDefiningType()));
+                curationAtt.setDefiningType(CurationAttribute.DefiningType.getDefiningType(att.getDefiningType()));
                 curationAttributes.add(curationAtt);
             }
             clsName2attributes.put(cls.getName(), curationAttributes);

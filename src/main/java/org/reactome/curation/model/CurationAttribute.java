@@ -21,7 +21,7 @@ import lombok.NoArgsConstructor;
 public class CurationAttribute {
     
     private AttributeProperties properties;
-    private DefiningType defineType;
+    private DefiningType definingType;
     private Category category;
     private String name;
     
