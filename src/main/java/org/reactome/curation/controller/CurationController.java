@@ -47,4 +47,25 @@ public class CurationController {
         }
     }
 
+    @GetMapping("fetch/getMaxDbId")
+    @ResponseBody
+    public Long getMaxDbId() {
+        logger.info("Request for the maximum dbId");
+        return service.getMaxDbId();
+    }
+
+    @GetMapping("generateDbId")
+    @ResponseBody
+    public Long generateDbId() {
+        logger.info("Request for new dbId");
+        return service.generateDbId();
+    }
+
+    @GetMapping("fetch/getSchema")
+    @ResponseBody
+    public List<String> getSchema() {
+        return service.getSchema();
+    }
+
+
 }

@@ -1,5 +1,6 @@
 package org.reactome.curation;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -15,6 +16,8 @@ import org.reactome.server.graph.domain.model.Figure;
 import org.reactome.server.graph.domain.model.InstanceEdit;
 import org.reactome.server.graph.domain.model.Pathway;
 import org.reactome.server.graph.domain.model.ReferenceDatabase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -22,6 +25,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 @SpringBootTest
 class ControllerTests {
+
+    protected static final Logger logger = LoggerFactory.getLogger("controllerTestLogger");
 
     @Autowired
     private CurationController controller;
@@ -65,5 +70,26 @@ class ControllerTests {
             System.out.println(clsName + ":\n" + attributes);
         }
     }
+
+    @Test
+    public void testGetMaxDbId() {
+        Long maxDbIdObserved = controller.getMaxDbId();
+        assertThat(maxDbIdObserved).isEqualTo(1000000000000000001L);
+    }
+
+    @Test
+    public void testGenerateDbId() {
+        Long generatedDbId = controller.generateDbId();
+        logger.info(generatedDbId.toString());
+    }
+
+    @Test
+    public void testGetSchema() {
+        List<String> schemaClasses = controller.getSchema();
+        for(int i=0; i<schemaClasses.size(); i++){
+            logger.info(schemaClasses.get(i));
+        }
+    }
+
 
 }

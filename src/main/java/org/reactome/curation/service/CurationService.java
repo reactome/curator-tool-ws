@@ -1,24 +1,28 @@
 package org.reactome.curation.service;
 
 import java.io.InputStream;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.neo4j.driver.types.Relationship;
 import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.repository.CurationRepository;
 //import org.reactome.server.graph.aop.LazyFetchAspect;
 import org.reactome.server.graph.domain.model.DatabaseObject;
+import org.reactome.server.graph.domain.result.QueryResultWrapper;
 import org.reactome.server.graph.repository.AdvancedDatabaseObjectRepository;
 import org.reactome.server.graph.service.helper.AttributeProperties;
+import org.reactome.server.graph.service.helper.RelationshipDirection;
 import org.reactome.server.graph.service.util.DatabaseObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.server.WebServerException;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -86,4 +90,90 @@ public class CurationService {
         return mapper.readValue(is, typeRef);
     }
 
+    public boolean update(DatabaseObject o,
+                          String attName, // hasEvent -> setHasEvent
+                          Object value) throws NoSuchMethodException { // Overload function for List
+        // T extends Collection<Object> value
+        DatabaseObject saved = objectRepository.findById(o.getDbId(), RelationshipDirection.OUTGOING);
+        // Use references for physical entities, value may need to be queried
+        if (saved == null)
+            throw new IllegalArgumentException(o + " is not found!");
+
+        Class classOfValue = value.getClass();
+        String attributeName = attName.substring(0, 1).toUpperCase() + attName.substring(1);
+
+        if(isRelationship(o, attName)){
+            //TODO: check if value is databaseObject
+            DatabaseObject valueAsDbObject = (DatabaseObject) value;
+            Long dbId = valueAsDbObject.getDbId();
+
+            // If this relationship is a database object get actual node
+            if(dbId != null) {
+                DatabaseObject existingRelationship = objectRepository.findById((Long) dbId, RelationshipDirection.OUTGOING);
+                if (existingRelationship == null)
+                    throw new IllegalArgumentException(o + " is not found!");
+
+
+                Collection<QueryResultWrapper> relationships = objectRepository.queryRelationshipTypesByDbId(o.getDbId(),
+                        attributeName, RelationshipDirection.OUTGOING);
+                QueryResultWrapper newRelationship = new QueryResultWrapper(valueAsDbObject);
+                relationships.add(newRelationship);
+            }
+
+        }
+
+        // TODO: move to a string utility class
+        // Find method called set{AttName} (e.g. setHasEvent, or setText, setName)
+        Class classOfObject = o.getClass();
+        Method setMethod = classOfObject.getMethod("set" + attributeName, List.class);
+
+        try {
+            //setMethod.invoke(saved, relationships);
+            setMethod.invoke(saved, value);
+            curationRepository.save(saved);
+        } catch (InvocationTargetException | IllegalAccessException e) {
+            throw new WebServerException("Method " + setMethod.getName() + " is not found on class " + o.getClass().getName(), e);
+        }
+        return true;
+    }
+
+    // TODO: make this function public in graph-core/ReflectionUtils
+    public List<Field> getAllFields(List<Field> fields, Class<?> type) {
+        fields.addAll(Arrays.asList(type.getDeclaredFields()));
+        if (type.getSuperclass() != null && !type.getSuperclass().equals(Object.class)) {
+            fields = getAllFields(fields, type.getSuperclass());
+        }
+        return fields;
+    }
+
+    public boolean isRelationship(Object o, String attName){
+        List<Field> objectFields = getAllFields(new ArrayList<>(), o.getClass());
+        for(Field field: objectFields){
+            if(field.getAnnotation(Relationship.class) != null && field.getName().equals(attName)){
+                Annotation annotation = field.getAnnotation(Relationship.class);
+                logger.info(annotation.toString());
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public Long getMaxDbId(){
+        Long maxDbId = curationRepository.getMaxDbId();
+        if(maxDbId != null) {return maxDbId;}
+        else {return null;}
+    }
+
+    public Long generateDbId() {
+        Long generatedDbId = curationRepository.generateDbId();
+        // Using a random number to prevent curators getting same dbId
+        Random random = new Random();
+        Long randomLong = random.nextLong();
+        Long newDbId = generatedDbId + randomLong;
+        return newDbId;
+    }
+
+    public List<String> getSchema() {
+        return curationRepository.getSchema();
+    }
 }
