@@ -5,6 +5,8 @@ import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 /**
  * Apparently the default auto-generated code from Neo4jRepository cannot be used for our purpose.
  * It is extreme to load the whole reference graph for a object and cannot find a simple way to control
@@ -19,5 +21,15 @@ public interface CurationRepository extends Neo4jRepository<DatabaseObject, Long
     // Use the Repositories implemented in graph-core for all queries related stuff.
     @Query("MATCH (a:DatabaseObject{dbId:$dbId})-[r]-(m) RETURN a, COLLECT(r), COLLECT(m)")
     public DatabaseObject findByDbId(Long dbId);
+
+    @Query("MATCH(n) RETURN MAX(n.dbId)") // Make a node reference instead
+    Long getMaxDbId();
+    @Query("MATCH (n:DbIdGenerator)  " +
+            "SET n.last = n.last + 1 " +
+            "RETURN n.last;")
+    Long generateDbId();
+
+    @Query("MATCH (d:DatabaseObject) RETURN DISTINCT d.schemaClass")
+    List<String> getSchema();
 
 }

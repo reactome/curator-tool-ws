@@ -9,7 +9,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.neo4j.driver.types.Relationship;
+import org.springframework.data.neo4j.core.schema.Relationship;
 import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.repository.CurationRepository;
 //import org.reactome.server.graph.aop.LazyFetchAspect;
