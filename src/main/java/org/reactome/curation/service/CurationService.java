@@ -91,44 +91,39 @@ public class CurationService {
     }
 
     public boolean update(DatabaseObject o,
-                          String attName, // hasEvent -> setHasEvent
-                          Object value) throws NoSuchMethodException { // Overload function for List
-        // T extends Collection<Object> value
+                          String attName // hasEvent -> setHasEvent
+                                        ) throws NoSuchMethodException {
         DatabaseObject saved = objectRepository.findById(o.getDbId(), RelationshipDirection.OUTGOING);
-        // Use references for physical entities, value may need to be queried
         if (saved == null)
             throw new IllegalArgumentException(o + " is not found!");
-
-        Class classOfValue = value.getClass();
-        String attributeName = attName.substring(0, 1).toUpperCase() + attName.substring(1);
-
-        if(isRelationship(o, attName)){
-            //TODO: check if value is databaseObject
-            DatabaseObject valueAsDbObject = (DatabaseObject) value;
-            Long dbId = valueAsDbObject.getDbId();
-
-            // If this relationship is a database object get actual node
-            if(dbId != null) {
-                DatabaseObject existingRelationship = objectRepository.findById((Long) dbId, RelationshipDirection.OUTGOING);
-                if (existingRelationship == null)
-                    throw new IllegalArgumentException(o + " is not found!");
-
-
-                Collection<QueryResultWrapper> relationships = objectRepository.queryRelationshipTypesByDbId(o.getDbId(),
-                        attributeName, RelationshipDirection.OUTGOING);
-                QueryResultWrapper newRelationship = new QueryResultWrapper(valueAsDbObject);
-                relationships.add(newRelationship);
-            }
-
-        }
 
         // TODO: move to a string utility class
         // Find method called set{AttName} (e.g. setHasEvent, or setText, setName)
         Class classOfObject = o.getClass();
+        String attributeName = attName.substring(0, 1).toUpperCase() + attName.substring(1);
         Method setMethod = classOfObject.getMethod("set" + attributeName, List.class);
+        Method getMethod = classOfObject.getMethod("get" + attributeName);
+        Object value; // could also always consider value a collection
 
         try {
-            //setMethod.invoke(saved, relationships);
+            value = getMethod.invoke(o);
+        } catch (InvocationTargetException | IllegalAccessException e) {
+            throw new WebServerException("Method " + getMethod.getName() + " is not found on class " + o.getClass().getName(), e);
+        }
+
+        if(isRelationship(o, attName)){
+            Collection<?> relationships = (Collection<?>) value;
+            for(Object relationship : relationships){
+                // Use references for physical entities, value may need to be queried
+                DatabaseObject relationshipObject = (DatabaseObject) relationship;
+                Long dbId = relationshipObject.getDbId();
+                if(dbId == null){
+                    // call save function with mint dbId logic called there
+                }
+            }
+        }
+
+        try {
             setMethod.invoke(saved, value);
             curationRepository.save(saved);
         } catch (InvocationTargetException | IllegalAccessException e) {

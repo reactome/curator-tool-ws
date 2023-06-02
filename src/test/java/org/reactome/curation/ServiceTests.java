@@ -75,7 +75,7 @@ class ServiceTests {
         start = System.currentTimeMillis();
         String test = new String("testGenericClass");
         DatabaseObject reaction = new Reaction(170984L);
-        this.curationService.update(reaction, "displayName", "test");
+        this.curationService.update(reaction, "displayName");
         time = System.currentTimeMillis() - start;
         logger.info("curationService.updateDbObject execution time:" + time + "ms");
         logger.info("Finished curationService.updateDbObjectExisting");
@@ -88,7 +88,7 @@ class ServiceTests {
         start = System.currentTimeMillis();
         String projectAtt = new String("Test adding project name");
         Person person = advancedDatabaseObjectRepository.findById(140537L, 1);
-        this.curationService.update(person, "project", projectAtt);
+        curationService.update(person, "project");
         time = System.currentTimeMillis() - start;
         logger.info("curationService.updateDbObject execution time:" + time + "ms");
         logger.info("Finished curationService.updatePerson");
@@ -103,12 +103,19 @@ class ServiceTests {
         Person person = advancedDatabaseObjectRepository.findById(140537L, 1);
         // Would the attribute name be the relationship or the attribute of that attribute entity?
         // Or combo of both?
-        Affiliation affiliation = person.getAffiliation().get(0);
-        this.curationService.update(person, "affiliation", affiliation);
+        List<Affiliation> affiliations = person.getAffiliation();
+        Affiliation affiliation =  new Affiliation();
+        affiliation.setDbId(curationService.generateDbId());
+        affiliation.setDisplayName("Testing adding an affiliation");
+        affiliations.add(affiliation);
+        person.setAffiliation(affiliations);
+        curationService.update(person, "affiliation");
         time = System.currentTimeMillis() - start;
         logger.info("curationService.updateDbObject execution time:" + time + "ms");
         logger.info("Finished curationService.updateRelationship");
     }
+
+    //Test with reaction and input
 
     @Test
     public void getMaxDbId() {
