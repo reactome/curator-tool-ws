@@ -70,7 +70,7 @@ class ServiceTests {
     }
 
     @Test
-    public void updateDbObjectExisting() throws NoSuchMethodException {
+    public void updateDbObjectExisting() throws Exception {
         logger.info("Started testing curationService.updateDbObjectExisting");
         long start, time;
         start = System.currentTimeMillis();
@@ -83,7 +83,7 @@ class ServiceTests {
     }
 
     @Test
-    public void updatePerson() throws NoSuchMethodException {
+    public void updatePerson() throws Exception {
         logger.info("Started testing curationService.updatePerson");
         long start, time;
         start = System.currentTimeMillis();
@@ -96,7 +96,7 @@ class ServiceTests {
     }
 
     @Test
-    public void updateRelationship() throws NoSuchMethodException {
+    public void updateRelationship() throws Exception {
         logger.info("Started testing curationService.updateRelationship");
         long start, time;
         start = System.currentTimeMillis();

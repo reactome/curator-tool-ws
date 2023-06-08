@@ -80,6 +80,7 @@ public class CurationService {
        return objectRepository.findById(dbId, 1);
     }
     
+    @SuppressWarnings("static-access")
     public List<CurationAttribute> getAttributes(String clsName) throws Exception {
         if (clsName2Attributes == null) { // Should not occur. But try again!
             logger.info("Loading clsName2Attributes...");
@@ -112,12 +113,21 @@ public class CurationService {
         return mapper.readValue(is, typeRef);
     }
 
+    /**
+     * Update an attribute value for the passed DatabaseObject. The DatabaseObject should have
+     * updated value already. 
+     * @param o
+     * @param attName
+     * @return
+     * @throws NoSuchMethodException
+     */
     public boolean update(DatabaseObject o,
-                          String attName) // e.g. hasEvent -> setHasEvent 
-                          throws NoSuchMethodException {
-        DatabaseObject saved = objectRepository.findById(o.getDbId(), RelationshipDirection.OUTGOING);
-        if (saved == null)
-            throw new IllegalArgumentException(o + " is not found!");
+                          String attName) throws Exception {
+        DatabaseObject saved = findById(o.getDbId());
+        if (saved == null) {
+            logger.error("Updated an object that doesn't exist. dbId: " + o.getDbId());
+            throw new IllegalArgumentException(o + " doesn't exist.");
+        }
 
         // TODO: move to a string utility class
         // Find method called set{AttName} (e.g. setHasEvent, or setText, setName)
@@ -125,14 +135,7 @@ public class CurationService {
         String attributeName = attName.substring(0, 1).toUpperCase() + attName.substring(1);
         Method setMethod = classOfObject.getMethod("set" + attributeName, List.class);
         Method getMethod = classOfObject.getMethod("get" + attributeName);
-        Object value; // could also always consider value a collection
-
-        try {
-            value = getMethod.invoke(o);
-        } catch (InvocationTargetException | IllegalAccessException e) {
-            throw new WebServerException("Method " + getMethod.getName() + " is not found on class " + o.getClass().getName(), e);
-        }
-
+        Object value = getMethod.invoke(o);
         if(isRelationship(o, attName)){
             Collection<?> relationships = (Collection<?>) value;
             for(Object relationship : relationships){
@@ -144,13 +147,8 @@ public class CurationService {
                 }
             }
         }
-
-        try {
-            setMethod.invoke(saved, value);
-            curationRepository.save(saved);
-        } catch (InvocationTargetException | IllegalAccessException e) {
-            throw new WebServerException("Method " + setMethod.getName() + " is not found on class " + o.getClass().getName(), e);
-        }
+        setMethod.invoke(saved, value);
+        curationRepository.save(saved);
         return true;
     }
 
@@ -176,9 +174,7 @@ public class CurationService {
     }
 
     public Long getMaxDbId(){
-        Long maxDbId = curationRepository.getMaxDbId();
-        if(maxDbId != null) {return maxDbId;}
-        else {return null;}
+        return curationRepository.getMaxDbId();
     }
 
     public List<String> getSchemaClasses() {
