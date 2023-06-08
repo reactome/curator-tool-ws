@@ -5,16 +5,21 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.springframework.data.neo4j.core.schema.Relationship;
 import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.repository.CurationRepository;
 //import org.reactome.server.graph.aop.LazyFetchAspect;
 import org.reactome.server.graph.domain.model.DatabaseObject;
-import org.reactome.server.graph.domain.result.QueryResultWrapper;
 import org.reactome.server.graph.repository.AdvancedDatabaseObjectRepository;
 import org.reactome.server.graph.service.helper.AttributeProperties;
 import org.reactome.server.graph.service.helper.RelationshipDirection;
@@ -23,17 +28,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.server.WebServerException;
+import org.springframework.data.neo4j.core.schema.Relationship;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@Data
+//@Data
 @Service
-@NoArgsConstructor
+//@NoArgsConstructor
 //@EnableScheduling
 //@EnableAsync
 //@EntityScan({"org.reactome.server.graph.domain.model"})
@@ -45,7 +48,7 @@ public class CurationService {
     private Map<String, List<CurationAttribute>> clsName2Attributes;
     
     // For curation specific stuff
-    @Autowired
+//    @Autowired
     private CurationRepository curationRepository;
     // For queries
     @Autowired
@@ -54,12 +57,31 @@ public class CurationService {
     @Autowired
     private DatabaseObjectUtils databaseObjectUtils;
     
+    public CurationService() {
+        // Load clsName2Attributes to avoid any thread issue: clsName2Attributes
+        // may be loaded multiple times unnecessarily.
+        try {
+            logger.info("Loading clsName2Attributes...");
+            clsName2Attributes = loadClsName2Attributes();
+            logger.info("Done loading.");
+        }
+        catch(Exception e) {
+            logger.info("Cannot load clsName2Attributes: " + e.getMessage(), e);
+        }
+    }
+    
+    @Autowired
+    public void setCurationRepository(CurationRepository repo) {
+        this.curationRepository = repo;
+        repo.createDbIdIndex();
+    }
+    
     public DatabaseObject findById(Long dbId) {
        return objectRepository.findById(dbId, 1);
     }
     
     public List<CurationAttribute> getAttributes(String clsName) throws Exception {
-        if (clsName2Attributes == null) {
+        if (clsName2Attributes == null) { // Should not occur. But try again!
             logger.info("Loading clsName2Attributes...");
             clsName2Attributes = loadClsName2Attributes();
             logger.info("Done loading.");
@@ -91,15 +113,15 @@ public class CurationService {
     }
 
     public boolean update(DatabaseObject o,
-                          String attName // hasEvent -> setHasEvent
-                                        ) throws NoSuchMethodException {
+                          String attName) // e.g. hasEvent -> setHasEvent 
+                          throws NoSuchMethodException {
         DatabaseObject saved = objectRepository.findById(o.getDbId(), RelationshipDirection.OUTGOING);
         if (saved == null)
             throw new IllegalArgumentException(o + " is not found!");
 
         // TODO: move to a string utility class
         // Find method called set{AttName} (e.g. setHasEvent, or setText, setName)
-        Class classOfObject = o.getClass();
+        Class<?> classOfObject = o.getClass();
         String attributeName = attName.substring(0, 1).toUpperCase() + attName.substring(1);
         Method setMethod = classOfObject.getMethod("set" + attributeName, List.class);
         Method getMethod = classOfObject.getMethod("get" + attributeName);
@@ -159,16 +181,7 @@ public class CurationService {
         else {return null;}
     }
 
-    public Long generateDbId() {
-        Long generatedDbId = curationRepository.generateDbId();
-        // Using a random number to prevent curators getting same dbId
-        Random random = new Random();
-        Long randomLong = random.nextLong();
-        Long newDbId = generatedDbId + randomLong;
-        return newDbId;
-    }
-
-    public List<String> getSchema() {
-        return curationRepository.getSchema();
+    public List<String> getSchemaClasses() {
+        return curationRepository.getSchemaClasses();
     }
 }

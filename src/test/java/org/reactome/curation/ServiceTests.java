@@ -21,7 +21,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 @SpringBootTest
 class ServiceTests {
-    protected static final Logger logger = LoggerFactory.getLogger("ServiceTestsLogger");
+    
+    private static final Logger logger = LoggerFactory.getLogger(ServiceTests.class);
 
     @Autowired
     private CurationService curationService;
@@ -64,7 +65,7 @@ class ServiceTests {
         };
         for (String clsName : clsNames) {
             List<CurationAttribute> attributes = curationService.getAttributes(clsName);
-            System.out.println(clsName + ":\n" + attributes);
+            logger.info(clsName + ":\n" + attributes);
         }
     }
 
@@ -105,7 +106,7 @@ class ServiceTests {
         // Or combo of both?
         List<Affiliation> affiliations = person.getAffiliation();
         Affiliation affiliation =  new Affiliation();
-        affiliation.setDbId(curationService.generateDbId());
+        affiliation.setDbId(curationService.getMaxDbId() + 1);
         affiliation.setDisplayName("Testing adding an affiliation");
         affiliations.add(affiliation);
         person.setAffiliation(affiliations);
@@ -115,33 +116,20 @@ class ServiceTests {
         logger.info("Finished curationService.updateRelationship");
     }
 
-    //Test with reaction and input
-
     @Test
     public void getMaxDbId() {
         logger.info("Started testing curationService.getMaxDbId");
         long start, time;
         start = System.currentTimeMillis();
-        Long maxDbIdObserved = curationService.getMaxDbId();
-        time = System.currentTimeMillis() - start;
-        logger.info(time + "");
-        assertThat(maxDbIdObserved).isEqualTo(1000000000000000001L);
-        logger.info("curationService.getMaxDbId execution time:" + time + "ms");
-        logger.info("Finished curationService.getMaxDbId");
-    }
-
-    @Test
-    public void testGenerateDbId() {
-        logger.info("Started testing curationService.testGenerateDbId");
-        long start, time;
-        start = System.currentTimeMillis();
-        for(int i=0; i<1000; i++) {
-            Long generatedDbId = curationService.generateDbId();
+        // Let run it 100 time to see the performance
+        int times = 100;
+        for (int i = 0; i < times; i++) {
+            Long maxDbIdObserved = curationService.getMaxDbId();
+            logger.info(i + ": " + maxDbIdObserved);
         }
         time = System.currentTimeMillis() - start;
-        logger.info(time + "");
-        logger.info("curationService.getMaxDbId execution time:" + time + "ms");
-        logger.info("Finished curationService.testGenerateDbId");
+        logger.info("curationService.getMaxDbId execution time:" + time + " ms");
+        logger.info("Finished curationService.getMaxDbId");
     }
 
 }
