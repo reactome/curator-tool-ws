@@ -161,7 +161,7 @@ public class CurationService {
         return true;
     }
 
-    public boolean isRelationship(Object o, String attName) {
+    private boolean isRelationship(Object o, String attName) {
         if (clsName2attName2Attribute == null) {
             logger.error("clsName2attName2Attribute is not initialized.");
             throw new IllegalStateException("clsName2attName2Attribute is not initialized.");
