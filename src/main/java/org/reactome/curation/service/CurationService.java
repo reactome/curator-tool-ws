@@ -130,6 +130,7 @@ public class CurationService {
      * @return
      * @throws NoSuchMethodException
      */
+    //TODO: Consider moving this method to some repository. 
     public boolean update(DatabaseObject o,
                           String attName) throws Exception {
         DatabaseObject saved = findById(o.getDbId());
