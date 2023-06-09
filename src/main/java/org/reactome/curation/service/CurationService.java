@@ -3,7 +3,6 @@ package org.reactome.curation.service;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,13 +20,12 @@ import org.reactome.curation.repository.CurationRepository;
 //import org.reactome.server.graph.aop.LazyFetchAspect;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.repository.AdvancedDatabaseObjectRepository;
+import org.reactome.server.graph.service.helper.AttributeClass;
 import org.reactome.server.graph.service.helper.AttributeProperties;
-import org.reactome.server.graph.service.helper.RelationshipDirection;
 import org.reactome.server.graph.service.util.DatabaseObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.web.server.WebServerException;
 import org.springframework.data.neo4j.core.schema.Relationship;
 import org.springframework.stereotype.Service;
 
@@ -46,6 +44,8 @@ public class CurationService {
     private static final Logger logger = LoggerFactory.getLogger(CurationService.class);
     
     private Map<String, List<CurationAttribute>> clsName2Attributes;
+    // A map for quick search
+    private Map<String, Map<String, CurationAttribute>> clsName2attName2Attribute;
     
     // For curation specific stuff
 //    @Autowired
@@ -63,11 +63,23 @@ public class CurationService {
         try {
             logger.info("Loading clsName2Attributes...");
             clsName2Attributes = loadClsName2Attributes();
+            clsName2attName2Attribute = initMapForClassDefinitions(clsName2Attributes);
             logger.info("Done loading.");
         }
         catch(Exception e) {
             logger.info("Cannot load clsName2Attributes: " + e.getMessage(), e);
         }
+    }
+    
+    private Map<String, Map<String, CurationAttribute>> initMapForClassDefinitions(Map<String, List<CurationAttribute>> clsName2Attributes) {
+        Map<String, Map<String, CurationAttribute>> clsName2attName2Att = new HashMap<>();
+        for (String clsName : clsName2Attributes.keySet()) {
+            List<CurationAttribute> attributes = clsName2Attributes.get(clsName);
+            Map<String, CurationAttribute> attName2Att = attributes.stream()
+                    .collect(Collectors.toMap(CurationAttribute::getName, Function.identity()));
+            clsName2attName2Att.put(clsName, attName2Att);
+        }
+        return clsName2attName2Att;
     }
     
     @Autowired
@@ -82,13 +94,10 @@ public class CurationService {
     
     @SuppressWarnings("static-access")
     public List<CurationAttribute> getAttributes(String clsName) throws Exception {
-        if (clsName2Attributes == null) { // Should not occur. But try again!
-            logger.info("Loading clsName2Attributes...");
-            clsName2Attributes = loadClsName2Attributes();
-            logger.info("Done loading.");
-        }
-        if (clsName2Attributes == null)
+        if (clsName2Attributes == null) {
+            logger.error("clsName2Attributes is not initialized.");
             return Collections.EMPTY_LIST; // Just in case
+        }
         List<CurationAttribute> attributes = clsName2Attributes.get(clsName);
         if (attributes == null)
             return Collections.EMPTY_LIST;
@@ -152,25 +161,18 @@ public class CurationService {
         return true;
     }
 
-    // TODO: make this function public in graph-core/ReflectionUtils
-    public List<Field> getAllFields(List<Field> fields, Class<?> type) {
-        fields.addAll(Arrays.asList(type.getDeclaredFields()));
-        if (type.getSuperclass() != null && !type.getSuperclass().equals(Object.class)) {
-            fields = getAllFields(fields, type.getSuperclass());
+    public boolean isRelationship(Object o, String attName) {
+        if (clsName2attName2Attribute == null) {
+            logger.error("clsName2attName2Attribute is not initialized.");
+            throw new IllegalStateException("clsName2attName2Attribute is not initialized.");
         }
-        return fields;
-    }
-
-    public boolean isRelationship(Object o, String attName){
-        List<Field> objectFields = getAllFields(new ArrayList<>(), o.getClass());
-        for(Field field: objectFields){
-            if(field.getAnnotation(Relationship.class) != null && field.getName().equals(attName)){
-                Annotation annotation = field.getAnnotation(Relationship.class);
-                logger.info(annotation.toString());
-                return true;
-            }
-        }
-        return false;
+        Map<String, CurationAttribute> attName2Att = clsName2attName2Attribute.get(o.getClass().getSimpleName());
+        if (attName2Att == null || !attName2Att.keySet().contains(attName))
+            throw new IllegalArgumentException(attName + " is not defined in " + o.getClass().getCanonicalName());
+        CurationAttribute att = attName2Att.get(attName);
+        List<AttributeClass> attClasses = att.getProperties().getAttributeClasses();
+        AttributeClass attCls = attClasses.stream().findAny().get();
+        return attCls.isValueTypeDatabaseObject();
     }
 
     public Long getMaxDbId(){
