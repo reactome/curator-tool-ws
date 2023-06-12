@@ -9,6 +9,7 @@ import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,6 +23,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @RequestMapping("api/curation")
 @SuppressWarnings("unchecked")
+@CrossOrigin
 public class CurationController {
     private static final Logger logger = LoggerFactory.getLogger(CurationController.class);
     
