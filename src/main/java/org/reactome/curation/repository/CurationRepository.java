@@ -32,4 +32,24 @@ public interface CurationRepository extends Neo4jRepository<DatabaseObject, Long
     @Query("MATCH (d:DatabaseObject) RETURN DISTINCT d.schemaClass")
     List<String> getSchema();
 
+//    MATCH
+//            (a:DatabaseObject),
+//  (b:DatabaseObject)
+//    OPTIONAL MATCH (a)-[r:$relTypes]->(b)
+//    WHERE a.dbId = $from AND b.dbId IN $to
+//    DELETE r,
+//    CREATE (a)-[nr:$relTypes]->(b)
+//    RETURN type(nr)
+
+//    MATCH (from:Test)
+//    WHERE from.id = 1
+//    OPTIONAL MATCH (from)-[r:testRel]->()
+//    DELETE r
+//    WITH from
+//    MATCH (to:Test)
+//    WHERE to.id in [2,3]
+//    CREATE (from)-[:testRel]->(to)
+//    RETURN from, to;
+
+
 }

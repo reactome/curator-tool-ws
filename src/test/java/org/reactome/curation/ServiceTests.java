@@ -105,8 +105,8 @@ class ServiceTests {
         // Or combo of both?
         List<Affiliation> affiliations = person.getAffiliation();
         Affiliation affiliation =  new Affiliation();
-        affiliation.setDbId(curationService.generateDbId());
-        affiliation.setDisplayName("Testing adding an affiliation");
+        affiliation.setDbId(1247587L);
+        //affiliation.setDisplayName("Testing adding an affiliation");
         affiliations.add(affiliation);
         person.setAffiliation(affiliations);
         curationService.update(person, "affiliation");
