@@ -3,37 +3,38 @@ package org.reactome.curation.service;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.springframework.data.neo4j.core.schema.Relationship;
 import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.repository.CurationRepository;
 //import org.reactome.server.graph.aop.LazyFetchAspect;
 import org.reactome.server.graph.domain.model.DatabaseObject;
-import org.reactome.server.graph.domain.result.QueryResultWrapper;
 import org.reactome.server.graph.repository.AdvancedDatabaseObjectRepository;
+import org.reactome.server.graph.service.helper.AttributeClass;
 import org.reactome.server.graph.service.helper.AttributeProperties;
-import org.reactome.server.graph.service.helper.RelationshipDirection;
 import org.reactome.server.graph.service.util.DatabaseObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.web.server.WebServerException;
+import org.springframework.data.neo4j.core.schema.Relationship;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@Data
+//@Data
 @Service
-@NoArgsConstructor
+//@NoArgsConstructor
 //@EnableScheduling
 //@EnableAsync
 //@EntityScan({"org.reactome.server.graph.domain.model"})
@@ -43,9 +44,11 @@ public class CurationService {
     private static final Logger logger = LoggerFactory.getLogger(CurationService.class);
     
     private Map<String, List<CurationAttribute>> clsName2Attributes;
+    // A map for quick search
+    private Map<String, Map<String, CurationAttribute>> clsName2attName2Attribute;
     
     // For curation specific stuff
-    @Autowired
+//    @Autowired
     private CurationRepository curationRepository;
     // For queries
     @Autowired
@@ -54,18 +57,47 @@ public class CurationService {
     @Autowired
     private DatabaseObjectUtils databaseObjectUtils;
     
+    public CurationService() {
+        // Load clsName2Attributes to avoid any thread issue: clsName2Attributes
+        // may be loaded multiple times unnecessarily.
+        try {
+            logger.info("Loading clsName2Attributes...");
+            clsName2Attributes = loadClsName2Attributes();
+            clsName2attName2Attribute = initMapForClassDefinitions(clsName2Attributes);
+            logger.info("Done loading.");
+        }
+        catch(Exception e) {
+            logger.info("Cannot load clsName2Attributes: " + e.getMessage(), e);
+        }
+    }
+    
+    private Map<String, Map<String, CurationAttribute>> initMapForClassDefinitions(Map<String, List<CurationAttribute>> clsName2Attributes) {
+        Map<String, Map<String, CurationAttribute>> clsName2attName2Att = new HashMap<>();
+        for (String clsName : clsName2Attributes.keySet()) {
+            List<CurationAttribute> attributes = clsName2Attributes.get(clsName);
+            Map<String, CurationAttribute> attName2Att = attributes.stream()
+                    .collect(Collectors.toMap(CurationAttribute::getName, Function.identity()));
+            clsName2attName2Att.put(clsName, attName2Att);
+        }
+        return clsName2attName2Att;
+    }
+    
+    @Autowired
+    public void setCurationRepository(CurationRepository repo) {
+        this.curationRepository = repo;
+        repo.createDbIdIndex();
+    }
+    
     public DatabaseObject findById(Long dbId) {
        return objectRepository.findById(dbId, 1);
     }
     
+    @SuppressWarnings("static-access")
     public List<CurationAttribute> getAttributes(String clsName) throws Exception {
         if (clsName2Attributes == null) {
-            logger.info("Loading clsName2Attributes...");
-            clsName2Attributes = loadClsName2Attributes();
-            logger.info("Done loading.");
-        }
-        if (clsName2Attributes == null)
+            logger.error("clsName2Attributes is not initialized.");
             return Collections.EMPTY_LIST; // Just in case
+        }
         List<CurationAttribute> attributes = clsName2Attributes.get(clsName);
         if (attributes == null)
             return Collections.EMPTY_LIST;
@@ -90,27 +122,30 @@ public class CurationService {
         return mapper.readValue(is, typeRef);
     }
 
+    /**
+     * Update an attribute value for the passed DatabaseObject. The DatabaseObject should have
+     * updated value already. 
+     * @param o
+     * @param attName
+     * @return
+     * @throws NoSuchMethodException
+     */
+    //TODO: Consider moving this method to some repository. 
     public boolean update(DatabaseObject o,
-                          String attName // hasEvent -> setHasEvent
-                                        ) throws NoSuchMethodException {
-        DatabaseObject saved = objectRepository.findById(o.getDbId(), RelationshipDirection.OUTGOING);
-        if (saved == null)
-            throw new IllegalArgumentException(o + " is not found!");
+                          String attName) throws Exception {
+        DatabaseObject saved = findById(o.getDbId());
+        if (saved == null) {
+            logger.error("Updated an object that doesn't exist. dbId: " + o.getDbId());
+            throw new IllegalArgumentException(o + " doesn't exist.");
+        }
 
         // TODO: move to a string utility class
         // Find method called set{AttName} (e.g. setHasEvent, or setText, setName)
-        Class classOfObject = o.getClass();
+        Class<?> classOfObject = o.getClass();
         String attributeName = attName.substring(0, 1).toUpperCase() + attName.substring(1);
         Method setMethod = classOfObject.getMethod("set" + attributeName, List.class);
         Method getMethod = classOfObject.getMethod("get" + attributeName);
-        Object value; // could also always consider value a collection
-
-        try {
-            value = getMethod.invoke(o);
-        } catch (InvocationTargetException | IllegalAccessException e) {
-            throw new WebServerException("Method " + getMethod.getName() + " is not found on class " + o.getClass().getName(), e);
-        }
-
+        Object value = getMethod.invoke(o);
         if(isRelationship(o, attName)){
             Collection<?> relationships = (Collection<?>) value; // check if extends collection
             for(Object relationship : relationships){
@@ -122,53 +157,30 @@ public class CurationService {
                 }
             }
         }
-
-        try {
-            setMethod.invoke(saved, value);
-            curationRepository.save(saved);
-        } catch (InvocationTargetException | IllegalAccessException e) {
-            throw new WebServerException("Method " + setMethod.getName() + " is not found on class " + o.getClass().getName(), e);
-        }
+        setMethod.invoke(saved, value);
+        curationRepository.save(saved);
         return true;
     }
 
-    // TODO: make this function public in graph-core/ReflectionUtils
-    public List<Field> getAllFields(List<Field> fields, Class<?> type) {
-        fields.addAll(Arrays.asList(type.getDeclaredFields()));
-        if (type.getSuperclass() != null && !type.getSuperclass().equals(Object.class)) {
-            fields = getAllFields(fields, type.getSuperclass());
+    private boolean isRelationship(Object o, String attName) {
+        if (clsName2attName2Attribute == null) {
+            logger.error("clsName2attName2Attribute is not initialized.");
+            throw new IllegalStateException("clsName2attName2Attribute is not initialized.");
         }
-        return fields;
-    }
-
-    public boolean isRelationship(Object o, String attName){
-        List<Field> objectFields = getAllFields(new ArrayList<>(), o.getClass());
-        for(Field field: objectFields){
-            if(field.getAnnotation(Relationship.class) != null && field.getName().equals(attName)){
-                Annotation annotation = field.getAnnotation(Relationship.class);
-                logger.info(annotation.toString());
-                return true;
-            }
-        }
-        return false;
+        Map<String, CurationAttribute> attName2Att = clsName2attName2Attribute.get(o.getClass().getSimpleName());
+        if (attName2Att == null || !attName2Att.keySet().contains(attName))
+            throw new IllegalArgumentException(attName + " is not defined in " + o.getClass().getCanonicalName());
+        CurationAttribute att = attName2Att.get(attName);
+        List<AttributeClass> attClasses = att.getProperties().getAttributeClasses();
+        AttributeClass attCls = attClasses.stream().findAny().get();
+        return attCls.isValueTypeDatabaseObject();
     }
 
     public Long getMaxDbId(){
-        Long maxDbId = curationRepository.getMaxDbId();
-        if(maxDbId != null) {return maxDbId;}
-        else {return null;}
+        return curationRepository.getMaxDbId();
     }
 
-    public Long generateDbId() {
-        Long generatedDbId = curationRepository.generateDbId();
-        // Using a random number to prevent curators getting same dbId
-        Random random = new Random();
-        Long randomLong = random.nextLong();
-        Long newDbId = generatedDbId + randomLong;
-        return newDbId;
-    }
-
-    public List<String> getSchema() {
-        return curationRepository.getSchema();
+    public List<String> getSchemaClasses() {
+        return curationRepository.getSchemaClasses();
     }
 }

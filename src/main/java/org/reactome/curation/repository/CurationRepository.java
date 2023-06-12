@@ -1,11 +1,10 @@
 package org.reactome.curation.repository;
 
+import java.util.List;
+
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
-import org.springframework.stereotype.Repository;
-
-import java.util.List;
 
 /**
  * Apparently the default auto-generated code from Neo4jRepository cannot be used for our purpose.
@@ -15,22 +14,30 @@ import java.util.List;
  * @author wug
  *
  */
-public interface CurationRepository extends Neo4jRepository<DatabaseObject, Long>{
+public interface CurationRepository extends Neo4jRepository<DatabaseObject, Long> {
     
     // This is just a test. There is no need to be here and don't use this one
     // Use the Repositories implemented in graph-core for all queries related stuff.
     @Query("MATCH (a:DatabaseObject{dbId:$dbId})-[r]-(m) RETURN a, COLLECT(r), COLLECT(m)")
     public DatabaseObject findByDbId(Long dbId);
 
-    @Query("MATCH(n) RETURN MAX(n.dbId)") // Make a node reference instead
+    /**
+     * To create the performance of this query, add a range index to dbId using the following 
+     * CREATE INDEX db_id_index IF NOT EXISTS FOR (n:DatabaseObject) ON (n.dbId)
+     * The client should call createDbIdIndex() function at least once.
+     * @return
+     */
+    @Query("MATCH (n:DatabaseObject) RETURN MAX(n.dbId)") // Make a node reference instead
     Long getMaxDbId();
-    @Query("MATCH (n:DbIdGenerator)  " +
-            "SET n.last = n.last + 1 " +
-            "RETURN n.last;")
-    Long generateDbId();
-
+    
+    /**
+     * Use this method to create index for DatabaseObject's DB_ID. 
+     */
+    @Query("CREATE INDEX db_id_index IF NOT EXISTS FOR (n:DatabaseObject) ON (n.dbId)")
+    void createDbIdIndex(); 
+    
     @Query("MATCH (d:DatabaseObject) RETURN DISTINCT d.schemaClass")
-    List<String> getSchema();
+    List<String> getSchemaClasses();
 
 //    MATCH
 //            (a:DatabaseObject),

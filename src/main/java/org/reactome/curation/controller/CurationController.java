@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import lombok.Data;
@@ -30,7 +29,6 @@ public class CurationController {
     private CurationService service;
     
     @GetMapping("findByDbId/{dbId}")
-    @ResponseBody
     public DatabaseObject findByDdId(@PathVariable("dbId") Long dbId) {
         DatabaseObject obj = service.findById(dbId);
         return obj;
@@ -47,24 +45,15 @@ public class CurationController {
         }
     }
 
-    @GetMapping("fetch/getMaxDbId")
-    @ResponseBody
+    @GetMapping("getMaxDbId")
     public Long getMaxDbId() {
         logger.info("Request for the maximum dbId");
         return service.getMaxDbId();
     }
 
-    @GetMapping("generateDbId")
-    @ResponseBody
-    public Long generateDbId() {
-        logger.info("Request for new dbId");
-        return service.generateDbId();
-    }
-
-    @GetMapping("fetch/getSchema")
-    @ResponseBody
-    public List<String> getSchema() {
-        return service.getSchema();
+    @GetMapping("getSchemaClasses")
+    public List<String> getSchemaClasses() {
+        return service.getSchemaClasses();
     }
 
 

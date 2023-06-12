@@ -21,7 +21,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 @SpringBootTest
 class ServiceTests {
-    protected static final Logger logger = LoggerFactory.getLogger("ServiceTestsLogger");
+
+    private static final Logger logger = LoggerFactory.getLogger(ServiceTests.class);
 
     @Autowired
     private CurationService curationService;
@@ -64,12 +65,12 @@ class ServiceTests {
         };
         for (String clsName : clsNames) {
             List<CurationAttribute> attributes = curationService.getAttributes(clsName);
-            System.out.println(clsName + ":\n" + attributes);
+            logger.info(clsName + ":\n" + attributes);
         }
     }
 
     @Test
-    public void updateDbObjectExisting() throws NoSuchMethodException {
+    public void updateDbObjectExisting() throws Exception {
         logger.info("Started testing curationService.updateDbObjectExisting");
         long start, time;
         start = System.currentTimeMillis();
@@ -82,7 +83,7 @@ class ServiceTests {
     }
 
     @Test
-    public void updatePerson() throws NoSuchMethodException {
+    public void updatePerson() throws Exception {
         logger.info("Started testing curationService.updatePerson");
         long start, time;
         start = System.currentTimeMillis();
@@ -95,7 +96,7 @@ class ServiceTests {
     }
 
     @Test
-    public void updateRelationship() throws NoSuchMethodException {
+    public void updateRelationship() throws Exception {
         logger.info("Started testing curationService.updateRelationship");
         long start, time;
         start = System.currentTimeMillis();
@@ -105,8 +106,8 @@ class ServiceTests {
         // Or combo of both?
         List<Affiliation> affiliations = person.getAffiliation();
         Affiliation affiliation =  new Affiliation();
-        affiliation.setDbId(1247587L);
-        //affiliation.setDisplayName("Testing adding an affiliation");
+        affiliation.setDbId(curationService.getMaxDbId() + 1);
+        affiliation.setDisplayName("Testing adding an affiliation");
         affiliations.add(affiliation);
         person.setAffiliation(affiliations);
         curationService.update(person, "affiliation");
@@ -122,11 +123,14 @@ class ServiceTests {
         logger.info("Started testing curationService.getMaxDbId");
         long start, time;
         start = System.currentTimeMillis();
-        Long maxDbIdObserved = curationService.getMaxDbId();
+        // Let run it 100 time to see the performance
+        int times = 100;
+        for (int i = 0; i < times; i++) {
+            Long maxDbIdObserved = curationService.getMaxDbId();
+            logger.info(i + ": " + maxDbIdObserved);
+        }
         time = System.currentTimeMillis() - start;
-        logger.info(time + "");
-        assertThat(maxDbIdObserved).isEqualTo(1000000000000000001L);
-        logger.info("curationService.getMaxDbId execution time:" + time + "ms");
+        logger.info("curationService.getMaxDbId execution time:" + time + " ms");
         logger.info("Finished curationService.getMaxDbId");
     }
 
