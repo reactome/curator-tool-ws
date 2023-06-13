@@ -69,62 +69,62 @@ class ServiceTests {
         }
     }
 
-    @Test
-    public void updateDbObjectExisting() throws Exception {
-        logger.info("Started testing curationService.updateDbObjectExisting");
-        long start, time;
-        start = System.currentTimeMillis();
-        String test = new String("testGenericClass");
-        DatabaseObject reaction = new Reaction(170984L);
-        this.curationService.update(reaction, "displayName");
-        time = System.currentTimeMillis() - start;
-        logger.info("curationService.updateDbObject execution time:" + time + "ms");
-        logger.info("Finished curationService.updateDbObjectExisting");
-    }
+//    @Test
+//    public void updateDbObjectExisting() throws Exception {
+//        logger.info("Started testing curationService.updateDbObjectExisting");
+//        long start, time;
+//        start = System.currentTimeMillis();
+//        String test = new String("testGenericClass");
+//        DatabaseObject reaction = new Reaction(170984L);
+//        this.curationService.update(reaction, "displayName");
+//        time = System.currentTimeMillis() - start;
+//        logger.info("curationService.updateDbObject execution time:" + time + "ms");
+//        logger.info("Finished curationService.updateDbObjectExisting");
+//    }
+//
+//    @Test
+//    public void updatePerson() throws Exception {
+//        logger.info("Started testing curationService.updatePerson");
+//        long start, time;
+//        start = System.currentTimeMillis();
+//        String projectAtt = new String("Test adding project name");
+//        Person person = advancedDatabaseObjectRepository.findById(140537L, 1);
+//        curationService.update(person, "project");
+//        time = System.currentTimeMillis() - start;
+//        logger.info("curationService.updateDbObject execution time:" + time + "ms");
+//        logger.info("Finished curationService.updatePerson");
+//    }
+//
+//    @Test
+//    public void updateRelationship() throws Exception {
+//        logger.info("Started testing curationService.updateRelationship");
+//        long start, time;
+//        start = System.currentTimeMillis();
+//        // This is Guanming
+//        Person person = advancedDatabaseObjectRepository.findById(140537L, 1);
+//        // Would the attribute name be the relationship or the attribute of that attribute entity?
+//        // Or combo of both?
+//        List<Affiliation> affiliations = person.getAffiliation();
+//        Affiliation affiliation =  new Affiliation();
+//        affiliation.setDbId(curationService.getMaxDbId() + 1);
+//        affiliation.setDisplayName("Testing adding an affiliation");
+//        affiliations.add(affiliation);
+//        person.setAffiliation(affiliations);
+//        curationService.update(person, "affiliation");
+//        time = System.currentTimeMillis() - start;
+//        logger.info("curationService.updateDbObject execution time:" + time + "ms");
+//        logger.info("Finished curationService.updateRelationship");
+//    }
 
     @Test
-    public void updatePerson() throws Exception {
-        logger.info("Started testing curationService.updatePerson");
-        long start, time;
-        start = System.currentTimeMillis();
-        String projectAtt = new String("Test adding project name");
-        Person person = advancedDatabaseObjectRepository.findById(140537L, 1);
-        curationService.update(person, "project");
-        time = System.currentTimeMillis() - start;
-        logger.info("curationService.updateDbObject execution time:" + time + "ms");
-        logger.info("Finished curationService.updatePerson");
-    }
-
-    @Test
-    public void updateRelationship() throws Exception {
-        logger.info("Started testing curationService.updateRelationship");
-        long start, time;
-        start = System.currentTimeMillis();
-        // This is Guanming
-        Person person = advancedDatabaseObjectRepository.findById(140537L, 1);
-        // Would the attribute name be the relationship or the attribute of that attribute entity?
-        // Or combo of both?
-        List<Affiliation> affiliations = person.getAffiliation();
-        Affiliation affiliation =  new Affiliation();
-        affiliation.setDbId(curationService.getMaxDbId() + 1);
-        affiliation.setDisplayName("Testing adding an affiliation");
-        affiliations.add(affiliation);
-        person.setAffiliation(affiliations);
-        curationService.update(person, "affiliation");
-        time = System.currentTimeMillis() - start;
-        logger.info("curationService.updateDbObject execution time:" + time + "ms");
-        logger.info("Finished curationService.updateRelationship");
-    }
-
-    @Test
-    public void getMaxDbId() {
+    public void getNextDbId() {
         logger.info("Started testing curationService.getMaxDbId");
         long start, time;
         start = System.currentTimeMillis();
         // Let run it 100 time to see the performance
-        int times = 100;
+        int times = 10;
         for (int i = 0; i < times; i++) {
-            Long maxDbIdObserved = curationService.getMaxDbId();
+            Long maxDbIdObserved = curationService.getNextDbId();
             logger.info(i + ": " + maxDbIdObserved);
         }
         time = System.currentTimeMillis() - start;

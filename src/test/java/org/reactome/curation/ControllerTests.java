@@ -68,12 +68,6 @@ class ControllerTests {
     }
 
     @Test
-    public void testGetMaxDbId() {
-        Long maxDbIdObserved = controller.getMaxDbId();
-        logger.info("Max DBID: " + maxDbIdObserved);
-    }
-
-    @Test
     public void testGetSchemaClasses() {
         List<String> schemaClasses = controller.getSchemaClasses();
         for(int i=0; i<schemaClasses.size(); i++){

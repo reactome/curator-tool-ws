@@ -1,11 +1,7 @@
 package org.reactome.curation.service;
 
 import java.io.InputStream;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -26,13 +22,14 @@ import org.reactome.server.graph.service.util.DatabaseObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.neo4j.core.schema.Relationship;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-//@Data
+import lombok.Data;
+
+@Data
 @Service
 //@NoArgsConstructor
 //@EnableScheduling
@@ -49,13 +46,15 @@ public class CurationService {
     
     // For curation specific stuff
 //    @Autowired
-    private CurationRepository curationRepository;
+//    private CurationRepository curationRepository;
     // For queries
     @Autowired
     private AdvancedDatabaseObjectRepository objectRepository;
     // To get the class attributes
     @Autowired
     private DatabaseObjectUtils databaseObjectUtils;
+    @Autowired
+    private CurationRepository curationRepository;
     
     public CurationService() {
         // Load clsName2Attributes to avoid any thread issue: clsName2Attributes
@@ -80,12 +79,6 @@ public class CurationService {
             clsName2attName2Att.put(clsName, attName2Att);
         }
         return clsName2attName2Att;
-    }
-    
-    @Autowired
-    public void setCurationRepository(CurationRepository repo) {
-        this.curationRepository = repo;
-        repo.createDbIdIndex();
     }
     
     public DatabaseObject findById(Long dbId) {
@@ -176,8 +169,8 @@ public class CurationService {
         return attCls.isValueTypeDatabaseObject();
     }
 
-    public Long getMaxDbId(){
-        return curationRepository.getMaxDbId();
+    public Long getNextDbId(){
+        return curationRepository.nextDbId();
     }
 
     public List<String> getSchemaClasses() {
