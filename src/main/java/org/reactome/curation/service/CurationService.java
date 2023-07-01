@@ -85,6 +85,16 @@ public class CurationService {
        return objectRepository.findById(dbId, 1);
     }
     
+    /**
+     * Store a new DatabaseObject into a repository.
+     * @param obj
+     * @return
+     * @throws Exception
+     */
+    public Long store(DatabaseObject obj) throws Exception {
+        return curationRepository.store(obj);
+    }
+    
     @SuppressWarnings("static-access")
     public List<CurationAttribute> getAttributes(String clsName) throws Exception {
         if (clsName2Attributes == null) {
@@ -151,7 +161,7 @@ public class CurationService {
             }
         }
         setMethod.invoke(saved, value);
-        curationRepository.save(saved);
+        curationRepository.store(saved);
         return true;
     }
 

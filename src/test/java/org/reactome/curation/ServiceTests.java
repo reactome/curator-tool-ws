@@ -1,6 +1,5 @@
 package org.reactome.curation;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -8,12 +7,15 @@ import java.util.List;
 
 import org.gk.model.ReactomeJavaConstants;
 import org.junit.jupiter.api.Test;
-import org.reactome.server.graph.domain.model.*;
-import org.reactome.server.graph.repository.AdvancedDatabaseObjectRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.service.CurationService;
+import org.reactome.server.graph.domain.model.DatabaseObject;
+import org.reactome.server.graph.domain.model.Figure;
+import org.reactome.server.graph.domain.model.InstanceEdit;
+import org.reactome.server.graph.domain.model.Pathway;
+import org.reactome.server.graph.domain.model.ReferenceDatabase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -26,8 +28,6 @@ class ServiceTests {
 
     @Autowired
     private CurationService curationService;
-    @Autowired
-    private AdvancedDatabaseObjectRepository advancedDatabaseObjectRepository;
 
     @Test
     void contextLoads() {
