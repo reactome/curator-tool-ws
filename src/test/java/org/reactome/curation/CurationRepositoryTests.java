@@ -115,41 +115,8 @@ class CurationRepositoryTests {
     @Test
     public void testSaveWithNewInstanceAsValue() throws Exception {
         logger.info("Tets storing Instance using another new Instance...");
-        Long dbId = -1L;
-        List<DatabaseObject> objs = new ArrayList<>();
-        Complex complex = new Complex(dbId--);
-        objs.add(complex);
-        complex.setDisplayName("Test Complex Level 1");
-        Complex subComplex = new Complex(dbId--);
-        objs.add(subComplex);
-        subComplex.setDisplayName("Test Complex Level 2_1");
-        Complex subComplex1 = new Complex(dbId--);
-        objs.add(subComplex1);
-        subComplex1.setDisplayName("Test Complex Level 2_2");
-        List<PhysicalEntity> hasComponents = new ArrayList<>();
-        hasComponents.add(subComplex);
-        hasComponents.add(subComplex);
-        hasComponents.add(subComplex1);
-        hasComponents.add(subComplex1);
-        hasComponents.add(subComplex1);
-        complex.setHasComponent(hasComponents);
-        EntityWithAccessionedSequence ewas = new EntityWithAccessionedSequence(dbId--);
-        objs.add(ewas);
-        ewas.setDisplayName("Complex Subunit 1");
-        List<PhysicalEntity> subunits = new ArrayList<>();
-        for (int i = 0; i < 4; i++)
-            subunits.add(ewas);
-        subComplex.setHasComponent(subunits);
-        EntityWithAccessionedSequence ewas1 = new EntityWithAccessionedSequence(dbId--);
-        objs.add(ewas1);
-        ewas1.setDisplayName("Complex Subunit 2");
-        List<PhysicalEntity> subunits1 = new ArrayList<>();
-        for (int i = 0; i < 2; i++)
-            subunits1.add(ewas1);
-        subComplex1.setHasComponent(subunits1);
-        // Remove DB_IDs
-//        objs.forEach(t -> t.setDbId(null));
-        dbId = repository.store(complex);
+        Complex complex = CurationWSTestHelper.createComplexWithNewComplexAndSubunit();
+        Long dbId = repository.store(complex);
         logger.info("Newly stored complex having multiple layers of new values: " + dbId);
         logger.info("Done with storing test.");
     }

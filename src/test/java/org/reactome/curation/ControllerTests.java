@@ -9,6 +9,7 @@ import org.gk.model.ReactomeJavaConstants;
 import org.junit.jupiter.api.Test;
 import org.reactome.curation.controller.CurationController;
 import org.reactome.curation.model.CurationAttribute;
+import org.reactome.server.graph.domain.model.Complex;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.domain.model.Figure;
 import org.reactome.server.graph.domain.model.InstanceEdit;
@@ -18,6 +19,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
+import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator;
 
 @SpringBootTest
 class ControllerTests {
@@ -75,5 +81,11 @@ class ControllerTests {
         }
     }
 
+    @Test
+    public void testStoreComplexWithNewValue() throws Exception {
+        Complex complex = CurationWSTestHelper.createComplexWithNewComplexAndSubunit();
+        Long dbId = controller.store(complex);
+        logger.info("Store a new Complex with new value: " + dbId);
+    }
 
 }
