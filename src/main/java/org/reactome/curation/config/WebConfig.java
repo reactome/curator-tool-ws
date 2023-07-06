@@ -24,9 +24,10 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupp
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
-import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator;
+import com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping;
+import com.fasterxml.jackson.databind.jsontype.TypeResolverBuilder;
 
 // It is needed to define the following bean to enable the correct JSON one hop serialization
 @Configuration
@@ -49,18 +50,20 @@ public class WebConfig extends WebMvcConfigurationSupport {
     // The following configuration follows https://stackoverflow.com/questions/51261809/spring-boot-jackson-non-null-property-not-working
     // To make ObjectMapper doesn't export null. The application.properties configuration cannot work reliable.
     @Override
-    public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
-        // Actually we need a new ObjectMapper
-        // Ref: https://www.baeldung.com/jackson-inheritance
-        PolymorphicTypeValidator ptv = BasicPolymorphicTypeValidator.builder()
-                .allowIfSubType("org.reactome.server.graph.domain.model")
-                .allowIfSubType("java.util")
-                .build();
+    public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {        
         ObjectMapper mapper = new ObjectMapper();
+        // Refer to https://stackoverflow.com/questions/12353774/how-to-customize-jackson-type-information-mechanism
+        // and https://www.demo2s.com/java/jackson-typeresolverbuilder-tutorial-with-examples.html
+        // Also the comment about this class.
+        TypeResolverBuilder<?> typeResolver = new DatabaseObjectTypeResolverBuilder(DefaultTyping.NON_FINAL,
+                mapper.getPolymorphicTypeValidator());
+        typeResolver.init(JsonTypeInfo.Id.CLASS, null);
+        typeResolver.inclusion(JsonTypeInfo.As.PROPERTY);
+        typeResolver.typeProperty("@JavaClass");
+        mapper.setDefaultTyping(typeResolver);
+        
         // properties with null value, or what is considered empty, are not to be included.
         mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
-        mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
-        mapper.activateDefaultTyping(ptv, ObjectMapper.DefaultTyping.NON_FINAL);
         mapper.addMixIn(PhysicalEntity.class, PEMixIn.class);
         mapper.addMixIn(Complex.class, ComplexMixIn.class);
         mapper.addMixIn(ReactionLikeEvent.class, ReactionlikeEventMixIn.class);
@@ -75,7 +78,6 @@ public class WebConfig extends WebMvcConfigurationSupport {
 
         converters.add(mappingJackson2HttpMessageConverter);
         super.configureMessageConverters(converters);
-
     }
 
     static interface PEMixIn {
@@ -99,5 +101,5 @@ public class WebConfig extends WebMvcConfigurationSupport {
         @JsonIgnore
         public String getSchemaClass();
     }
-
+    
 }

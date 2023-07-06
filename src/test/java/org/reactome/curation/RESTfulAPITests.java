@@ -84,7 +84,7 @@ class RESTfulAPITests {
         assertNotNull(mockMvc);
         Complex complex = CurationWSTestHelper.createComplexWithNewComplexAndSubunit();
         ObjectMapper mapper = CurationWSTestHelper.createObjectMapper();
-        String json = mapper.writeValueAsString(complex);
+        String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(complex);
         logger.info("Complex in JSON:\n" + json);
         String url = BASE_URL + "store";
         logger.info("URL: " + url);

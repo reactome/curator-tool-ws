@@ -2,15 +2,24 @@ package org.reactome.curation;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import org.reactome.curation.config.DatabaseObjectTypeResolverBuilder;
 import org.reactome.server.graph.domain.model.Complex;
 import org.reactome.server.graph.domain.model.EntityWithAccessionedSequence;
+import org.reactome.server.graph.domain.model.LiteratureReference;
 import org.reactome.server.graph.domain.model.PhysicalEntity;
+import org.reactome.server.graph.domain.model.Publication;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping;
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator;
+import com.fasterxml.jackson.databind.jsontype.TypeResolverBuilder;
+import com.fasterxml.jackson.databind.node.JsonNodeType;
 
 public class CurationWSTestHelper {
     
@@ -43,19 +52,32 @@ public class CurationWSTestHelper {
         for (int i = 0; i < 2; i++)
             subunits1.add(ewas1);
         subComplex1.setHasComponent(subunits1);
+        
+        // Add literature references to test list and order
+        Long[] refIds = {9626035L, 9624149L, 9615711L};
+        List<Publication> refs = Stream.of(refIds).map(id -> new LiteratureReference(id)).collect(Collectors.toList());
+        complex.setLiteratureReference(refs);
+        
         return complex;
     }
     
     public static ObjectMapper createObjectMapper() {
-        // Need subtype information
-        // Ref: https://www.baeldung.com/jackson-inheritance
-        PolymorphicTypeValidator ptv = BasicPolymorphicTypeValidator.builder()
-                .allowIfSubType("org.reactome.server.graph.domain.model")
-                .allowIfSubType("java.util")
-                .build();
         ObjectMapper mapper = new ObjectMapper();
+        
         mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
-        mapper.activateDefaultTyping(ptv, ObjectMapper.DefaultTyping.NON_FINAL);
+        TypeResolverBuilder<?> typeResolver = new DatabaseObjectTypeResolverBuilder(DefaultTyping.NON_FINAL,
+                mapper.getPolymorphicTypeValidator());
+        typeResolver.init(JsonTypeInfo.Id.CLASS, null);
+        typeResolver.inclusion(JsonTypeInfo.As.PROPERTY);
+        typeResolver.typeProperty("@JavaClass");
+        mapper.setDefaultTyping(typeResolver);
+        
+//        TypeResolverBuilder<?> serializerTyper = ObjectMapper.DefaultTypeResolverBuilder
+//                .construct(ObjectMapper.DefaultTyping.NON_FINAL, mapper.getPolymorphicTypeValidator());
+//        serializerTyper = serializerTyper.init(JsonTypeInfo.Id.CLASS, null);
+//        serializerTyper = serializerTyper.inclusion(JsonTypeInfo.As.PROPERTY);
+//        mapper.setDefaultTyping(serializerTyper);
+
         return mapper;
     }
 

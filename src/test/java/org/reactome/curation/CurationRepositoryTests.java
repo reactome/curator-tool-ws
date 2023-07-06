@@ -54,7 +54,7 @@ class CurationRepositoryTests {
         // Add literature references to test list and order
         Long[] refIds = {9626035L, 9624149L, 9615711L};
         List<Publication> refs = Stream.of(refIds).map(id -> new LiteratureReference(id)).collect(Collectors.toList());
-       summation.setLiteratureReference(refs);
+        summation.setLiteratureReference(refs);
         // By using a simple empty object, the node properties will be gone though 
         // the relationships are still kept. This is not good. We have to load
         // all properties to make it work. Or just need to save relationships!
