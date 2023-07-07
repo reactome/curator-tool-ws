@@ -5,12 +5,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.lang.System.LoggerFinder;
-import java.net.URLEncoder;
-
 import org.gk.model.ReactomeJavaConstants;
 import org.junit.jupiter.api.Test;
 import org.reactome.server.graph.domain.model.Complex;
+import org.reactome.server.graph.domain.model.Reaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +17,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest
@@ -79,6 +76,48 @@ class RESTfulAPITests {
         }
     }
     
+    /**
+     * Store a new complex with new references and a new reaction with new inputs/outputs.
+     * These two new instances have some overlapped negative DB_IDs. This check is to make sure
+     * these overlapped DB_IDs are not shared during deserialization. Newly stored instances 
+     * should have their own set of positive DB_IDs in the database.
+     * @throws Exception
+     */
+    @Test
+    public void testStoreComplexAndReaction() throws Exception {
+        assertNotNull(mockMvc);
+        
+        String url = BASE_URL + "store";
+        logger.info("URL: " + url);
+        
+        ObjectMapper mapper = CurationWSTestHelper.createObjectMapper();
+        
+        Complex complex = CurationWSTestHelper.createComplexWithNewComplexAndSubunit();
+        String complexJSON = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(complex);
+        logger.info("Complex in JSON:\n" + complexJSON);
+        
+        Reaction reaction = CurationWSTestHelper.createReaction();
+        String reactionJSON = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(reaction);
+        logger.info("Reaction in JSON:\n" + reactionJSON);
+        
+        // Store
+        String dbId = mockMvc.perform(post(url).contentType(MediaType.APPLICATION_JSON)
+                           .content(complexJSON))
+                           .andExpect(status().isOk())
+                           .andReturn()
+                           .getResponse()
+                           .getContentAsString();
+        logger.info("Done saving a new Complex: " + dbId);
+        
+        dbId = mockMvc.perform(post(url).contentType(MediaType.APPLICATION_JSON)
+                .content(reactionJSON))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        logger.info("Done saving a new Reaction: " + dbId);
+    }
+    
     @Test
     public void testStoreComplexWithNewValue() throws Exception {
         assertNotNull(mockMvc);
@@ -95,6 +134,29 @@ class RESTfulAPITests {
                            .getResponse()
                            .getContentAsString();
         logger.info("Done saving a new Complex: " + dbId);
+    }
+    
+    @Test
+    public void testStoreReactionWithNewValues() throws Exception {
+        assertNotNull(mockMvc);
+        
+        String url = BASE_URL + "store";
+        logger.info("URL: " + url);
+        
+        ObjectMapper mapper = CurationWSTestHelper.createObjectMapper();
+        
+        Reaction reaction = CurationWSTestHelper.createReaction();
+        String reactionJSON = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(reaction);
+        logger.info("Reaction in JSON:\n" + reactionJSON);
+        
+        // Store
+        String dbId = mockMvc.perform(post(url).contentType(MediaType.APPLICATION_JSON)
+                .content(reactionJSON))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        logger.info("Done saving a new Reaction: " + dbId);
     }
 
 }

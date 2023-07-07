@@ -11,17 +11,59 @@ import org.reactome.server.graph.domain.model.EntityWithAccessionedSequence;
 import org.reactome.server.graph.domain.model.LiteratureReference;
 import org.reactome.server.graph.domain.model.PhysicalEntity;
 import org.reactome.server.graph.domain.model.Publication;
+import org.reactome.server.graph.domain.model.Reaction;
+import org.reactome.server.graph.domain.model.SimpleEntity;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping;
-import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
-import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator;
 import com.fasterxml.jackson.databind.jsontype.TypeResolverBuilder;
-import com.fasterxml.jackson.databind.node.JsonNodeType;
 
 public class CurationWSTestHelper {
+    
+    public static Reaction createReaction() {
+        Long dbId = -1L;
+        Reaction reaction = new Reaction(dbId--);
+        reaction.setDisplayName("Test Reaction");
+        
+        SimpleEntity input1 = new SimpleEntity();
+        input1.setDbId(dbId--);
+        input1.setDisplayName("Test Reaction Input 1");;
+        EntityWithAccessionedSequence input2 = new EntityWithAccessionedSequence();
+        input2.setDbId(dbId--);
+        input2.setReferenceType("ReferenceGeneProduct");
+        input2.setDisplayName("Test Reaction Input 2");
+        List<PhysicalEntity> inputs = new ArrayList<>();
+        inputs.add(input1);
+        inputs.add(input1);
+        inputs.add(input2);
+        reaction.setInput(inputs);
+        
+        List<PhysicalEntity> outputs = new ArrayList<>();
+        SimpleEntity output1 = new SimpleEntity();
+        output1.setDbId(dbId --);
+        output1.setDisplayName("Test Reaction Output 1");
+        outputs.add(output1);
+        outputs.add(output1);
+        EntityWithAccessionedSequence output2 = new EntityWithAccessionedSequence();
+        output2.setReferenceType("ReferenceGeneProduct");
+        output2.setDbId(dbId --);
+        output2.setDisplayName("Test Reaction Output 2");
+        outputs.add(output2);
+        // Apparently when this method is called, the original order is not kept
+        // Same with setInput(). This is not good! However, apparently it works 
+        // at the database side. Weird!
+        reaction.setOutput(outputs);
+        
+        Long[] dbIds = {9625187L, 9625186L, 9625184L};
+        List<Publication> references = Stream.of(dbIds)
+                .map(id -> new LiteratureReference(id))
+                .collect(Collectors.toList());
+        reaction.setLiteratureReference(references);
+        
+        return reaction;
+    }
     
     public static Complex createComplexWithNewComplexAndSubunit() {
         Long dbId = -1L;

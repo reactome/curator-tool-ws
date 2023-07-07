@@ -24,6 +24,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupp
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping;
@@ -90,9 +91,19 @@ public class WebConfig extends WebMvcConfigurationSupport {
         public void setIncludedLocation(SortedSet<HasCompartment> includedLocation);
     }
 
+    /**
+     * For ReactionlikeEvent, we don't need the first setOutput(), but we need
+     * the second setOutput(). Otherwise, output cannot be deserialized into Java
+     * output from JSON. 
+     * @author wug
+     *
+     */
     static interface ReactionlikeEventMixIn {
         @JsonIgnore
         public void setOutput(Set<Output> output);
+        
+        @JsonSetter // Must add!
+        public void setOutput(List<PhysicalEntity> output);
     }
 
     static interface DatabaseObjectMixIn {

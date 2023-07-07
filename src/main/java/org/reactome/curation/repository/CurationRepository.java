@@ -107,6 +107,9 @@ public class CurationRepository {
      * TODO: If the passed obj has a new DatabaseObject referred, this method will not return the DB_ID for that object.
      * For the time being, the client should call findByDbId to reload the passed object to get the DB_ID for that object.
      * This may need to change in the future. 
+     * Note: There is a bug in the original graph-core code regarding the order of StoichiometryObject
+     * used in input, output, and hasComponent. The order is _displayName based, which most likely is
+     * not true. This needs a further investigation.
      * @param obj
      * @return
      * @throws IllegalAccessException 
