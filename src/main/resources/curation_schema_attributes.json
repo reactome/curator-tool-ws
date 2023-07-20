@@ -6,11 +6,11 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -30,12 +30,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "ControlReference" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "MANDATORY",
@@ -43,7 +43,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -55,12 +55,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "NegativeRegulation" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "OPTIONAL",
@@ -72,7 +72,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -96,7 +96,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "StableIdentifier" : [ {
     "definingType" : "UNDEFINED",
@@ -109,11 +109,11 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -141,12 +141,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "ModifiedNucleotide" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "MANDATORY",
@@ -158,7 +158,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -174,7 +174,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "CellDevelopmentStep" : [ {
     "definingType" : "UNDEFINED",
@@ -255,7 +255,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -307,7 +307,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "MANDATORY",
@@ -331,7 +331,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -412,7 +412,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -440,7 +440,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "OPTIONAL",
@@ -452,7 +452,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "MANDATORY",
@@ -465,7 +465,7 @@
   "GO_CellularComponent" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -489,7 +489,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -497,7 +497,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "MANDATORY",
@@ -522,11 +522,11 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -546,12 +546,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "PositiveGeneExpressionRegulation" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "OPTIONAL",
@@ -563,7 +563,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -587,7 +587,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "Book" : [ {
     "definingType" : "UNDEFINED",
@@ -596,7 +596,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "MANDATORY",
@@ -616,7 +616,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -628,7 +628,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -649,7 +649,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -657,7 +657,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -677,12 +677,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "Affiliation" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "REQUIRED",
@@ -694,7 +694,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "MANDATORY",
@@ -706,7 +706,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "SimpleEntity" : [ {
     "definingType" : "UNDEFINED",
@@ -719,7 +719,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -763,7 +763,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -779,7 +779,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "MANDATORY",
@@ -808,7 +808,7 @@
   "Publication" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "MANDATORY",
@@ -816,7 +816,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -832,12 +832,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "AbstractModifiedResidue" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -845,7 +845,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -857,7 +857,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "CandidateSet" : [ {
     "definingType" : "UNDEFINED",
@@ -918,7 +918,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -946,7 +946,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "OPTIONAL",
@@ -958,7 +958,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "MANDATORY",
@@ -1043,7 +1043,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -1095,7 +1095,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "MANDATORY",
@@ -1119,7 +1119,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -1148,7 +1148,7 @@
   "Requirement" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "OPTIONAL",
@@ -1160,7 +1160,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -1184,12 +1184,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "_UpdateTracker" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -1197,7 +1197,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -1217,7 +1217,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "FrontPage" : [ {
     "definingType" : "UNDEFINED",
@@ -1226,7 +1226,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -1234,7 +1234,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -1242,12 +1242,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "FragmentModification" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -1255,7 +1255,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -1275,12 +1275,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "Summation" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -1292,7 +1292,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -1304,12 +1304,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "Person" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -1341,7 +1341,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -1353,7 +1353,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -1366,7 +1366,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -1374,7 +1374,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -1402,7 +1402,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "ExternalOntology" : [ {
     "definingType" : "ALL_DEFINING",
@@ -1411,7 +1411,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -1419,7 +1419,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -1447,12 +1447,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "InterChainCrosslinkedResidue" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "REQUIRED",
@@ -1468,7 +1468,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "REQUIRED",
@@ -1496,12 +1496,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "FragmentDeletionModification" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -1509,7 +1509,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -1529,7 +1529,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "ReferenceMolecule" : [ {
     "definingType" : "ALL_DEFINING",
@@ -1538,7 +1538,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -1546,7 +1546,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -1574,12 +1574,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "ReferenceDatabase" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -1595,7 +1595,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "ANY_DEFINING",
     "category" : "MANDATORY",
@@ -1611,7 +1611,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "RNADrug" : [ {
     "definingType" : "UNDEFINED",
@@ -1624,7 +1624,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -1668,7 +1668,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -1680,7 +1680,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "MANDATORY",
@@ -1713,7 +1713,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOTDEFINED",
@@ -1733,7 +1733,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "MANDATORY",
@@ -1741,7 +1741,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -1790,7 +1790,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "REQUIRED",
@@ -1798,7 +1798,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -1814,7 +1814,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "URL" : [ {
     "definingType" : "ANY_DEFINING",
@@ -1823,7 +1823,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "MANDATORY",
@@ -1831,7 +1831,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -1847,7 +1847,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "ReferenceRNASequence" : [ {
     "definingType" : "ALL_DEFINING",
@@ -1856,7 +1856,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -1880,7 +1880,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "MANDATORY",
@@ -1888,7 +1888,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -1993,7 +1993,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -2025,7 +2025,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "OPTIONAL",
@@ -2037,7 +2037,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "MANDATORY",
@@ -2050,7 +2050,7 @@
   "GroupModifiedResidue" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "REQUIRED",
@@ -2062,7 +2062,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "MANDATORY",
@@ -2082,7 +2082,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "PathwayDiagram" : [ {
     "definingType" : "ALL_DEFINING",
@@ -2091,11 +2091,11 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -2119,12 +2119,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "RegulationReference" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "MANDATORY",
@@ -2136,7 +2136,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -2148,7 +2148,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "ReferenceDNASequence" : [ {
     "definingType" : "ALL_DEFINING",
@@ -2157,7 +2157,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -2177,7 +2177,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "MANDATORY",
@@ -2185,7 +2185,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -2230,7 +2230,7 @@
   "_Release" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "MANDATORY",
@@ -2238,7 +2238,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -2254,12 +2254,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "NonsenseMutation" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "REQUIRED",
@@ -2271,7 +2271,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "MANDATORY",
@@ -2287,12 +2287,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "ModifiedResidue" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "REQUIRED",
@@ -2304,7 +2304,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "MANDATORY",
@@ -2320,16 +2320,16 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "Taxon" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -2353,12 +2353,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "GO_BiologicalProcess" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -2366,7 +2366,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "MANDATORY",
@@ -2390,7 +2390,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "Depolymerisation" : [ {
     "definingType" : "UNDEFINED",
@@ -2467,7 +2467,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -2519,7 +2519,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "MANDATORY",
@@ -2543,7 +2543,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -2648,7 +2648,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -2700,7 +2700,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "MANDATORY",
@@ -2724,7 +2724,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -2753,7 +2753,7 @@
   "CatalystActivity" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "REQUIRED",
@@ -2765,7 +2765,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "MANDATORY",
@@ -2781,12 +2781,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "Figure" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -2794,7 +2794,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -2806,7 +2806,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "ChemicalDrug" : [ {
     "definingType" : "UNDEFINED",
@@ -2819,7 +2819,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -2863,7 +2863,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -2875,7 +2875,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "MANDATORY",
@@ -2960,7 +2960,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -3000,7 +3000,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "REQUIRED",
@@ -3024,7 +3024,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -3057,7 +3057,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -3065,7 +3065,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -3097,7 +3097,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "Event" : [ {
     "definingType" : "UNDEFINED",
@@ -3146,7 +3146,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -3182,7 +3182,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -3194,7 +3194,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -3295,7 +3295,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -3347,7 +3347,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "REQUIRED",
@@ -3371,7 +3371,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -3404,7 +3404,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -3412,7 +3412,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -3440,12 +3440,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "Compartment" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -3469,7 +3469,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -3477,7 +3477,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "MANDATORY",
@@ -3550,7 +3550,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -3590,7 +3590,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "REQUIRED",
@@ -3614,7 +3614,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -3647,7 +3647,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -3671,7 +3671,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "REQUIRED",
@@ -3687,7 +3687,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "_Deleted" : [ {
     "definingType" : "UNDEFINED",
@@ -3696,11 +3696,11 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -3728,7 +3728,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "InstanceEdit" : [ {
     "definingType" : "UNDEFINED",
@@ -3745,7 +3745,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOTDEFINED",
@@ -3753,7 +3753,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -3765,16 +3765,16 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "DatabaseObject" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -3786,12 +3786,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "Species" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -3799,7 +3799,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "MANDATORY",
@@ -3823,7 +3823,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "Cell" : [ {
     "definingType" : "UNDEFINED",
@@ -3880,7 +3880,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -3904,7 +3904,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "REQUIRED",
@@ -3920,7 +3920,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -3941,11 +3941,11 @@
   "StableIdentifierReleaseStatus" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -3965,7 +3965,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "ReferenceGroup" : [ {
     "definingType" : "ALL_DEFINING",
@@ -3974,7 +3974,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -3982,7 +3982,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -4010,12 +4010,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "FunctionalStatus" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "MANDATORY",
@@ -4023,7 +4023,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -4039,12 +4039,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "GO_MolecularFunction" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -4052,7 +4052,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "MANDATORY",
@@ -4080,12 +4080,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "ReactionType" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -4093,7 +4093,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "MANDATORY",
@@ -4109,7 +4109,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "DefinedSet" : [ {
     "definingType" : "UNDEFINED",
@@ -4166,7 +4166,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -4194,7 +4194,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "OPTIONAL",
@@ -4206,7 +4206,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "MANDATORY",
@@ -4271,7 +4271,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -4287,7 +4287,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOTDEFINED",
@@ -4299,7 +4299,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -4320,7 +4320,7 @@
   "TranscriptionalModification" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -4328,7 +4328,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -4340,12 +4340,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "IntraChainCrosslinkedResidue" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "REQUIRED",
@@ -4357,7 +4357,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "REQUIRED",
@@ -4381,12 +4381,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "GeneticallyModifiedResidue" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -4394,7 +4394,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -4406,12 +4406,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "DeletedControlledVocabulary" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -4419,7 +4419,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "MANDATORY",
@@ -4435,7 +4435,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "ReferenceTherapeutic" : [ {
     "definingType" : "ALL_DEFINING",
@@ -4444,7 +4444,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -4476,7 +4476,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "MANDATORY",
@@ -4484,7 +4484,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -4517,7 +4517,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -4525,7 +4525,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -4553,7 +4553,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "ProteinDrug" : [ {
     "definingType" : "UNDEFINED",
@@ -4566,7 +4566,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -4610,7 +4610,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -4622,7 +4622,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "MANDATORY",
@@ -4651,7 +4651,7 @@
   "ReplacedResidue" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "REQUIRED",
@@ -4663,7 +4663,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "MANDATORY",
@@ -4679,7 +4679,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "ReactionlikeEvent" : [ {
     "definingType" : "UNDEFINED",
@@ -4756,7 +4756,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -4808,7 +4808,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOTDEFINED",
@@ -4832,7 +4832,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -4905,7 +4905,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -4941,7 +4941,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "OPTIONAL",
@@ -4953,7 +4953,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "NONE_DEFINING",
     "category" : "MANDATORY",
@@ -4970,7 +4970,7 @@
   "NegativeGeneExpressionRegulation" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "OPTIONAL",
@@ -4982,7 +4982,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -5006,12 +5006,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "CatalystActivityReference" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "MANDATORY",
@@ -5019,7 +5019,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -5035,16 +5035,16 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "FunctionalStatusType" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -5064,12 +5064,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "EvidenceType" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -5077,7 +5077,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "ANY_DEFINING",
     "category" : "MANDATORY",
@@ -5097,12 +5097,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "FragmentInsertionModification" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "REQUIRED",
@@ -5114,7 +5114,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -5134,12 +5134,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "TranslationalModification" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "REQUIRED",
@@ -5151,7 +5151,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "MANDATORY",
@@ -5167,12 +5167,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "MarkerReference" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "MANDATORY",
@@ -5184,7 +5184,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -5196,12 +5196,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "NegativePrecedingEventReason" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -5209,7 +5209,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "MANDATORY",
@@ -5225,7 +5225,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "GenomeEncodedEntity" : [ {
     "definingType" : "UNDEFINED",
@@ -5238,7 +5238,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -5278,7 +5278,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -5294,7 +5294,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "ANY_DEFINING",
     "category" : "MANDATORY",
@@ -5327,11 +5327,11 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -5359,12 +5359,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "DrugActionType" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -5372,7 +5372,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "MANDATORY",
@@ -5392,7 +5392,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "ReferenceGeneProduct" : [ {
     "definingType" : "ALL_DEFINING",
@@ -5401,7 +5401,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -5429,7 +5429,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOTDEFINED",
@@ -5445,7 +5445,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -5562,7 +5562,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -5614,7 +5614,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "MANDATORY",
@@ -5638,7 +5638,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -5667,7 +5667,7 @@
   "CrosslinkedResidue" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "REQUIRED",
@@ -5679,7 +5679,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "REQUIRED",
@@ -5703,7 +5703,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "Drug" : [ {
     "definingType" : "UNDEFINED",
@@ -5716,7 +5716,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -5760,7 +5760,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -5772,7 +5772,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "MANDATORY",
@@ -5801,7 +5801,7 @@
   "_DeletedInstance" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "NOMANUALEDIT",
@@ -5809,7 +5809,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -5837,7 +5837,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "DatabaseIdentifier" : [ {
     "definingType" : "ALL_DEFINING",
@@ -5846,7 +5846,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -5854,7 +5854,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -5870,7 +5870,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "Polymer" : [ {
     "definingType" : "UNDEFINED",
@@ -5931,7 +5931,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -5955,7 +5955,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "OPTIONAL",
@@ -5967,7 +5967,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "MANDATORY",
@@ -6024,7 +6024,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -6060,7 +6060,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -6076,7 +6076,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -6101,7 +6101,7 @@
   "PositiveRegulation" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "OPTIONAL",
@@ -6113,7 +6113,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -6137,12 +6137,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "ControlledVocabulary" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -6150,7 +6150,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "MANDATORY",
@@ -6166,7 +6166,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "PhysicalEntity" : [ {
     "definingType" : "UNDEFINED",
@@ -6179,7 +6179,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -6219,7 +6219,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -6231,7 +6231,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "MANDATORY",
@@ -6264,7 +6264,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -6304,7 +6304,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -6316,7 +6316,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "ANY_DEFINING",
     "category" : "MANDATORY",
@@ -6349,7 +6349,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -6357,7 +6357,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -6385,12 +6385,12 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ],
   "Regulation" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "DB_ID"
+    "name" : "dbId"
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "OPTIONAL",
@@ -6398,7 +6398,7 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "_displayName"
+    "name" : "displayName"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -6426,6 +6426,6 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
+    "name" : "stId"
   } ]
 }

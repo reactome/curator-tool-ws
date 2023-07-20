@@ -68,12 +68,16 @@ public class CuratorToolExporter {
         Schema schema = dba.fetchSchema();
         Collection<SchemaClass> classes = schema.getClasses();
         logger.info("Total classes: " + classes.size());
+        Map<String, String> old2new = mapAttNames();
         for (SchemaClass cls : classes) {
             Collection<SchemaAttribute> attributes = cls.getAttributes();
             List<CurationAttribute> curationAttributes = new ArrayList<>();
             for (SchemaAttribute att : attributes) {
                 CurationAttribute curationAtt = new CurationAttribute();
-                curationAtt.setName(att.getName());
+                String attName = att.getName();
+                if (old2new.keySet().contains(attName))
+                    attName = old2new.get(attName);
+                curationAtt.setName(attName);
                 curationAtt.setCategory(CurationAttribute.Category.getCategory(att.getCategory()));
                 curationAtt.setDefiningType(CurationAttribute.DefiningType.getDefiningType(att.getDefiningType()));
                 curationAttributes.add(curationAtt);
@@ -83,6 +87,19 @@ public class CuratorToolExporter {
         ObjectMapper mapper = new ObjectMapper();
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
         mapper.writeValue(new File(fileName), clsName2attributes);
+    }
+    
+    /**
+     * Some names are changes in the production graph database. Use the updated names.
+     * @return
+     */
+    private Map<String, String> mapAttNames() {
+        Map<String, String> old2new = Map.of(
+                "DB_ID", "dbId",
+                "stableIdentifier", "stId",
+                "_displayName", "displayName"
+                );
+        return old2new;
     }
 
 }
