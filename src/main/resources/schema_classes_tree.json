@@ -1,0 +1,343 @@
+{
+  "name" : "DatabaseObject",
+  "children" : [ {
+    "name" : "AbstractModifiedResidue",
+    "children" : [ {
+      "name" : "GeneticallyModifiedResidue",
+      "children" : [ {
+        "name" : "FragmentModification",
+        "children" : [ {
+          "name" : "FragmentDeletionModification",
+          "abstract" : false
+        }, {
+          "name" : "FragmentInsertionModification",
+          "abstract" : false
+        }, {
+          "name" : "FragmentReplacedModification",
+          "abstract" : false
+        } ],
+        "abstract" : true
+      }, {
+        "name" : "ReplacedResidue",
+        "children" : [ {
+          "name" : "NonsenseMutation",
+          "abstract" : false
+        } ],
+        "abstract" : false
+      } ],
+      "abstract" : true
+    }, {
+      "name" : "TranscriptionalModification",
+      "children" : [ {
+        "name" : "ModifiedNucleotide",
+        "abstract" : false
+      } ],
+      "abstract" : true
+    }, {
+      "name" : "TranslationalModification",
+      "children" : [ {
+        "name" : "CrosslinkedResidue",
+        "children" : [ {
+          "name" : "InterChainCrosslinkedResidue",
+          "abstract" : false
+        }, {
+          "name" : "IntraChainCrosslinkedResidue",
+          "abstract" : false
+        } ],
+        "abstract" : true
+      }, {
+        "name" : "GroupModifiedResidue",
+        "abstract" : false
+      }, {
+        "name" : "ModifiedResidue",
+        "abstract" : false
+      } ],
+      "abstract" : true
+    } ],
+    "abstract" : true
+  }, {
+    "name" : "Affiliation",
+    "abstract" : false
+  }, {
+    "name" : "CatalystActivity",
+    "abstract" : false
+  }, {
+    "name" : "ControlReference",
+    "children" : [ {
+      "name" : "CatalystActivityReference",
+      "abstract" : false
+    }, {
+      "name" : "MarkerReference",
+      "abstract" : false
+    }, {
+      "name" : "RegulationReference",
+      "abstract" : false
+    } ],
+    "abstract" : true
+  }, {
+    "name" : "ControlledVocabulary",
+    "children" : [ {
+      "name" : "NegativePrecedingEventReason",
+      "abstract" : false
+    }, {
+      "name" : "ReactionType",
+      "children" : [ {
+        "name" : "DrugActionType",
+        "abstract" : false
+      } ],
+      "abstract" : true
+    }, {
+      "name" : "ReviewStatus",
+      "abstract" : false
+    } ],
+    "abstract" : true
+  }, {
+    "name" : "DatabaseIdentifier",
+    "abstract" : false
+  }, {
+    "name" : "DrugType",
+    "abstract" : false
+  }, {
+    "name" : "EntityFunctionalStatus",
+    "abstract" : false
+  }, {
+    "name" : "Event",
+    "children" : [ {
+      "name" : "CellLineagePath",
+      "abstract" : false
+    }, {
+      "name" : "InteractionEvent",
+      "abstract" : false
+    }, {
+      "name" : "Pathway",
+      "children" : [ {
+        "name" : "TopLevelPathway",
+        "abstract" : false
+      } ],
+      "abstract" : false
+    }, {
+      "name" : "ReactionLikeEvent",
+      "children" : [ {
+        "name" : "BlackBoxEvent",
+        "abstract" : false
+      }, {
+        "name" : "CellDevelopmentStep",
+        "abstract" : false
+      }, {
+        "name" : "Depolymerisation",
+        "abstract" : false
+      }, {
+        "name" : "FailedReaction",
+        "abstract" : false
+      }, {
+        "name" : "Polymerisation",
+        "abstract" : false
+      }, {
+        "name" : "Reaction",
+        "abstract" : false
+      } ],
+      "abstract" : true
+    } ],
+    "abstract" : true
+  }, {
+    "name" : "ExternalOntology",
+    "children" : [ {
+      "name" : "Anatomy",
+      "abstract" : false
+    }, {
+      "name" : "CellType",
+      "abstract" : false
+    }, {
+      "name" : "Disease",
+      "abstract" : false
+    }, {
+      "name" : "EvidenceType",
+      "abstract" : false
+    }, {
+      "name" : "PsiMod",
+      "abstract" : false
+    }, {
+      "name" : "SequenceOntology",
+      "abstract" : false
+    } ],
+    "abstract" : true
+  }, {
+    "name" : "Figure",
+    "abstract" : false
+  }, {
+    "name" : "FunctionalStatus",
+    "abstract" : false
+  }, {
+    "name" : "FunctionalStatusType",
+    "abstract" : false
+  }, {
+    "name" : "GO_Term",
+    "children" : [ {
+      "name" : "GO_BiologicalProcess",
+      "abstract" : false
+    }, {
+      "name" : "GO_CellularComponent",
+      "children" : [ {
+        "name" : "Compartment",
+        "abstract" : false
+      } ],
+      "abstract" : false
+    }, {
+      "name" : "GO_MolecularFunction",
+      "abstract" : false
+    } ],
+    "abstract" : true
+  }, {
+    "name" : "InstanceEdit",
+    "abstract" : false
+  }, {
+    "name" : "Interaction",
+    "children" : [ {
+      "name" : "DirectedInteraction",
+      "abstract" : false
+    }, {
+      "name" : "UndirectedInteraction",
+      "abstract" : false
+    } ],
+    "abstract" : true
+  }, {
+    "name" : "NegativePrecedingEvent",
+    "abstract" : false
+  }, {
+    "name" : "Ontology",
+    "abstract" : false
+  }, {
+    "name" : "Person",
+    "abstract" : false
+  }, {
+    "name" : "PhysicalEntity",
+    "children" : [ {
+      "name" : "Cell",
+      "abstract" : false
+    }, {
+      "name" : "Complex",
+      "abstract" : false
+    }, {
+      "name" : "Drug",
+      "children" : [ {
+        "name" : "ChemicalDrug",
+        "abstract" : false
+      }, {
+        "name" : "ProteinDrug",
+        "abstract" : false
+      }, {
+        "name" : "RNADrug",
+        "abstract" : false
+      } ],
+      "abstract" : true
+    }, {
+      "name" : "EntitySet",
+      "children" : [ {
+        "name" : "CandidateSet",
+        "abstract" : false
+      }, {
+        "name" : "DefinedSet",
+        "abstract" : false
+      } ],
+      "abstract" : true
+    }, {
+      "name" : "GenomeEncodedEntity",
+      "children" : [ {
+        "name" : "EntityWithAccessionedSequence",
+        "abstract" : false
+      } ],
+      "abstract" : false
+    }, {
+      "name" : "OtherEntity",
+      "abstract" : false
+    }, {
+      "name" : "Polymer",
+      "abstract" : false
+    }, {
+      "name" : "SimpleEntity",
+      "abstract" : false
+    } ],
+    "abstract" : true
+  }, {
+    "name" : "Publication",
+    "children" : [ {
+      "name" : "Book",
+      "abstract" : false
+    }, {
+      "name" : "LiteratureReference",
+      "abstract" : false
+    }, {
+      "name" : "URL",
+      "abstract" : false
+    } ],
+    "abstract" : true
+  }, {
+    "name" : "ReferenceDatabase",
+    "abstract" : false
+  }, {
+    "name" : "ReferenceEntity",
+    "children" : [ {
+      "name" : "ReferenceGroup",
+      "abstract" : false
+    }, {
+      "name" : "ReferenceMolecule",
+      "abstract" : false
+    }, {
+      "name" : "ReferenceSequence",
+      "children" : [ {
+        "name" : "ReferenceDNASequence",
+        "abstract" : false
+      }, {
+        "name" : "ReferenceGeneProduct",
+        "children" : [ {
+          "name" : "ReferenceIsoform",
+          "abstract" : false
+        } ],
+        "abstract" : false
+      }, {
+        "name" : "ReferenceRNASequence",
+        "abstract" : false
+      } ],
+      "abstract" : true
+    }, {
+      "name" : "ReferenceTherapeutic",
+      "abstract" : false
+    } ],
+    "abstract" : true
+  }, {
+    "name" : "Regulation",
+    "children" : [ {
+      "name" : "NegativeRegulation",
+      "children" : [ {
+        "name" : "NegativeGeneExpressionRegulation",
+        "abstract" : false
+      } ],
+      "abstract" : false
+    }, {
+      "name" : "PositiveRegulation",
+      "children" : [ {
+        "name" : "PositiveGeneExpressionRegulation",
+        "abstract" : false
+      }, {
+        "name" : "Requirement",
+        "abstract" : false
+      } ],
+      "abstract" : false
+    } ],
+    "abstract" : true
+  }, {
+    "name" : "RegulationType",
+    "abstract" : false
+  }, {
+    "name" : "Summation",
+    "abstract" : false
+  }, {
+    "name" : "Taxon",
+    "children" : [ {
+      "name" : "Species",
+      "abstract" : false
+    } ],
+    "abstract" : false
+  } ],
+  "abstract" : true
+}

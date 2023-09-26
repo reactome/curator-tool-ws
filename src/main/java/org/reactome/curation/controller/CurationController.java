@@ -2,21 +2,12 @@ package org.reactome.curation.controller;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
-import java.util.SortedSet;
-
-import javax.websocket.server.PathParam;
 
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
 import org.reactome.curation.model.CurationAttribute;
+import org.reactome.curation.model.SimpleSchemaClass;
 import org.reactome.curation.service.CurationService;
-import org.reactome.server.graph.domain.model.Complex;
 import org.reactome.server.graph.domain.model.DatabaseObject;
-import org.reactome.server.graph.domain.model.EntityWithAccessionedSequence;
-import org.reactome.server.graph.domain.model.PhysicalEntity;
-import org.reactome.server.graph.domain.model.ReactionLikeEvent;
-import org.reactome.server.graph.domain.relationship.HasCompartment;
-import org.reactome.server.graph.domain.relationship.Output;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,11 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
-import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -96,5 +83,15 @@ public class CurationController {
         return service.getSchemaClasses();
     }
 
+    @GetMapping("getSchemaClassTree")
+    public SimpleSchemaClass getSchemaClassTree() {
+        try {
+            return service.loadSchemaClassTree();
+        }
+        catch(Exception e) {
+            logger.error("CurtionController.getSchemaClassTree: " + e.getMessage(), e);
+            return new SimpleSchemaClass(); // Just return an empty node
+        }
+    }
 
 }

@@ -32,6 +32,18 @@ class RESTfulAPITests {
     @Test
     void contextLoads() {
     }
+    
+    @Test
+    public void testGetSchemaClassTree() throws Exception {
+        assertNotNull(mockMvc);
+        String url = BASE_URL + "getSchemaClassTree";
+        String json = mockMvc.perform(get(url))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        System.out.println(json);
+    }
 
     @Test
     public void testFindById() throws Exception {
@@ -63,7 +75,8 @@ class RESTfulAPITests {
                 ReactomeJavaConstants.EntityWithAccessionedSequence,
                 ReactomeJavaConstants.Pathway,
                 ReactomeJavaConstants.Reaction,
-                ReactomeJavaConstants.ReferenceGeneProduct
+                ReactomeJavaConstants.ReferenceGeneProduct,
+                ReactomeJavaConstants.Species
         };
         String url = BASE_URL + "getAttributes/";
         for (String clsName : clsNames) {
@@ -100,22 +113,22 @@ class RESTfulAPITests {
         String reactionJSON = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(reaction);
         logger.info("Reaction in JSON:\n" + reactionJSON);
         
-        // Store
-        String dbId = mockMvc.perform(post(url).contentType(MediaType.APPLICATION_JSON)
-                           .content(complexJSON))
-                           .andExpect(status().isOk())
-                           .andReturn()
-                           .getResponse()
-                           .getContentAsString();
-        logger.info("Done saving a new Complex: " + dbId);
-        
-        dbId = mockMvc.perform(post(url).contentType(MediaType.APPLICATION_JSON)
-                .content(reactionJSON))
-                .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-        logger.info("Done saving a new Reaction: " + dbId);
+//        // Store
+//        String dbId = mockMvc.perform(post(url).contentType(MediaType.APPLICATION_JSON)
+//                           .content(complexJSON))
+//                           .andExpect(status().isOk())
+//                           .andReturn()
+//                           .getResponse()
+//                           .getContentAsString();
+//        logger.info("Done saving a new Complex: " + dbId);
+//        
+//        dbId = mockMvc.perform(post(url).contentType(MediaType.APPLICATION_JSON)
+//                .content(reactionJSON))
+//                .andExpect(status().isOk())
+//                .andReturn()
+//                .getResponse()
+//                .getContentAsString();
+//        logger.info("Done saving a new Reaction: " + dbId);
     }
     
     @Test

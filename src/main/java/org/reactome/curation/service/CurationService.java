@@ -12,6 +12,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.reactome.curation.model.CurationAttribute;
+import org.reactome.curation.model.SimpleSchemaClass;
 import org.reactome.curation.repository.CurationRepository;
 //import org.reactome.server.graph.aop.LazyFetchAspect;
 import org.reactome.server.graph.domain.model.DatabaseObject;
@@ -43,6 +44,8 @@ public class CurationService {
     private Map<String, List<CurationAttribute>> clsName2Attributes;
     // A map for quick search
     private Map<String, Map<String, CurationAttribute>> clsName2attName2Attribute;
+    // Cache the class tree for quick service
+    private SimpleSchemaClass schemaClassTree;
     
     // For curation specific stuff
 //    @Autowired
@@ -177,6 +180,16 @@ public class CurationService {
         List<AttributeClass> attClasses = att.getProperties().getAttributeClasses();
         AttributeClass attCls = attClasses.stream().findAny().get();
         return attCls.isValueTypeDatabaseObject();
+    }
+    
+    public SimpleSchemaClass loadSchemaClassTree() throws Exception {
+        if (schemaClassTree != null)
+            return schemaClassTree;
+        // Load it 
+        InputStream is = getClass().getClassLoader().getResourceAsStream("schema_classes_tree.json");
+        ObjectMapper mapper = new ObjectMapper();
+        schemaClassTree = mapper.readValue(is, SimpleSchemaClass.class);
+        return schemaClassTree;
     }
 
     public Long getNextDbId(){

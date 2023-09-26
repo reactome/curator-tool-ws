@@ -2,27 +2,28 @@ package org.reactome.curation;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.PrintStream;
-import java.io.PrintWriter;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-import org.gk.model.Instance;
 import org.gk.persistence.MySQLAdaptor;
 import org.gk.schema.Schema;
 import org.gk.schema.SchemaAttribute;
 import org.gk.schema.SchemaClass;
+import org.junit.Test;
 import org.reactome.curation.model.CurationAttribute;
+import org.reactome.curation.model.SimpleSchemaClass;
+import org.reflections.Reflections;
+import org.reflections.scanners.SubTypesScanner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.core.JsonFactoryBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
@@ -36,7 +37,6 @@ public class CuratorToolExporter {
     private final static Logger logger = LoggerFactory.getLogger(CuratorToolExporter.class);
 
     public CuratorToolExporter() {
-
     }
 
     public static void main(String[] args) {
@@ -49,7 +49,75 @@ public class CuratorToolExporter {
             logger.error("Error in CuratorToolExporter.main(): " + e, e);
         }
     }
-
+    
+    /**
+     * Dump the data model classes in a hierarchy into a JSON text file for the web front.
+     * The data model right now is pulled out from the graph data model classes directly.
+     * This may be changed in the future to use an external configuration file (e.g. A 
+     * YAML or LinkML file).
+     * To grep the graph model classes, the refelections package is used.
+     * @param fileName
+     * @throws Exception
+     */
+    @Test
+    public void dumpSchemaClassTree() throws Exception {
+        String packageName = "org.reactome.server.graph.domain.model";
+        Class<?> root = Class.forName(packageName + ".DatabaseObject");
+        Reflections reflections = new Reflections(packageName, new SubTypesScanner());
+        Set<Class<?>> graphClasses = reflections.getSubTypesOf(root).stream().collect(Collectors.toSet());
+        graphClasses.add(root);
+        System.out.println("Total graph classes: " + graphClasses.size());
+        Map<String, SimpleSchemaClass> name2simpleClass = new HashMap<>();
+        for (Class<?> graphClass : graphClasses) {
+            SimpleSchemaClass simpleClass = new SimpleSchemaClass();
+            simpleClass.setName(graphClass.getSimpleName());
+            simpleClass.setAbstract(Modifier.isAbstract(graphClass.getModifiers()));
+            name2simpleClass.put(graphClass.getSimpleName(), simpleClass);
+        }
+        // Now it is time to figure out parent to use built-in Java reflection
+        for (Class<?> graphClass : graphClasses) {
+            // This should be the root, don't check it
+            if (graphClass == root)
+                continue;
+            Class<?> superClass = graphClass.getSuperclass();
+            SimpleSchemaClass simpleSuperClass = name2simpleClass.get(superClass.getSimpleName());
+            SimpleSchemaClass simpleClass = name2simpleClass.get(graphClass.getSimpleName());
+            simpleClass.setSuperClass(simpleSuperClass);
+        }
+        // It is much easier to have relationships from top to bottom to build a tree
+        // The following is to convert bottom->top to top->bottom
+        for (SimpleSchemaClass simpleClass : name2simpleClass.values()) {
+            if (simpleClass.getSuperClass() == null)
+                continue;
+            SimpleSchemaClass superSimpleClass = simpleClass.getSuperClass();
+            List<SimpleSchemaClass> children = superSimpleClass.getChildren();
+            if (children == null) {
+                children = new ArrayList<>();
+                superSimpleClass.setChildren(children);
+            }
+            children.add(simpleClass);
+        }
+        // Since we don't want the top->bottom relationship, do some cleanup here 
+        // also sort the children
+        for (SimpleSchemaClass simpleClass : name2simpleClass.values()) {
+            System.out.println(simpleClass.getName());
+            simpleClass.setSuperClass(null);
+            List<SimpleSchemaClass> children = simpleClass.getChildren();
+            if (children == null)
+                continue;
+            children.sort((c1, c2) -> c1.getName().compareTo(c2.getName()));
+        }
+        // Get the root and then dump
+        SimpleSchemaClass simpleRoot = name2simpleClass.get(root.getSimpleName());
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.enable(SerializationFeature.INDENT_OUTPUT);
+        String text = mapper.writeValueAsString(simpleRoot);
+        System.out.println(text);
+        // Dump out to a file
+        String fileName = "src/main/resources/schema_classes_tree.json";
+        mapper.writeValue(new File(fileName), simpleRoot);
+    }
+    
     /**
      * Dump curation specific attributes
      */
