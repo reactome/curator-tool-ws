@@ -56,12 +56,14 @@ public class WebConfig extends WebMvcConfigurationSupport {
         // Refer to https://stackoverflow.com/questions/12353774/how-to-customize-jackson-type-information-mechanism
         // and https://www.demo2s.com/java/jackson-typeresolverbuilder-tutorial-with-examples.html
         // Also the comment about this class.
-        TypeResolverBuilder<?> typeResolver = new DatabaseObjectTypeResolverBuilder(DefaultTyping.NON_FINAL,
-                mapper.getPolymorphicTypeValidator());
-        typeResolver.init(JsonTypeInfo.Id.CLASS, null);
-        typeResolver.inclusion(JsonTypeInfo.As.PROPERTY);
-        typeResolver.typeProperty("@JavaClass");
-        mapper.setDefaultTyping(typeResolver);
+        // As of September 29, 2023, there is no need for Java type. The relationships among classes will be handled
+        // explicitly at the web front end or tht server side.
+//        TypeResolverBuilder<?> typeResolver = new DatabaseObjectTypeResolverBuilder(DefaultTyping.NON_FINAL,
+//                mapper.getPolymorphicTypeValidator());
+//        typeResolver.init(JsonTypeInfo.Id.CLASS, null);
+//        typeResolver.inclusion(JsonTypeInfo.As.PROPERTY);
+//        typeResolver.typeProperty("@JavaClass");
+//        mapper.setDefaultTyping(typeResolver);
         
         // properties with null value, or what is considered empty, are not to be included.
         mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);

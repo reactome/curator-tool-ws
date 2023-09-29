@@ -13,7 +13,6 @@ import org.neo4j.cypherdsl.core.Cypher;
 import org.neo4j.cypherdsl.core.Node;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReading;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingUpdate;
-import org.neo4j.cypherdsl.core.renderer.Renderer;
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.service.helper.StoichiometryObject;
@@ -29,11 +28,11 @@ import lombok.Data;
 
 /**
  * Apparently the default auto-generated code from Neo4jRepository cannot be used for our purpose.
- * It is extreme to load the whole reference graph for a object and cannot find a simple way to control
- * it. Therefore, we may need to write our own cyphery based CRUD operations. All read-only queries
+ * It is extreme slow to load the whole reference graph for a object and cannot find a simple way to control
+ * it. Therefore, we may need to write our own cypher query based CRUD operations. All read-only queries
  * should be based on graph-core.
  * We use a class, instead of extending Neo4jRepository interface, to implement this curation repository so that
- * we have a much better control (e.g. handling dbId, etc). This is a better approach.
+ * we have a much better control (e.g. handling dbId, etc). This is a better approach!
  * @author wug
  *
  */

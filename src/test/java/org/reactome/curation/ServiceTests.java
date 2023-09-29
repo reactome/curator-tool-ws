@@ -61,7 +61,8 @@ class ServiceTests {
                 ReactomeJavaConstants.EntityWithAccessionedSequence,
                 ReactomeJavaConstants.Pathway,
                 ReactomeJavaConstants.Reaction,
-                ReactomeJavaConstants.ReferenceGeneProduct
+                ReactomeJavaConstants.ReferenceGeneProduct,
+                ReactomeJavaConstants.Species
         };
         for (String clsName : clsNames) {
             List<CurationAttribute> attributes = curationService.getAttributes(clsName);
