@@ -5,20 +5,25 @@ import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.neo4j.cypherdsl.core.internal.SchemaNames;
 import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.model.SimpleSchemaClass;
 import org.reactome.curation.repository.CurationRepository;
 //import org.reactome.server.graph.aop.LazyFetchAspect;
 import org.reactome.server.graph.domain.model.DatabaseObject;
+import org.reactome.server.graph.domain.result.SchemaClassCount;
 import org.reactome.server.graph.repository.AdvancedDatabaseObjectRepository;
+import org.reactome.server.graph.repository.SchemaRepository;
 import org.reactome.server.graph.service.helper.AttributeClass;
 import org.reactome.server.graph.service.helper.AttributeProperties;
+import org.reactome.server.graph.service.helper.SchemaNode;
 import org.reactome.server.graph.service.util.DatabaseObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,15 +52,15 @@ public class CurationService {
     // Cache the class tree for quick service
     private SimpleSchemaClass schemaClassTree;
     
-    // For curation specific stuff
-//    @Autowired
-//    private CurationRepository curationRepository;
     // For queries
     @Autowired
     private AdvancedDatabaseObjectRepository objectRepository;
     // To get the class attributes
+//    @Autowired
+//    private DatabaseObjectUtils databaseObjectUtils;
+    // To handle some schema class related stuff
     @Autowired
-    private DatabaseObjectUtils databaseObjectUtils;
+    private SchemaRepository schemaRepository;
     @Autowired
     private CurationRepository curationRepository;
     
@@ -111,7 +116,7 @@ public class CurationService {
         if (any.getProperties() != null)
             return attributes; // Loaded
         // Need to load attributes if needed
-        Set<AttributeProperties> properties = databaseObjectUtils.getAttributeTable(clsName);
+        Set<AttributeProperties> properties = DatabaseObjectUtils.getAttributeTable(clsName);
         // For quick assignment
         Map<String, AttributeProperties> name2prop = properties.stream()
                 .collect(Collectors.toMap(AttributeProperties::getName, Function.identity()));
@@ -183,13 +188,51 @@ public class CurationService {
     }
     
     public SimpleSchemaClass loadSchemaClassTree() throws Exception {
-        if (schemaClassTree != null)
-            return schemaClassTree;
-        // Load it 
-        InputStream is = getClass().getClassLoader().getResourceAsStream("schema_classes_tree.json");
-        ObjectMapper mapper = new ObjectMapper();
-        schemaClassTree = mapper.readValue(is, SimpleSchemaClass.class);
+        if (schemaClassTree == null) {
+            // Load it 
+            InputStream is = getClass().getClassLoader().getResourceAsStream("schema_classes_tree.json");
+            ObjectMapper mapper = new ObjectMapper();
+            schemaClassTree = mapper.readValue(is, SimpleSchemaClass.class);
+        }
+        // In the editing env, the numbers of instances may change even for the same session
+        // Therefore, this needs to be refreshed for each call.
+        attachInstanceCounts(schemaClassTree);
         return schemaClassTree;
+    }
+    
+    /**
+     * A helper method to count instances for each class and then add to its respective 
+     * class object.
+     * @param root the root class, i.e., DatabaseObject.
+     * @throws Exception
+     */
+    private void attachInstanceCounts(SimpleSchemaClass root) throws Exception {
+        Collection<SchemaClassCount> clsCounts = schemaRepository.getSchemaClassCounts();
+        SchemaNode rootNode = DatabaseObjectUtils.getGraphModelTree(clsCounts);
+        // Traversal the tree to assign the counts from the above collection
+        Map<String, SimpleSchemaClass> name2class = new HashMap<>();
+        traversalTree(root, name2class);
+        // Copy the count from rootNode
+        copyCount(rootNode, name2class);
+    }
+    
+    private void copyCount(SchemaNode schemaNode, Map<String, SimpleSchemaClass> name2class) {
+        SimpleSchemaClass schemaClass = name2class.get(schemaNode.getClassName());
+        if (schemaClass != null) {
+            schemaClass.setCount(schemaNode.getCount());
+        }
+        if (schemaNode.getChildren() == null || schemaNode.getChildren().size() == 0)
+            return;
+        for (SchemaNode child : schemaNode.getChildren())
+            copyCount(child, name2class);
+    }
+    
+    private void traversalTree(SimpleSchemaClass cls, Map<String, SimpleSchemaClass> name2class) {
+        name2class.put(cls.getName(), cls);
+        if (cls.getChildren() == null || cls.getChildren().size() == 0)
+            return;
+        for (SimpleSchemaClass child : cls.getChildren())
+            traversalTree(child, name2class);
     }
 
     public Long getNextDbId(){

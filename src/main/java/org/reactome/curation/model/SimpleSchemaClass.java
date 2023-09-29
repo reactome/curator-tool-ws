@@ -12,6 +12,8 @@ import lombok.NoArgsConstructor;
  * This is a really simple SchemaClass definition to provide the data model hierarchy to the frontend.
  * The data should be dumped by class CuratorToolExporter in package org.reactome.curation for easy
  * configuration and updating. 
+ * Note: This class is very similar to SchemaNode in org.reactome.server.graph.service.helper. However
+ * it is preferred here to make the front end parsing easy.
  * @author wug
  *
  */
@@ -24,5 +26,6 @@ public class SimpleSchemaClass {
     private List<SimpleSchemaClass> children;
     private boolean isAbstract;
     private SimpleSchemaClass superClass;
+    private Integer count; // This may need to use Long in the future.
 
 }
