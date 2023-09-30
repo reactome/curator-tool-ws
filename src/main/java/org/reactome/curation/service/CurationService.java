@@ -103,7 +103,6 @@ public class CurationService {
         return curationRepository.store(obj);
     }
     
-    @SuppressWarnings("static-access")
     public List<CurationAttribute> getAttributes(String clsName) throws Exception {
         if (clsName2Attributes == null) {
             logger.error("clsName2Attributes is not initialized.");
