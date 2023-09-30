@@ -25,10 +25,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupp
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSetter;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping;
-import com.fasterxml.jackson.databind.jsontype.TypeResolverBuilder;
 
 // It is needed to define the following bean to enable the correct JSON one hop serialization
 @Configuration
@@ -58,13 +55,12 @@ public class WebConfig extends WebMvcConfigurationSupport {
         // Also the comment about this class.
         //TODO:  As of September 29, 2023, there is no need for Java type. The relationships among classes will be handled
         // explicitly at the web front end or the server side.
-        //Still need it for the time being before refactoring.
-        TypeResolverBuilder<?> typeResolver = new DatabaseObjectTypeResolverBuilder(DefaultTyping.NON_FINAL,
-                mapper.getPolymorphicTypeValidator());
-        typeResolver.init(JsonTypeInfo.Id.CLASS, null);
-        typeResolver.inclusion(JsonTypeInfo.As.PROPERTY);
-        typeResolver.typeProperty("@JavaClass");
-        mapper.setDefaultTyping(typeResolver);
+//        TypeResolverBuilder<?> typeResolver = new DatabaseObjectTypeResolverBuilder(DefaultTyping.NON_FINAL,
+//                mapper.getPolymorphicTypeValidator());
+//        typeResolver.init(JsonTypeInfo.Id.CLASS, null);
+//        typeResolver.inclusion(JsonTypeInfo.As.PROPERTY);
+//        typeResolver.typeProperty("@JavaClass");
+//        mapper.setDefaultTyping(typeResolver);
         
         // properties with null value, or what is considered empty, are not to be included.
         mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);

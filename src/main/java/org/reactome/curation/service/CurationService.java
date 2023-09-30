@@ -5,14 +5,12 @@ import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.neo4j.cypherdsl.core.internal.SchemaNames;
 import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.model.SimpleSchemaClass;
 import org.reactome.curation.repository.CurationRepository;
