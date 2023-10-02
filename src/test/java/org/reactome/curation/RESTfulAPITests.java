@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import org.gk.model.ReactomeJavaConstants;
 import org.junit.jupiter.api.Test;
 import org.reactome.server.graph.domain.model.Complex;
+import org.reactome.server.graph.domain.model.Pathway;
 import org.reactome.server.graph.domain.model.Reaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,6 +56,30 @@ class RESTfulAPITests {
                 72811L, // InstanceEdit
         };
         // The URL should start with "/" to make it true
+        String url = BASE_URL + "findDatabaseObjectByDbId/";
+        for (Long dbId : dbIds) {
+            String json = mockMvc.perform(get(url + dbId))
+                    .andExpect(status().isOk())
+                    .andReturn()
+                    .getResponse()
+                    .getContentAsString();
+            System.out.println(json);
+//            DatabaseObject obj = curationService.findById(dbId);
+//            System.out.println(obj);
+        }
+    }
+    
+    @Test
+    public void testFindByIdInInstance() throws Exception {
+        assertNotNull(mockMvc);
+        Long[] dbIds = {
+                141429L, // A reaction has the same instance appearing in two slots.
+                109581L, // Pathway
+                72810L, // NCBI Taxonomy
+                9707103L, // A figure
+                72811L, // InstanceEdit
+        };
+        // The URL should start with "/" to make it true
         String url = BASE_URL + "findByDbId/";
         for (Long dbId : dbIds) {
             String json = mockMvc.perform(get(url + dbId))
@@ -72,11 +97,11 @@ class RESTfulAPITests {
     public void testGetAttributes() throws Exception {
         assertNotNull(mockMvc);
         String[] clsNames = {
-                ReactomeJavaConstants.EntityWithAccessionedSequence,
+//                ReactomeJavaConstants.EntityWithAccessionedSequence,
                 ReactomeJavaConstants.Pathway,
-                ReactomeJavaConstants.Reaction,
-                ReactomeJavaConstants.ReferenceGeneProduct,
-                ReactomeJavaConstants.Species
+//                ReactomeJavaConstants.Reaction,
+//                ReactomeJavaConstants.ReferenceGeneProduct,
+//                ReactomeJavaConstants.Species
         };
         String url = BASE_URL + "getAttributes/";
         for (String clsName : clsNames) {

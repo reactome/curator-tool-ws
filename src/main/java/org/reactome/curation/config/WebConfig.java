@@ -25,10 +25,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupp
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSetter;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping;
-import com.fasterxml.jackson.databind.jsontype.TypeResolverBuilder;
 
 // It is needed to define the following bean to enable the correct JSON one hop serialization
 @Configuration
@@ -56,8 +53,8 @@ public class WebConfig extends WebMvcConfigurationSupport {
         // Refer to https://stackoverflow.com/questions/12353774/how-to-customize-jackson-type-information-mechanism
         // and https://www.demo2s.com/java/jackson-typeresolverbuilder-tutorial-with-examples.html
         // Also the comment about this class.
-        // As of September 29, 2023, there is no need for Java type. The relationships among classes will be handled
-        // explicitly at the web front end or tht server side.
+        //TODO:  As of September 29, 2023, there is no need for Java type. The relationships among classes will be handled
+        // explicitly at the web front end or the server side.
 //        TypeResolverBuilder<?> typeResolver = new DatabaseObjectTypeResolverBuilder(DefaultTyping.NON_FINAL,
 //                mapper.getPolymorphicTypeValidator());
 //        typeResolver.init(JsonTypeInfo.Id.CLASS, null);

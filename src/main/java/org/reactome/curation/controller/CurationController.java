@@ -5,9 +5,11 @@ import java.util.List;
 
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
 import org.reactome.curation.model.CurationAttribute;
+import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.model.SimpleSchemaClass;
 import org.reactome.curation.service.CurationService;
 import org.reactome.server.graph.domain.model.DatabaseObject;
+import org.reactome.server.graph.domain.model.Pathway;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,11 +39,25 @@ public class CurationController {
     private CurationService service;
     @Autowired
     private ObjectMapper objectMapper;
+    @Autowired
+    private DatabaseObjectInstanceConverter converter;
     
-    @GetMapping("findByDbId/{dbId}")
+    @GetMapping("findDatabaseObjectByDbId/{dbId}")
     public DatabaseObject findByDdId(@PathVariable("dbId") Long dbId) {
         DatabaseObject obj = service.findById(dbId);
         return obj;
+    }
+    
+    @GetMapping("findByDbId/{dbId}")
+    public SimpleInstance findByDdIdInInstance(@PathVariable("dbId") Long dbId) {
+        try {
+            DatabaseObject obj = service.findById(dbId);
+            return converter.convert(obj);
+        }
+        catch(Exception e) {
+            logger.error("CurationController.strore: " + e.getMessage(), e);
+            throw new IllegalStateException(e.getMessage());
+        }
     }
     
     //TODO: The error handling needs to be updated

@@ -5,14 +5,12 @@ import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.neo4j.cypherdsl.core.internal.SchemaNames;
 import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.model.SimpleSchemaClass;
 import org.reactome.curation.repository.CurationRepository;
@@ -103,7 +101,6 @@ public class CurationService {
         return curationRepository.store(obj);
     }
     
-    @SuppressWarnings("static-access")
     public List<CurationAttribute> getAttributes(String clsName) throws Exception {
         if (clsName2Attributes == null) {
             logger.error("clsName2Attributes is not initialized.");
