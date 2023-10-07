@@ -107,12 +107,12 @@ public class CurationWSTestHelper {
         ObjectMapper mapper = new ObjectMapper();
         
         mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
-        TypeResolverBuilder<?> typeResolver = new DatabaseObjectTypeResolverBuilder(DefaultTyping.NON_FINAL,
-                mapper.getPolymorphicTypeValidator());
-        typeResolver.init(JsonTypeInfo.Id.CLASS, null);
-        typeResolver.inclusion(JsonTypeInfo.As.PROPERTY);
-        typeResolver.typeProperty("@JavaClass");
-        mapper.setDefaultTyping(typeResolver);
+//        TypeResolverBuilder<?> typeResolver = new DatabaseObjectTypeResolverBuilder(DefaultTyping.NON_FINAL,
+//                mapper.getPolymorphicTypeValidator());
+//        typeResolver.init(JsonTypeInfo.Id.CLASS, null);
+//        typeResolver.inclusion(JsonTypeInfo.As.PROPERTY);
+//        typeResolver.typeProperty("@JavaClass");
+//        mapper.setDefaultTyping(typeResolver);
         
 //        TypeResolverBuilder<?> serializerTyper = ObjectMapper.DefaultTypeResolverBuilder
 //                .construct(ObjectMapper.DefaultTyping.NON_FINAL, mapper.getPolymorphicTypeValidator());

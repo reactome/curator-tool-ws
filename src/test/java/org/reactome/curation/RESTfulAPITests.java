@@ -7,7 +7,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import org.gk.model.ReactomeJavaConstants;
 import org.junit.jupiter.api.Test;
+import org.reactome.curation.controller.DatabaseObjectInstanceConverter;
+import org.reactome.curation.model.SimpleInstance;
 import org.reactome.server.graph.domain.model.Complex;
+import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.domain.model.Pathway;
 import org.reactome.server.graph.domain.model.Reaction;
 import org.slf4j.Logger;
@@ -29,6 +32,8 @@ class RESTfulAPITests {
 
     @Autowired
     private MockMvc mockMvc;
+    @Autowired
+    private DatabaseObjectInstanceConverter converter;
 
     @Test
     void contextLoads() {
@@ -73,6 +78,7 @@ class RESTfulAPITests {
     public void testFindByIdInInstance() throws Exception {
         assertNotNull(mockMvc);
         Long[] dbIds = {
+                141412L, // An EWAS
                 141429L, // A reaction has the same instance appearing in two slots.
                 109581L, // Pathway
                 72810L, // NCBI Taxonomy
@@ -125,7 +131,7 @@ class RESTfulAPITests {
     public void testStoreComplexAndReaction() throws Exception {
         assertNotNull(mockMvc);
         
-        String url = BASE_URL + "store";
+        String url = BASE_URL + "storeDatabaseObject";
         logger.info("URL: " + url);
         
         ObjectMapper mapper = CurationWSTestHelper.createObjectMapper();
@@ -154,6 +160,47 @@ class RESTfulAPITests {
 //                .getResponse()
 //                .getContentAsString();
 //        logger.info("Done saving a new Reaction: " + dbId);
+    }
+    
+    /**
+     * Test the store method using SimpleInstance.
+     * @throws Exception
+     */
+    @Test
+    public void testStoreComplexAndReactionInInstance() throws Exception {
+        assertNotNull(mockMvc);
+        
+        String url = BASE_URL + "store";
+        logger.info("URL: " + url);
+        
+        ObjectMapper mapper = CurationWSTestHelper.createObjectMapper();
+        
+        Complex complex = CurationWSTestHelper.createComplexWithNewComplexAndSubunit();
+        SimpleInstance instance = converter.convert(complex);
+        String complexJSON = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(instance);
+        logger.info("Complex in JSON:\n" + complexJSON);
+        
+        Reaction reaction = CurationWSTestHelper.createReaction();
+        SimpleInstance reationInstance = converter.convert(reaction);
+        String reactionJSON = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(reationInstance);
+        logger.info("Reaction in JSON:\n" + reactionJSON);
+        
+        // Store
+        String dbId = mockMvc.perform(post(url).contentType(MediaType.APPLICATION_JSON)
+                           .content(complexJSON))
+                           .andExpect(status().isOk())
+                           .andReturn()
+                           .getResponse()
+                           .getContentAsString();
+        logger.info("Done saving a new Complex: " + dbId);
+        
+        dbId = mockMvc.perform(post(url).contentType(MediaType.APPLICATION_JSON)
+                .content(reactionJSON))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        logger.info("Done saving a new Reaction: " + dbId);
     }
     
     @Test
