@@ -116,6 +116,13 @@ public class CurationController {
             return Collections.EMPTY_LIST;
         }
     }
+    
+    @GetMapping("listInstances/{className}/{skip}/{limit}")
+    public List<SimpleInstance> listInstances(@PathVariable("className") String className,
+                                              @PathVariable("skip") Integer skip,
+                                              @PathVariable("limit") Integer limit) {
+        return service.listInstances(className, skip, limit);
+    }
 
     @GetMapping("getSchemaClasses")
     public List<String> getSchemaClasses() {

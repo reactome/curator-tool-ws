@@ -50,15 +50,43 @@ class RESTfulAPITests {
                 .getContentAsString();
         System.out.println(json);
     }
+    
+    @Test
+    public void testListInstances() throws Exception {
+        assertNotNull(mockMvc);
+        String className = "ProteinDrug";
+        String url = BASE_URL + "listInstances/" + className + "/10/20";
+        String json = mockMvc.perform(get(url))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        System.out.println(json);
+        // Try reactions
+        className = "Reaction";
+        url = BASE_URL + "listInstances/" + className + "/100/20";
+        json = mockMvc.perform(get(url))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        System.out.println(json);
+    }
+    
 
     @Test
     public void testFindById() throws Exception {
         assertNotNull(mockMvc);
         Long[] dbIds = {
-                109581L, // Pathway
-                72810L, // NCBI Taxonomy
-                9707103L, // A figure
-                72811L, // InstanceEdit
+                //TODO: The following query is used:
+                // MATCH (n:DatabaseObject{dbId:$dbId}) OPTIONAL MATCH (n)-[r]-(m) WITH n, r, m ORDER BY TYPE(r) ASC, r.order ASC RETURN n, COLLECT(r), COLLECT(m) LIMIT $limit
+                // This query is slow for homo sapiens because of the undirection relationship, which will pull out many results. 
+                // Need to consider to add the direction here to increase the performance.
+                48887L, // Homo sapiens. The query is quite slow!
+//                109581L, // Pathway
+//                72810L, // NCBI Taxonomy
+//                9707103L, // A figure
+//                72811L, // InstanceEdit
         };
         // The URL should start with "/" to make it true
         String url = BASE_URL + "findDatabaseObjectByDbId/";
