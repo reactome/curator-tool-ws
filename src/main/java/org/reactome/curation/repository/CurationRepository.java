@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.neo4j.cypherdsl.core.Cypher;
+import org.neo4j.cypherdsl.core.Literal;
 import org.neo4j.cypherdsl.core.Node;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReading;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingUpdate;
@@ -337,6 +338,7 @@ public class CurationRepository {
         var instance = Cypher.node(className).named("inst");
         var query = Cypher.match(instance)
                           .returning(instance.property("dbId"), instance.property("displayName"))
+                          .orderBy(instance.property("displayName"))
                           .skip(skip)
                           .limit(limit)
                           .build();
