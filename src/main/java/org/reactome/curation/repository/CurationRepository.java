@@ -4,16 +4,19 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.neo4j.cypherdsl.core.Cypher;
+import org.neo4j.cypherdsl.core.Literal;
 import org.neo4j.cypherdsl.core.Node;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReading;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingUpdate;
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
+import org.reactome.curation.model.SimpleInstance;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.service.helper.StoichiometryObject;
 import org.reactome.server.graph.service.util.DatabaseObjectUtils;
@@ -326,6 +329,32 @@ public class CurationRepository {
         return null; // Don't care
     }
 
+    /**
+     * Get a list of objects in SimpleInstance.
+     */
+    public List<SimpleInstance> listInstances(String className,
+                                              int skip,
+                                              int limit) {
+        var instance = Cypher.node(className).named("inst");
+        var query = Cypher.match(instance)
+                          .returning(instance.property("dbId"), instance.property("displayName"))
+                          .orderBy(instance.property("displayName"))
+                          .skip(skip)
+                          .limit(limit)
+                          .build();
+        Collection<Map<String, Object>> all = neo4jClient.query(query.getCypher())
+                .fetch()
+                .all();
+        List<SimpleInstance> rtn = new ArrayList<>();
+        for (Map<String, Object> map : all) {
+            SimpleInstance inst = new SimpleInstance();
+            inst.setDbId(Long.parseLong(map.get("inst.dbId").toString()));
+            inst.setDisplayName(map.get("inst.displayName").toString());
+            rtn.add(inst);
+        }
+        return rtn;
+    }
+    
 
     /**
      * Get the list of class names in the database.

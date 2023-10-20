@@ -12,6 +12,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.reactome.curation.model.CurationAttribute;
+import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.model.SimpleSchemaClass;
 import org.reactome.curation.repository.CurationRepository;
 //import org.reactome.server.graph.aop.LazyFetchAspect;
@@ -230,6 +231,12 @@ public class CurationService {
             return;
         for (SimpleSchemaClass child : cls.getChildren())
             traversalTree(child, name2class);
+    }
+    
+    public List<SimpleInstance> listInstances(String className,
+                                              int skip,
+                                              int limit) {
+        return curationRepository.listInstances(className, skip, limit);
     }
 
     public Long getNextDbId(){

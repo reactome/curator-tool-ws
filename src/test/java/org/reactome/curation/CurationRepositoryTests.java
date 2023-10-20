@@ -8,10 +8,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
+import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.repository.CurationRepository;
 import org.reactome.server.graph.domain.model.Complex;
-import org.reactome.server.graph.domain.model.DatabaseObject;
-import org.reactome.server.graph.domain.model.EntityWithAccessionedSequence;
 import org.reactome.server.graph.domain.model.LiteratureReference;
 import org.reactome.server.graph.domain.model.PhysicalEntity;
 import org.reactome.server.graph.domain.model.Publication;
@@ -69,6 +68,14 @@ class CurationRepositoryTests {
         summation.setText("This is a test summation!");
         summation.setDisplayName(displayName);
         return summation;
+    }
+    
+    @Test
+    public void testListInstances() {
+        logger.info("Test listInstance...");
+        String className = "ProteinDrug";
+        List<SimpleInstance> instances = repository.listInstances(className, 10, 10);
+        instances.forEach(instance -> System.out.println(instance));
     }
     
     /**

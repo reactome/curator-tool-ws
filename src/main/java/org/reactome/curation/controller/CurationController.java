@@ -9,7 +9,6 @@ import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.model.SimpleSchemaClass;
 import org.reactome.curation.service.CurationService;
 import org.reactome.server.graph.domain.model.DatabaseObject;
-import org.reactome.server.graph.domain.model.Pathway;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,10 +67,34 @@ public class CurationController {
      * @param obj
      * @return
      */
-    @PostMapping("store")
+    @PostMapping("storeDatabaseObject")
     public Long store(@RequestBody DatabaseObject obj) {
         try {
             return service.store(obj);
+        }
+        catch(DatabaseObjectNotFoundException e) {
+            logger.error("CurationController.store: " + e.getMessage(), e);
+            throw e; // Return to the client
+        }
+        catch(Exception e) {
+            logger.error("CurationController.store: " + e.getMessage(), e);
+            throw new IllegalStateException(e.getMessage());
+        }
+    }
+    
+    //TODO: The error handling needs to be updated
+    // See: https://www.toptal.com/java/spring-boot-rest-api-error-handling 
+    /**
+     * Store a new SimpleInstance object that is posted in JSON.
+     * @param obj
+     * @return
+     */
+    @PostMapping("store")
+    public Long store(@RequestBody SimpleInstance instance) {
+        try {
+            System.out.println(instance);
+            DatabaseObject databaseObject = converter.convert(instance);
+            return service.store(databaseObject);
         }
         catch(DatabaseObjectNotFoundException e) {
             logger.error("CurationController.store: " + e.getMessage(), e);
@@ -92,6 +115,13 @@ public class CurationController {
             logger.error("CurtionController.getAttributes: " + e.getMessage(), e);
             return Collections.EMPTY_LIST;
         }
+    }
+    
+    @GetMapping("listInstances/{className}/{skip}/{limit}")
+    public List<SimpleInstance> listInstances(@PathVariable("className") String className,
+                                              @PathVariable("skip") Integer skip,
+                                              @PathVariable("limit") Integer limit) {
+        return service.listInstances(className, skip, limit);
     }
 
     @GetMapping("getSchemaClasses")
