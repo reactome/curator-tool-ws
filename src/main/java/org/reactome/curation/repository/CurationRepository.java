@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.neo4j.cypherdsl.core.Cypher;
-import org.neo4j.cypherdsl.core.Literal;
 import org.neo4j.cypherdsl.core.Node;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReading;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingUpdate;
@@ -101,6 +100,30 @@ public class CurationRepository {
     private Long getMaxDbId() {
         return neo4jClient.query(MAX_DB_ID_QUERY).fetchAs(Long.class).one().get();
     }
+    
+    /**
+     * Delete an object as specified.
+     * @param dbId
+     * @return true if nothing wrong. The detailed information is not returned here.
+     * @throws Exception
+     */
+    public Boolean delete(DatabaseObject obj) {
+        // Make sure there is a node having this dbId
+        if (!neo4jTemplate.existsById(obj.getDbId(), obj.getClass())) {
+            throw new IllegalArgumentException("Cannot find an instance with dbId = " + obj.getDbId() +
+                    " and class = " + obj.getClassName());
+        }
+        // Build a dsl query to delete the node having this dbId
+        Node objNode = Cypher.node(getNodeLabel(obj))
+                             .named(getNodeName(obj))
+                             .withProperties("dbId", Cypher.literalOf(obj.getDbId()));
+        var query = Cypher.match(objNode).detachDelete(objNode).build();
+//        System.out.println(Renderer.getDefaultRenderer().render(query));
+        // Commit the deletion
+        neo4jClient.query(query.getCypher()).run(); // This may return something. But for the time being, we don't care
+                                                    // as long as no exception is thrown.
+        return true;
+    }
 
     /**
      * Store a new DatabaseObject. The DatabaseObject should be new and doesn't have a POSITIVE
@@ -112,6 +135,7 @@ public class CurationRepository {
      * Note: There is a bug in the original graph-core code regarding the order of StoichiometryObject
      * used in input, output, and hasComponent. The order is _displayName based, which most likely is
      * not true. This needs a further investigation.
+     * TODO: Check relationships enoded by specific classes, e.g., input, output, hasMember.
      * @param obj
      * @return
      * @throws IllegalAccessException 
@@ -331,6 +355,9 @@ public class CurationRepository {
 
     /**
      * Get a list of objects in SimpleInstance.
+     * Note: If performance is an issue, try to create an index on displayName 
+     * if it is not here like this: 
+     * CREATE INDEX ON :DatabaseObject(displayName)
      */
     public List<SimpleInstance> listInstances(String className,
                                               int skip,

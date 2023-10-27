@@ -121,11 +121,25 @@ class CurationRepositoryTests {
      */
     @Test
     public void testSaveWithNewInstanceAsValue() throws Exception {
-        logger.info("Tets storing Instance using another new Instance...");
+        logger.info("Test storing Instance using another new Instance...");
         Complex complex = CurationWSTestHelper.createComplexWithNewComplexAndSubunit();
         Long dbId = repository.store(complex);
         logger.info("Newly stored complex having multiple layers of new values: " + dbId);
         logger.info("Done with storing test.");
     }
+    
+    /**
+     * Use this method to test delete a DatabaseObject.
+     */
+    @Test
+    public void testDeleteInstance() {
+        Reaction reaction = new Reaction();
+        reaction.setDbId(12241241L);
+        logger.info("Deleting " + reaction + "...");
+        // Don't expect to delete this reaction after a test.
+        boolean rtn = repository.delete(reaction);
+        logger.info("Done: " + rtn);
+    }
+    
     
 }
