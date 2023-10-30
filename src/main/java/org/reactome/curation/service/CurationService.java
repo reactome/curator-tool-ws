@@ -246,4 +246,8 @@ public class CurationService {
     public List<String> getSchemaClasses() {
         return curationRepository.getSchemaClasses();
     }
+    
+    public Boolean delete(DatabaseObject obj) {
+        return curationRepository.delete(obj);
+    }
 }

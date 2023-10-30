@@ -92,7 +92,7 @@ public class CurationController {
     @PostMapping("store")
     public Long store(@RequestBody SimpleInstance instance) {
         try {
-            System.out.println(instance);
+//            System.out.println(instance);
             DatabaseObject databaseObject = converter.convert(instance);
             return service.store(databaseObject);
         }
@@ -102,6 +102,23 @@ public class CurationController {
         }
         catch(Exception e) {
             logger.error("CurationController.store: " + e.getMessage(), e);
+            throw new IllegalStateException(e.getMessage());
+        }
+    }
+    
+    /**
+     * Delete a SimpleInstance object. 
+     * @param instance
+     * @return
+     */
+    @PostMapping("delete")
+    public Boolean delete(@RequestBody SimpleInstance instance) {
+        try {
+            DatabaseObject obj = converter.convert(instance);
+            return service.delete(obj);
+        }
+        catch(Exception e) {
+            logger.error("CurationController.delete: " + e.getMessage(), e);
             throw new IllegalStateException(e.getMessage());
         }
     }

@@ -51,11 +51,39 @@ class RESTfulAPITests {
         System.out.println(json);
     }
     
+    /**
+     * Note: This test may not work if the instance has been deleted already. Try another instance
+     * that can be deleted without impacting anything else.
+     * @throws Exception
+     */
+    @Test
+    public void testDeleteInstance() throws Exception {
+        assertNotNull(mockMvc);
+        SimpleInstance simpleInstance = new SimpleInstance();
+        simpleInstance.setDbId(12241211L);
+        simpleInstance.setSchemaClassName("Reaction");
+        
+        ObjectMapper mapper = CurationWSTestHelper.createObjectMapper();
+        String reactionJSON = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(simpleInstance);
+        logger.info("Reaction in JSON:\n" + reactionJSON);
+        
+        String url = BASE_URL + "delete";
+        String rtn = mockMvc.perform(post(url).contentType(MediaType.APPLICATION_JSON)
+                           .content(reactionJSON))
+                           .andExpect(status().isOk())
+                           .andReturn()
+                           .getResponse()
+                           .getContentAsString();
+        logger.info("Deleting an instance: " + rtn);
+//        
+    }
+    
     @Test
     public void testListInstances() throws Exception {
         assertNotNull(mockMvc);
         String className = "ProteinDrug";
-        String url = BASE_URL + "listInstances/" + className + "/10/20";
+        className = "ReactionType";
+        String url = BASE_URL + "listInstances/" + className + "/0/20";
         String json = mockMvc.perform(get(url))
                 .andExpect(status().isOk())
                 .andReturn()
