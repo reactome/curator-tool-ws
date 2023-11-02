@@ -19,6 +19,8 @@ import org.reactome.curation.model.SimpleInstance;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.service.helper.StoichiometryObject;
 import org.reactome.server.graph.service.util.DatabaseObjectUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.data.neo4j.core.Neo4jTemplate;
 import org.springframework.data.neo4j.core.schema.Relationship;
@@ -41,6 +43,7 @@ import lombok.Data;
 @Repository
 @Data
 public class CurationRepository {
+    private static final Logger logger = LoggerFactory.getLogger(CurationRepository.class);
     // To be used to set the relationship properties
     private static final String STOICHIOMETRY = "stoichiometry";
     private static final String ORDER = "order";
@@ -374,6 +377,11 @@ public class CurationRepository {
                 .all();
         List<SimpleInstance> rtn = new ArrayList<>();
         for (Map<String, Object> map : all) {
+            // This should not occur. However, just in case
+            if (map.get("inst.dbId") == null) {
+                logger.error("Return result with dbId = null: " + className + ", " + skip + ", " + limit);
+                continue;
+            }
             SimpleInstance inst = new SimpleInstance();
             inst.setDbId(Long.parseLong(map.get("inst.dbId").toString()));
             inst.setDisplayName(map.get("inst.displayName").toString());
@@ -398,6 +406,16 @@ public class CurationRepository {
         // This should be called once so the query is kept here
         String query = "CREATE INDEX db_id_index IF NOT EXISTS FOR (n:DatabaseObject) ON (n.dbId)";
         neo4jClient.query(query).run(); // Nothing is needed but still need to get something. Otherwise Cypher is not sent.
+        // Create another index for _displayName for named based search (e.g. contains)
+        query = "CREATE TEXT INDEX databaseobject_text_index_displayname IF "
+                + "NOT EXISTS FOR (n:DatabaseObject) ON (n.displayName)";
+        neo4jClient.query(query).run(); 
+//        // Create range index for order by displayName
+//        query = "CREATE RANGE INDEX databaseobject_range_index_displayname IF NOT EXISTS for (n:DatabaseObject) on (n.displayName)";
+//        neo4jClient.query(query).run();
+        // For node lookup: by creating this index, we limit the search! (try profile in cypher!).
+        query = "CREATE LOOKUP INDEX node_label_lookup_index IF NOT EXISTS FOR (n) ON EACH labels(n)";
+        neo4jClient.query(query).run();
     }
 
 }
