@@ -2,6 +2,7 @@ package org.reactome.curation.controller;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
 import org.reactome.curation.model.CurationAttribute;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -134,11 +136,33 @@ public class CurationController {
         }
     }
     
+    /**
+     * This API can accept an optional parameter called query for searching based on display name
+     * in the format like ?query=TP53. 
+     * Note: the query string should be encoded using the standard http way from the front end (e.g. no space, etc).
+     * @param className
+     * @param skip
+     * @param limit
+     * @return
+     */
     @GetMapping("listInstances/{className}/{skip}/{limit}")
     public List<SimpleInstance> listInstances(@PathVariable("className") String className,
                                               @PathVariable("skip") Integer skip,
-                                              @PathVariable("limit") Integer limit) {
-        return service.listInstances(className, skip, limit);
+                                              @PathVariable("limit") Integer limit,
+                                              // Make sure to use Optional so that we can take a URL without query.
+                                              @RequestParam("query") Optional<String> query) { 
+        return service.listInstances(className, skip, limit, query.isEmpty() ? null : query.get());
+    }
+    
+    /**
+     * This method accepts an optional query as listInstances.
+     * @param className
+     * @return
+     */
+    @GetMapping("countInstances/{className}")
+    public Integer countInstances(@PathVariable("className") String className,
+                                  @RequestParam("query") Optional<String> query) {
+        return service.countInstances(className, query.isEmpty() ? null : query.get());
     }
 
     @GetMapping("getSchemaClasses")

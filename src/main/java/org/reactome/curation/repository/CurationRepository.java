@@ -10,7 +10,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.neo4j.cypherdsl.core.Condition;
 import org.neo4j.cypherdsl.core.Cypher;
+import org.neo4j.cypherdsl.core.Functions;
 import org.neo4j.cypherdsl.core.Node;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReading;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingUpdate;
@@ -364,15 +366,19 @@ public class CurationRepository {
      */
     public List<SimpleInstance> listInstances(String className,
                                               int skip,
-                                              int limit) {
+                                              int limit,
+                                              String text) {
         var instance = Cypher.node(className).named("inst");
-        var query = Cypher.match(instance)
-                          .returning(instance.property("dbId"), instance.property("displayName"))
-                          .orderBy(instance.property("displayName"))
-                          .skip(skip)
-                          .limit(limit)
-                          .build();
-        Collection<Map<String, Object>> all = neo4jClient.query(query.getCypher())
+        Condition condition = createDisplayNameQueryCondition(text, instance);
+        var query = Cypher.match(instance);
+        if (condition != null)
+            query.where(condition);
+        var queryBuild = query.returning(instance.property("dbId"), instance.property("displayName"))
+             .orderBy(instance.property("displayName"))
+             .skip(skip)
+             .limit(limit)
+             .build();
+        Collection<Map<String, Object>> all = neo4jClient.query(queryBuild.getCypher())
                 .fetch()
                 .all();
         List<SimpleInstance> rtn = new ArrayList<>();
@@ -389,7 +395,26 @@ public class CurationRepository {
         }
         return rtn;
     }
+
+    private Condition createDisplayNameQueryCondition(String text, Node instance) {
+        Condition condition = null;
+        if (text != null) {
+            // Find display names containing text using regex
+            var displayName = instance.property("displayName");
+            condition = displayName.matches(".*(?i)" + text + ".*");
+        }
+        return condition;
+    }
     
+    public Integer countInstances(String clsName, String text) {
+        var instance = Cypher.node(clsName).named("inst");
+        Condition condition = createDisplayNameQueryCondition(text, instance);
+        var query = Cypher.match(instance);
+        if (condition != null)
+            query.where(condition);
+        var queryBuild = query.returning(Functions.count(instance)).build();
+        return neo4jClient.query(queryBuild.getCypher()).fetchAs(Integer.class).one().get();
+    }
 
     /**
      * Get the list of class names in the database.

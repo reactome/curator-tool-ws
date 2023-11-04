@@ -17,12 +17,10 @@ import org.reactome.curation.model.SimpleSchemaClass;
 import org.reactome.curation.repository.CurationRepository;
 //import org.reactome.server.graph.aop.LazyFetchAspect;
 import org.reactome.server.graph.domain.model.DatabaseObject;
-import org.reactome.server.graph.domain.result.SchemaClassCount;
 import org.reactome.server.graph.repository.AdvancedDatabaseObjectRepository;
 import org.reactome.server.graph.repository.SchemaRepository;
 import org.reactome.server.graph.service.helper.AttributeClass;
 import org.reactome.server.graph.service.helper.AttributeProperties;
-import org.reactome.server.graph.service.helper.SchemaNode;
 import org.reactome.server.graph.service.util.DatabaseObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,9 +55,6 @@ public class CurationService {
     // To get the class attributes
 //    @Autowired
 //    private DatabaseObjectUtils databaseObjectUtils;
-    // To handle some schema class related stuff
-    @Autowired
-    private SchemaRepository schemaRepository;
     @Autowired
     private CurationRepository curationRepository;
     
@@ -194,7 +189,7 @@ public class CurationService {
         }
         // In the editing env, the numbers of instances may change even for the same session
         // Therefore, this needs to be refreshed for each call.
-        attachInstanceCounts(schemaClassTree);
+        countInstances(schemaClassTree);
         return schemaClassTree;
     }
     
@@ -204,39 +199,25 @@ public class CurationService {
      * @param root the root class, i.e., DatabaseObject.
      * @throws Exception
      */
-    private void attachInstanceCounts(SimpleSchemaClass root) throws Exception {
-        Collection<SchemaClassCount> clsCounts = schemaRepository.getSchemaClassCounts();
-        SchemaNode rootNode = DatabaseObjectUtils.getGraphModelTree(clsCounts);
-        // Traversal the tree to assign the counts from the above collection
-        Map<String, SimpleSchemaClass> name2class = new HashMap<>();
-        traversalTree(root, name2class);
-        // Copy the count from rootNode
-        copyCount(rootNode, name2class);
-    }
-    
-    private void copyCount(SchemaNode schemaNode, Map<String, SimpleSchemaClass> name2class) {
-        SimpleSchemaClass schemaClass = name2class.get(schemaNode.getClassName());
-        if (schemaClass != null) {
-            schemaClass.setCount(schemaNode.getCount());
-        }
-        if (schemaNode.getChildren() == null || schemaNode.getChildren().size() == 0)
-            return;
-        for (SchemaNode child : schemaNode.getChildren())
-            copyCount(child, name2class);
-    }
-    
-    private void traversalTree(SimpleSchemaClass cls, Map<String, SimpleSchemaClass> name2class) {
-        name2class.put(cls.getName(), cls);
+    private void countInstances(SimpleSchemaClass cls) {
+        Integer count = countInstances(cls.getName(), null);
+        cls.setCount(count);
         if (cls.getChildren() == null || cls.getChildren().size() == 0)
             return;
         for (SimpleSchemaClass child : cls.getChildren())
-            traversalTree(child, name2class);
+            countInstances(child);
+    }
+    
+    public Integer countInstances(String clsName, 
+                                  String query) {
+        return curationRepository.countInstances(clsName, query);
     }
     
     public List<SimpleInstance> listInstances(String className,
                                               int skip,
-                                              int limit) {
-        return curationRepository.listInstances(className, skip, limit);
+                                              int limit,
+                                              String text) {
+        return curationRepository.listInstances(className, skip, limit, text);
     }
 
     public Long getNextDbId(){
