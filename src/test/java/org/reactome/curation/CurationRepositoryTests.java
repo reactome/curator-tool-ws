@@ -74,7 +74,12 @@ class CurationRepositoryTests {
     public void testListInstances() {
         logger.info("Test listInstance...");
         String className = "ProteinDrug";
-        List<SimpleInstance> instances = repository.listInstances(className, 10, 10);
+        System.out.println("List some protein drugs:");
+        List<SimpleInstance> instances = repository.listInstances(className, 10, 10, null);
+        instances.forEach(instance -> System.out.println(instance));
+        className = "Pathway";
+        System.out.println("\nList some pathways having TP53:");
+        instances = repository.listInstances(className, 0, 10, "TP53");
         instances.forEach(instance -> System.out.println(instance));
     }
     

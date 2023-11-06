@@ -10,7 +10,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.neo4j.cypherdsl.core.Condition;
 import org.neo4j.cypherdsl.core.Cypher;
+import org.neo4j.cypherdsl.core.Functions;
 import org.neo4j.cypherdsl.core.Node;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReading;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingUpdate;
@@ -19,6 +21,8 @@ import org.reactome.curation.model.SimpleInstance;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.service.helper.StoichiometryObject;
 import org.reactome.server.graph.service.util.DatabaseObjectUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.data.neo4j.core.Neo4jTemplate;
 import org.springframework.data.neo4j.core.schema.Relationship;
@@ -41,6 +45,7 @@ import lombok.Data;
 @Repository
 @Data
 public class CurationRepository {
+    private static final Logger logger = LoggerFactory.getLogger(CurationRepository.class);
     // To be used to set the relationship properties
     private static final String STOICHIOMETRY = "stoichiometry";
     private static final String ORDER = "order";
@@ -361,19 +366,28 @@ public class CurationRepository {
      */
     public List<SimpleInstance> listInstances(String className,
                                               int skip,
-                                              int limit) {
+                                              int limit,
+                                              String text) {
         var instance = Cypher.node(className).named("inst");
-        var query = Cypher.match(instance)
-                          .returning(instance.property("dbId"), instance.property("displayName"))
-                          .orderBy(instance.property("displayName"))
-                          .skip(skip)
-                          .limit(limit)
-                          .build();
-        Collection<Map<String, Object>> all = neo4jClient.query(query.getCypher())
+        Condition condition = createDisplayNameQueryCondition(text, instance);
+        var query = Cypher.match(instance);
+        if (condition != null)
+            query.where(condition);
+        var queryBuild = query.returning(instance.property("dbId"), instance.property("displayName"))
+             .orderBy(instance.property("displayName"))
+             .skip(skip)
+             .limit(limit)
+             .build();
+        Collection<Map<String, Object>> all = neo4jClient.query(queryBuild.getCypher())
                 .fetch()
                 .all();
         List<SimpleInstance> rtn = new ArrayList<>();
         for (Map<String, Object> map : all) {
+            // This should not occur. However, just in case
+            if (map.get("inst.dbId") == null) {
+                logger.error("Return result with dbId = null: " + className + ", " + skip + ", " + limit);
+                continue;
+            }
             SimpleInstance inst = new SimpleInstance();
             inst.setDbId(Long.parseLong(map.get("inst.dbId").toString()));
             inst.setDisplayName(map.get("inst.displayName").toString());
@@ -381,7 +395,26 @@ public class CurationRepository {
         }
         return rtn;
     }
+
+    private Condition createDisplayNameQueryCondition(String text, Node instance) {
+        Condition condition = null;
+        if (text != null) {
+            // Find display names containing text using regex
+            var displayName = instance.property("displayName");
+            condition = displayName.matches(".*(?i)" + text + ".*");
+        }
+        return condition;
+    }
     
+    public Integer countInstances(String clsName, String text) {
+        var instance = Cypher.node(clsName).named("inst");
+        Condition condition = createDisplayNameQueryCondition(text, instance);
+        var query = Cypher.match(instance);
+        if (condition != null)
+            query.where(condition);
+        var queryBuild = query.returning(Functions.count(instance)).build();
+        return neo4jClient.query(queryBuild.getCypher()).fetchAs(Integer.class).one().get();
+    }
 
     /**
      * Get the list of class names in the database.
@@ -398,6 +431,16 @@ public class CurationRepository {
         // This should be called once so the query is kept here
         String query = "CREATE INDEX db_id_index IF NOT EXISTS FOR (n:DatabaseObject) ON (n.dbId)";
         neo4jClient.query(query).run(); // Nothing is needed but still need to get something. Otherwise Cypher is not sent.
+        // Create another index for _displayName for named based search (e.g. contains)
+        query = "CREATE TEXT INDEX databaseobject_text_index_displayname IF "
+                + "NOT EXISTS FOR (n:DatabaseObject) ON (n.displayName)";
+        neo4jClient.query(query).run(); 
+//        // Create range index for order by displayName
+//        query = "CREATE RANGE INDEX databaseobject_range_index_displayname IF NOT EXISTS for (n:DatabaseObject) on (n.displayName)";
+//        neo4jClient.query(query).run();
+        // For node lookup: by creating this index, we limit the search! (try profile in cypher!).
+        query = "CREATE LOOKUP INDEX node_label_lookup_index IF NOT EXISTS FOR (n) ON EACH labels(n)";
+        neo4jClient.query(query).run();
     }
 
 //    MATCH

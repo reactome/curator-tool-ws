@@ -10,8 +10,6 @@ import org.junit.jupiter.api.Test;
 import org.reactome.curation.controller.DatabaseObjectInstanceConverter;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.server.graph.domain.model.Complex;
-import org.reactome.server.graph.domain.model.DatabaseObject;
-import org.reactome.server.graph.domain.model.Pathway;
 import org.reactome.server.graph.domain.model.Reaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,7 +90,28 @@ class RESTfulAPITests {
         System.out.println(json);
         // Try reactions
         className = "Reaction";
-        url = BASE_URL + "listInstances/" + className + "/100/20";
+        url = BASE_URL + "listInstances/" + className + "/100/20?query=EGFR";
+        json = mockMvc.perform(get(url))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        System.out.println(json);
+    }
+    
+    @Test
+    public void testCountInstances() throws Exception {
+        String className = "Reaction";
+        String url = BASE_URL + "countInstances/" + className;
+        String json = mockMvc.perform(get(url))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        System.out.println(json);
+        // Query for some text
+        System.out.println("Count instances for some text: EGFR");
+        url = BASE_URL + "countInstances/" + className + "?query=EGFR";
         json = mockMvc.perform(get(url))
                 .andExpect(status().isOk())
                 .andReturn()
