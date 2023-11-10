@@ -18,7 +18,6 @@ import org.reactome.curation.repository.CurationRepository;
 //import org.reactome.server.graph.aop.LazyFetchAspect;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.repository.AdvancedDatabaseObjectRepository;
-import org.reactome.server.graph.repository.SchemaRepository;
 import org.reactome.server.graph.service.helper.AttributeClass;
 import org.reactome.server.graph.service.helper.AttributeProperties;
 import org.reactome.server.graph.service.util.DatabaseObjectUtils;
