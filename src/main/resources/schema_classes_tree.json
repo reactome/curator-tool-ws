@@ -95,22 +95,19 @@
     "name" : "DatabaseIdentifier",
     "abstract" : false
   }, {
-    "name" : "DrugType",
-    "abstract" : false
-  }, {
     "name" : "EntityFunctionalStatus",
     "abstract" : false
   }, {
     "name" : "Event",
     "children" : [ {
-      "name" : "CellLineagePath",
-      "abstract" : false
-    }, {
       "name" : "InteractionEvent",
       "abstract" : false
     }, {
       "name" : "Pathway",
       "children" : [ {
+        "name" : "CellLineagePath",
+        "abstract" : false
+      }, {
         "name" : "TopLevelPathway",
         "abstract" : false
       } ],
@@ -202,9 +199,6 @@
     "abstract" : true
   }, {
     "name" : "NegativePrecedingEvent",
-    "abstract" : false
-  }, {
-    "name" : "Ontology",
     "abstract" : false
   }, {
     "name" : "Person",
@@ -325,9 +319,6 @@
       "abstract" : false
     } ],
     "abstract" : true
-  }, {
-    "name" : "RegulationType",
-    "abstract" : false
   }, {
     "name" : "Summation",
     "abstract" : false
