@@ -109,6 +109,23 @@ public class CurationController {
     }
     
     /**
+     * Update an existing object.
+     * @param instance
+     * @return
+     */
+    @PostMapping("update")
+    public Long update(@RequestBody SimpleInstance instance) {
+        try {
+            DatabaseObject databaseObject = converter.convert(instance);
+            return service.update(databaseObject);
+        }
+        catch(Exception e) {
+            logger.error("CurationController.update: " + e.getMessage(), e);
+            throw new IllegalStateException(e.getMessage());
+        }
+    }
+    
+    /**
      * Delete a SimpleInstance object. 
      * @param instance
      * @return

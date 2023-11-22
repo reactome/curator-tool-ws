@@ -124,6 +124,16 @@ public class CurationService {
         TypeReference<HashMap<String, List<CurationAttribute>>> typeRef = new TypeReference<>(){};
         return mapper.readValue(is, typeRef);
     }
+    
+    /**
+     * Update the whole object.
+     * @param obj
+     * @return the original dbId of the passed obj if update works fine.
+     * @throws Exception
+     */
+    public Long update(DatabaseObject obj) throws Exception {
+        return curationRepository.update(obj);
+    }
 
     /**
      * Update an attribute value for the passed DatabaseObject. The DatabaseObject should have

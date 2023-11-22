@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.model.SimpleInstance;
@@ -129,7 +130,10 @@ public class DatabaseObjectInstanceConverter {
                 value = convert((SimpleInstance)value, id2object);
             }
             else if (value instanceof Collection) { 
-                Object anyValue = ((Collection) value).stream().findAny().get();
+                Optional<?> any = ((Collection) value).stream().findAny();
+                if (any.isEmpty())
+                    continue; // Do nothing
+                Object anyValue = any.get();
                 if (anyValue instanceof SimpleInstance) {
                     // Need to convert the list to a list of SimpleInstance
                     List<DatabaseObject> tmpList = new ArrayList<>();

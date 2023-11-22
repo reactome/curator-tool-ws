@@ -112,6 +112,7 @@ public class CurationRepository {
      * @return true if nothing wrong. The detailed information is not returned here.
      * @throws Exception
      */
+    @Transactional
     public Boolean delete(DatabaseObject obj) {
         // Make sure there is a node having this dbId
         if (!neo4jTemplate.existsById(obj.getDbId(), obj.getClass())) {
@@ -140,7 +141,7 @@ public class CurationRepository {
      * Note: There is a bug in the original graph-core code regarding the order of StoichiometryObject
      * used in input, output, and hasComponent. The order is _displayName based, which most likely is
      * not true. This needs a further investigation.
-     * TODO: Check relationships enoded by specific classes, e.g., input, output, hasMember.
+     * TODO: Check relationships encoded by specific classes, e.g., input, output, hasMember.
      * @param obj
      * @return
      * @throws IllegalAccessException 
@@ -152,8 +153,10 @@ public class CurationRepository {
      */
     @Transactional
     public Long store(DatabaseObject obj) throws Exception {
-        if (obj.getDbId() != null && obj.getDbId() > 0)
-            throw new IllegalArgumentException(obj + " has dbId set. Use update to update its content in the database.");
+        // Only instance that has not been in the database can be stored
+        if (obj.getDbId() != null && neo4jTemplate.existsById(obj.getDbId(), obj.getClass())) {
+            throw new IllegalStateException(obj + " is in the database and cannot be stored. Call update instead.");
+        }
         // Get all get methods
         Map<String, Object> field2value = DatabaseObjectUtils.getAllFields(obj, false); // Use "false" to avoid empty fields
         // Make sure existing DatabaseObject referred by the passed obj still exists to
@@ -178,7 +181,8 @@ public class CurationRepository {
                 storeValueObj(value);
         }
         // Now we can start to store
-        obj.setDbId(nextDbId());
+        if (obj.getDbId() == null || obj.getDbId() < 0)
+            obj.setDbId(nextDbId());
         // To do save, we create a DatabaseObject without relationships first
         DatabaseObject proxyNode = obj.getClass().getConstructor().newInstance();
         for (String field : field2value.keySet()) {
@@ -245,7 +249,7 @@ public class CurationRepository {
         if (value instanceof DatabaseObject) {
             DatabaseObject valueObj = (DatabaseObject) value;
             if (valueObj.getDbId() == null || valueObj.getDbId() < 0)
-                return store(valueObj); // We should not Spring creates another transaction for this call (see https://www.marcobehler.com/guides/spring-transaction-management-transactional-in-depth)
+                return store(valueObj); // We should not let Spring creates another transaction for this call (see https://www.marcobehler.com/guides/spring-transaction-management-transactional-in-depth)
         }
         else if (value instanceof StoichiometryObject) {
             StoichiometryObject stoiObj = (StoichiometryObject) value;
@@ -414,6 +418,26 @@ public class CurationRepository {
             query.where(condition);
         var queryBuild = query.returning(Functions.count(instance)).build();
         return neo4jClient.query(queryBuild.getCypher()).fetchAs(Integer.class).one().get();
+    }
+    
+    
+    /**
+     * Update the DatabaseObject stored in the database. The current implementation is first to delete
+     * this object and then store it. This two-step process probably is the cleanest and the most simply 
+     * one, but with performance penalty. 
+     * @param obj
+     * @return The original DB_ID should be returned if update works fine.
+     * @throws Exception
+     * TODO: Make sure there is only one transaction applied.
+     */
+    @Transactional
+    public Long update(DatabaseObject obj) throws Exception {
+        boolean deleted = delete(obj);
+        if (!deleted)
+            throw new IllegalStateException("Cannot deleted the object first to update: " + 
+                                obj.getDisplayName() + " [" + obj.getDbId() + "]");
+        Long dbId = store(obj);
+        return dbId;
     }
 
     /**
