@@ -434,10 +434,26 @@ public class CurationRepository {
     public Long update(DatabaseObject obj) throws Exception {
         boolean deleted = delete(obj);
         if (!deleted)
-            throw new IllegalStateException("Cannot deleted the object first to update: " + 
+            throw new IllegalStateException("Cannot delete the object first to update: " + 
                                 obj.getDisplayName() + " [" + obj.getDbId() + "]");
         Long dbId = store(obj);
         return dbId;
+    }
+    
+    /**
+     * Though the client to this object can call update or store, it is recommended to
+     * call this method directly and let it to figure out the passed object should be 
+     * store or update.
+     * @param obj
+     * @return
+     * @throws Exception
+     */
+    @Transactional
+    public Long commit(DatabaseObject obj) throws Exception {
+        if (obj.getDbId() != null && neo4jTemplate.existsById(obj.getDbId(), obj.getClass())) 
+            return update(obj);
+        else
+            return store(obj);
     }
 
     /**

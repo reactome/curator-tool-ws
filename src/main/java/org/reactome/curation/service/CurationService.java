@@ -96,6 +96,10 @@ public class CurationService {
         return curationRepository.store(obj);
     }
     
+    public Long commit(DatabaseObject obj) throws Exception {
+        return curationRepository.commit(obj);
+    }
+    
     public List<CurationAttribute> getAttributes(String clsName) throws Exception {
         if (clsName2Attributes == null) {
             logger.error("clsName2Attributes is not initialized.");

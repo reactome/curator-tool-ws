@@ -84,12 +84,6 @@ class ControllerTests {
         }
     }
 
-    @Test
-    public void testStoreComplexWithNewValue() throws Exception {
-        Complex complex = CurationWSTestHelper.createComplexWithNewComplexAndSubunit();
-        Long dbId = controller.store(complex);
-        logger.info("Store a new Complex with new value: " + dbId);
-    }
     
     /**
      * Use this method to test update a complex's display name and with one literature reference replaced by
@@ -110,7 +104,7 @@ class ControllerTests {
         ((Complex)complex).setLiteratureReference(refs);
         SimpleInstance instance = converter.convert(complex);
 //        converter.convert(instance);
-        controller.update(instance);
+        controller.commit(instance);
     }
 
 }
