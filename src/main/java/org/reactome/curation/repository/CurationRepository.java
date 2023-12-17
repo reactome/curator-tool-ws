@@ -17,6 +17,7 @@ import org.neo4j.cypherdsl.core.Node;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReading;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingUpdate;
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
+import org.reactome.curation.model.CuratorToolWSUtils;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.service.helper.StoichiometryObject;
@@ -192,8 +193,7 @@ public class CurationRepository {
             if (field.equals("schemaClass"))
                 continue;
             Object value = field2value.get(field);
-            Method method = obj.getClass().getMethod("set" + field.substring(0, 1).toUpperCase() + field.substring(1),
-                    value.getClass());
+            Method method = CuratorToolWSUtils.getSetMethod(field, value, obj);
             if (method == null)
                 throw new IllegalStateException("Cannot find method to set " + field + " in class, " + obj.getClass().getSimpleName());
             method.invoke(proxyNode, value);
@@ -298,7 +298,13 @@ public class CurationRepository {
     }
 
     private String getNodeLabel(DatabaseObject obj) {
-        String clsName = obj.getClass().getSimpleName();
+        // This is a hack for convenience in case a SimpleInstance is used
+        // for attribute values
+        String clsName = null;
+        if (obj instanceof SimpleInstance)
+            clsName = DatabaseObject.class.getSimpleName();
+        else
+            clsName = obj.getClass().getSimpleName();
         int index = clsName.lastIndexOf(".");
         return clsName.substring(index + 1);
     }

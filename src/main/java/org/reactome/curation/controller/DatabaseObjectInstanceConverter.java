@@ -11,6 +11,7 @@ import java.util.Optional;
 
 import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.model.SimpleInstance;
+import org.reactome.curation.model.CuratorToolWSUtils;
 import org.reactome.curation.service.CurationService;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.slf4j.Logger;
@@ -113,7 +114,7 @@ public class DatabaseObjectInstanceConverter {
         // been converted already to avoid falling into a infinity loop.
         if (id2object.containsKey(instance.getDbId()))
             return id2object.get(instance.getDbId()); 
-        DatabaseObject databaseObject = newInstance(instance.getSchemaClassName());
+        DatabaseObject databaseObject = newInstance(instance);
         id2object.put(instance.getDbId(), databaseObject);
         // The basic information
         databaseObject.setDbId(instance.getDbId());
@@ -144,7 +145,7 @@ public class DatabaseObjectInstanceConverter {
                     value = tmpList;
                 }
             }
-            Method setMethod = getSetMethod(attributeName, value, databaseObject);
+            Method setMethod = CuratorToolWSUtils.getSetMethod(attributeName, value, databaseObject);
             if (setMethod == null) { // This should not occur since getSetMethod has checked already. Just in case!
                 logger.error("Cannot find a set method for " + attributeName + " in " + instance.getSchemaClassName());
                 continue;
@@ -154,18 +155,10 @@ public class DatabaseObjectInstanceConverter {
         return databaseObject;
     }
     
-    private Method getSetMethod(String attributeName, 
-                                Object value,
-                                DatabaseObject object) throws Exception {
-        String methodName = "set" + attributeName.substring(0, 1).toUpperCase() + attributeName.substring(1);
-        Class parameterCls = value.getClass();
-        if (parameterCls == ArrayList.class)
-            parameterCls = List.class; // Make it more generic since it is used in class defintions
-        Method method = object.getClass().getMethod(methodName, parameterCls);
-        return method;
-    }
-    
-    private DatabaseObject newInstance(String schemaClassName) throws Exception {
+    private DatabaseObject newInstance(SimpleInstance instance) throws Exception {
+        String schemaClassName = instance.getSchemaClassName();
+        if (schemaClassName == null)
+            return instance; // Use this instance directly. Most likely we just need to use its dbId.
         // Assumed all graph model classes are in the same package
         String packageName = DatabaseObject.class.getPackageName();
         String clsName = packageName + "." + schemaClassName;

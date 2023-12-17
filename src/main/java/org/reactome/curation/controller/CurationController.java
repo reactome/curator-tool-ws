@@ -76,7 +76,7 @@ public class CurationController {
             return service.commit(databaseObject);
         }
         catch(Exception e) {
-            logger.error("CurationController.update: " + e.getMessage(), e);
+            logger.error("CurationController.commit: " + e.getMessage(), e);
             throw new IllegalStateException(e.getMessage());
         } 
     }

@@ -286,7 +286,7 @@ class RESTfulAPITests {
         ObjectMapper mapper = CurationWSTestHelper.createObjectMapper();
         String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(instance);
         logger.info("Complex in JSON:\n" + json);
-        String url = BASE_URL + "store";
+        String url = BASE_URL + "commit";
         logger.info("URL: " + url);
         String dbId = mockMvc.perform(post(url).contentType(MediaType.APPLICATION_JSON)
                            .content(json))
