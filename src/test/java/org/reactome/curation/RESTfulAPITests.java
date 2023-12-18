@@ -5,7 +5,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import org.gk.model.ReactomeJavaConstants;
 import org.junit.jupiter.api.Test;
 import org.reactome.curation.controller.DatabaseObjectInstanceConverter;
 import org.reactome.curation.model.SimpleInstance;
@@ -179,10 +178,11 @@ class RESTfulAPITests {
         assertNotNull(mockMvc);
         String[] clsNames = {
 //                ReactomeJavaConstants.EntityWithAccessionedSequence,
-                ReactomeJavaConstants.Pathway,
+//                ReactomeJavaConstants.Pathway,
 //                ReactomeJavaConstants.Reaction,
 //                ReactomeJavaConstants.ReferenceGeneProduct,
 //                ReactomeJavaConstants.Species
+                "ReviewStatus" // A new class
         };
         String url = BASE_URL + "getAttributes/";
         for (String clsName : clsNames) {
@@ -282,10 +282,11 @@ class RESTfulAPITests {
     public void testStoreComplexWithNewValue() throws Exception {
         assertNotNull(mockMvc);
         Complex complex = CurationWSTestHelper.createComplexWithNewComplexAndSubunit();
+        SimpleInstance instance = converter.convert(complex);
         ObjectMapper mapper = CurationWSTestHelper.createObjectMapper();
-        String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(complex);
+        String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(instance);
         logger.info("Complex in JSON:\n" + json);
-        String url = BASE_URL + "store";
+        String url = BASE_URL + "commit";
         logger.info("URL: " + url);
         String dbId = mockMvc.perform(post(url).contentType(MediaType.APPLICATION_JSON)
                            .content(json))
@@ -295,6 +296,7 @@ class RESTfulAPITests {
                            .getContentAsString();
         logger.info("Done saving a new Complex: " + dbId);
     }
+    
     
     @Test
     public void testStoreReactionWithNewValues() throws Exception {

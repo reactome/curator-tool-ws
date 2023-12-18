@@ -4,7 +4,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
 import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.model.SimpleSchemaClass;
@@ -60,52 +59,29 @@ public class CurationController {
             throw new IllegalStateException(e.getMessage());
         }
     }
-    
+
     //TODO: The error handling needs to be updated
-    // See: https://www.toptal.com/java/spring-boot-rest-api-error-handling 
+    // See: https://www.toptal.com/java/spring-boot-rest-api-error-handling  
     /**
-     * The obj needs to have java class information. Need a template for the front-end to see what information is needed
-     * so that Spring cannot automatically convert JSON to obj.
-     * @param obj
+     * Call this method to either store a new instance or update an existing 
+     * instance. The implementation of this method will figure out which approach
+     * should be used.
+     * @param instance
      * @return
      */
-    @PostMapping("storeDatabaseObject")
-    public Long store(@RequestBody DatabaseObject obj) {
+    @PostMapping("commit")
+    public SimpleInstance commit(@RequestBody SimpleInstance instance) {
         try {
-            return service.store(obj);
-        }
-        catch(DatabaseObjectNotFoundException e) {
-            logger.error("CurationController.store: " + e.getMessage(), e);
-            throw e; // Return to the client
-        }
-        catch(Exception e) {
-            logger.error("CurationController.store: " + e.getMessage(), e);
-            throw new IllegalStateException(e.getMessage());
-        }
-    }
-    
-    //TODO: The error handling needs to be updated
-    // See: https://www.toptal.com/java/spring-boot-rest-api-error-handling 
-    /**
-     * Store a new SimpleInstance object that is posted in JSON.
-     * @param obj
-     * @return
-     */
-    @PostMapping("store")
-    public Long store(@RequestBody SimpleInstance instance) {
-        try {
-//            System.out.println(instance);
             DatabaseObject databaseObject = converter.convert(instance);
-            return service.store(databaseObject);
-        }
-        catch(DatabaseObjectNotFoundException e) {
-            logger.error("CurationController.store: " + e.getMessage(), e);
-            throw e; // Return to the client
+            DatabaseObject stored = service.commit(databaseObject);
+            // For the front end, we just need to return a SimpleInstance having attributes that may change
+            SimpleInstance rtn = converter.convertInShell(stored);
+            return rtn;
         }
         catch(Exception e) {
-            logger.error("CurationController.store: " + e.getMessage(), e);
+            logger.error("CurationController.commit: " + e.getMessage(), e);
             throw new IllegalStateException(e.getMessage());
-        }
+        } 
     }
     
     /**

@@ -86,14 +86,8 @@ public class CurationService {
        return objectRepository.findById(dbId, 1);
     }
     
-    /**
-     * Store a new DatabaseObject into a repository.
-     * @param obj
-     * @return
-     * @throws Exception
-     */
-    public Long store(DatabaseObject obj) throws Exception {
-        return curationRepository.store(obj);
+    public DatabaseObject commit(DatabaseObject obj) throws Exception {
+        return curationRepository.commit(obj);
     }
     
     public List<CurationAttribute> getAttributes(String clsName) throws Exception {

@@ -7,6 +7,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.reactome.server.graph.domain.model.DatabaseObject;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonParser;
@@ -16,25 +18,26 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 /**
  * Similar to SimpleSchemaClass, this is a a very simple port of the original
  * GKInstance in Java MySQL API to model the instance for the web frontend for
  * easy parsing and tight control.
  * 
+ * TODO: This is implemented as a subclass to DatabaseObject for convenience. However, more
+ * tests may be needed to make sure there is no side effects existing. we may consider 
+ * to use this class completely without going to DatabaseObject, just like Java API to
+ * MySQL database.
+ * 
  * @author wug
  *
  */
-@Data
-@NoArgsConstructor
 @JsonInclude(Include.NON_NULL)
 @JsonDeserialize(using = SimpleInstanceDeserializer.class)
-public class SimpleInstance {
+@SuppressWarnings("serial")
+public class SimpleInstance extends DatabaseObject {
 
-    private Long dbId;
-    private String displayName;
+//    private Long dbId;
+//    private String displayName;
     private String schemaClassName;
     private Map<String, Object> attributes;
 
@@ -42,6 +45,22 @@ public class SimpleInstance {
         if (attributes == null)
             attributes = new HashMap<>();
         attributes.put(attributeName, value);
+    }
+
+    public String getSchemaClassName() {
+        return schemaClassName;
+    }
+
+    public void setSchemaClassName(String schemaClassName) {
+        this.schemaClassName = schemaClassName;
+    }
+
+    public Map<String, Object> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(Map<String, Object> attributes) {
+        this.attributes = attributes;
     }
 
 }

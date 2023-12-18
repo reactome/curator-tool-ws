@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.gk.model.InstanceDisplayNameGenerator;
 import org.neo4j.cypherdsl.core.Condition;
 import org.neo4j.cypherdsl.core.Cypher;
 import org.neo4j.cypherdsl.core.Functions;
@@ -17,6 +18,7 @@ import org.neo4j.cypherdsl.core.Node;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReading;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingUpdate;
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
+import org.reactome.curation.model.CuratorToolWSUtils;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.service.helper.StoichiometryObject;
@@ -28,6 +30,8 @@ import org.springframework.data.neo4j.core.Neo4jTemplate;
 import org.springframework.data.neo4j.core.schema.Relationship;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.fasterxml.jackson.annotation.SimpleObjectIdResolver;
 
 import lombok.Data;
 
@@ -112,6 +116,7 @@ public class CurationRepository {
      * @return true if nothing wrong. The detailed information is not returned here.
      * @throws Exception
      */
+    @Transactional
     public Boolean delete(DatabaseObject obj) {
         // Make sure there is a node having this dbId
         if (!neo4jTemplate.existsById(obj.getDbId(), obj.getClass())) {
@@ -129,6 +134,16 @@ public class CurationRepository {
                                                     // as long as no exception is thrown.
         return true;
     }
+    
+    /**
+     * Check if the display name needs to be updated.
+     * @param obj
+     * @throws Exception
+     */
+    private void updateDisplayName(DatabaseObject obj) throws Exception {
+        // To be updated
+//        String newDisplayName = InstanceDisplayNameGenerator
+    }
 
     /**
      * Store a new DatabaseObject. The DatabaseObject should be new and doesn't have a POSITIVE
@@ -140,7 +155,7 @@ public class CurationRepository {
      * Note: There is a bug in the original graph-core code regarding the order of StoichiometryObject
      * used in input, output, and hasComponent. The order is _displayName based, which most likely is
      * not true. This needs a further investigation.
-     * TODO: Check relationships enoded by specific classes, e.g., input, output, hasMember.
+     * TODO: Check relationships encoded by specific classes, e.g., input, output, hasMember.
      * @param obj
      * @return
      * @throws IllegalAccessException 
@@ -151,9 +166,13 @@ public class CurationRepository {
      * @throws IllegalArgumentException 
      */
     @Transactional
-    public Long store(DatabaseObject obj) throws Exception {
-        if (obj.getDbId() != null && obj.getDbId() > 0)
-            throw new IllegalArgumentException(obj + " has dbId set. Use update to update its content in the database.");
+    public DatabaseObject store(DatabaseObject obj) throws Exception {
+        // Only instance that has not been in the database can be stored
+        if (obj.getDbId() != null && neo4jTemplate.existsById(obj.getDbId(), obj.getClass())) {
+            throw new IllegalStateException(obj + " is in the database and cannot be stored. Call update instead.");
+        }
+        // Make sure the display name is still correct.
+        updateDisplayName(obj);
         // Get all get methods
         Map<String, Object> field2value = DatabaseObjectUtils.getAllFields(obj, false); // Use "false" to avoid empty fields
         // Make sure existing DatabaseObject referred by the passed obj still exists to
@@ -178,7 +197,8 @@ public class CurationRepository {
                 storeValueObj(value);
         }
         // Now we can start to store
-        obj.setDbId(nextDbId());
+        if (obj.getDbId() == null || obj.getDbId() < 0)
+            obj.setDbId(nextDbId());
         // To do save, we create a DatabaseObject without relationships first
         DatabaseObject proxyNode = obj.getClass().getConstructor().newInstance();
         for (String field : field2value.keySet()) {
@@ -188,8 +208,7 @@ public class CurationRepository {
             if (field.equals("schemaClass"))
                 continue;
             Object value = field2value.get(field);
-            Method method = obj.getClass().getMethod("set" + field.substring(0, 1).toUpperCase() + field.substring(1),
-                    value.getClass());
+            Method method = CuratorToolWSUtils.getSetMethod(field, value, obj);
             if (method == null)
                 throw new IllegalStateException("Cannot find method to set " + field + " in class, " + obj.getClass().getSimpleName());
             method.invoke(proxyNode, value);
@@ -232,7 +251,7 @@ public class CurationRepository {
             // Commit these changes
             neo4jClient.query(update.build().getCypher()).run(); // Nothing should be returned
         }
-        return obj.getDbId();
+        return obj;
     }
     
     /**
@@ -241,11 +260,11 @@ public class CurationRepository {
      * @return
      * @throws Exception
      */
-    private Long storeValueObj(Object value) throws Exception {
+    private DatabaseObject storeValueObj(Object value) throws Exception {
         if (value instanceof DatabaseObject) {
             DatabaseObject valueObj = (DatabaseObject) value;
             if (valueObj.getDbId() == null || valueObj.getDbId() < 0)
-                return store(valueObj); // We should not Spring creates another transaction for this call (see https://www.marcobehler.com/guides/spring-transaction-management-transactional-in-depth)
+                return store(valueObj); // We should not let Spring creates another transaction for this call (see https://www.marcobehler.com/guides/spring-transaction-management-transactional-in-depth)
         }
         else if (value instanceof StoichiometryObject) {
             StoichiometryObject stoiObj = (StoichiometryObject) value;
@@ -294,7 +313,13 @@ public class CurationRepository {
     }
 
     private String getNodeLabel(DatabaseObject obj) {
-        String clsName = obj.getClass().getSimpleName();
+        // This is a hack for convenience in case a SimpleInstance is used
+        // for attribute values
+        String clsName = null;
+        if (obj instanceof SimpleInstance)
+            clsName = DatabaseObject.class.getSimpleName();
+        else
+            clsName = obj.getClass().getSimpleName();
         int index = clsName.lastIndexOf(".");
         return clsName.substring(index + 1);
     }
@@ -414,6 +439,41 @@ public class CurationRepository {
             query.where(condition);
         var queryBuild = query.returning(Functions.count(instance)).build();
         return neo4jClient.query(queryBuild.getCypher()).fetchAs(Integer.class).one().get();
+    }
+    
+    
+    /**
+     * Update the DatabaseObject stored in the database. The current implementation is first to delete
+     * this object and then store it. This two-step process probably is the cleanest and the most simply 
+     * one, but with performance penalty. 
+     * @param obj
+     * @return The original DB_ID should be returned if update works fine.
+     * @throws Exception
+     * TODO: Make sure there is only one transaction applied.
+     */
+    @Transactional
+    public DatabaseObject update(DatabaseObject obj) throws Exception {
+        boolean deleted = delete(obj);
+        if (!deleted)
+            throw new IllegalStateException("Cannot delete the object first to update: " + 
+                                obj.getDisplayName() + " [" + obj.getDbId() + "]");
+        return store(obj);
+    }
+    
+    /**
+     * Though the client to this object can call update or store, it is recommended to
+     * call this method directly and let it to figure out the passed object should be 
+     * store or update.
+     * @param obj
+     * @return
+     * @throws Exception
+     */
+    @Transactional
+    public DatabaseObject commit(DatabaseObject obj) throws Exception {
+        if (obj.getDbId() != null && neo4jTemplate.existsById(obj.getDbId(), obj.getClass())) 
+            return update(obj);
+        else
+            return store(obj);
     }
 
     /**

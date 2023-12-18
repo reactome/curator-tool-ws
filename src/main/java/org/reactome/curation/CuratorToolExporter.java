@@ -2,6 +2,7 @@ package org.reactome.curation;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -12,6 +13,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.gk.model.ReactomeJavaConstants;
 import org.gk.persistence.MySQLAdaptor;
 import org.gk.schema.Schema;
 import org.gk.schema.SchemaAttribute;
@@ -19,6 +21,7 @@ import org.gk.schema.SchemaClass;
 import org.junit.Test;
 import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.model.SimpleSchemaClass;
+import org.reactome.server.graph.domain.model.TopLevelPathway;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 import org.slf4j.Logger;
@@ -69,6 +72,20 @@ public class CuratorToolExporter {
         System.out.println("Total graph classes: " + graphClasses.size());
         Map<String, SimpleSchemaClass> name2simpleClass = new HashMap<>();
         for (Class<?> graphClass : graphClasses) {
+            // Remove any class that has been deprecated (only two, Ontology and RegulationType)
+            boolean isDeprecated = false;
+            Annotation[] annotations = graphClass.getAnnotations();
+            for (Annotation annotation : annotations) {
+                if (annotation instanceof java.lang.Deprecated) {
+                    isDeprecated = true;
+                    break;
+                }
+            }
+            if (isDeprecated)
+                continue;
+            // This class should not be exported
+            if (graphClass.getSimpleName().equals(ReactomeJavaConstants.DrugType))
+                continue;
             SimpleSchemaClass simpleClass = new SimpleSchemaClass();
             simpleClass.setName(graphClass.getSimpleName());
             simpleClass.setAbstract(Modifier.isAbstract(graphClass.getModifiers()));
@@ -78,6 +95,9 @@ public class CuratorToolExporter {
         for (Class<?> graphClass : graphClasses) {
             // This should be the root, don't check it
             if (graphClass == root)
+                continue;
+            // Escaped
+            if (!name2simpleClass.containsKey(graphClass.getSimpleName()))
                 continue;
             Class<?> superClass = graphClass.getSuperclass();
             SimpleSchemaClass simpleSuperClass = name2simpleClass.get(superClass.getSimpleName());
@@ -119,7 +139,8 @@ public class CuratorToolExporter {
     }
     
     /**
-     * Dump curation specific attributes
+     * Dump curation specific attributes. They are all flattened without hierarchical relationships for easy
+     * handling.
      */
     @SuppressWarnings("unchecked")
     public void dumpAttributes(String fileName) throws Exception {
@@ -152,9 +173,13 @@ public class CuratorToolExporter {
             }
             clsName2attributes.put(cls.getName(), curationAttributes);
         }
+        // Hacking this so that we have a top level pathway
+        clsName2attributes.put(TopLevelPathway.class.getSimpleName(), 
+                clsName2attributes.get(ReactomeJavaConstants.Pathway));
         ObjectMapper mapper = new ObjectMapper();
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
         mapper.writeValue(new File(fileName), clsName2attributes);
+        System.out.println("Done dumping: " + fileName);
     }
     
     /**

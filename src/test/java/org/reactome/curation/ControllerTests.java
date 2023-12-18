@@ -4,26 +4,27 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.gk.model.ReactomeJavaConstants;
 import org.junit.jupiter.api.Test;
 import org.reactome.curation.controller.CurationController;
+import org.reactome.curation.controller.DatabaseObjectInstanceConverter;
 import org.reactome.curation.model.CurationAttribute;
+import org.reactome.curation.model.SimpleInstance;
 import org.reactome.server.graph.domain.model.Complex;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.domain.model.Figure;
 import org.reactome.server.graph.domain.model.InstanceEdit;
+import org.reactome.server.graph.domain.model.LiteratureReference;
 import org.reactome.server.graph.domain.model.Pathway;
+import org.reactome.server.graph.domain.model.Publication;
 import org.reactome.server.graph.domain.model.ReferenceDatabase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
-import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator;
 
 @SpringBootTest
 class ControllerTests {
@@ -32,6 +33,8 @@ class ControllerTests {
 
     @Autowired
     private CurationController controller;
+    @Autowired
+    private DatabaseObjectInstanceConverter converter;
 
     @Test
     void contextLoads() {
@@ -81,11 +84,27 @@ class ControllerTests {
         }
     }
 
+    
+    /**
+     * Use this method to test update a complex's display name and with one literature reference replaced by
+     * another. The tested complex is created by another test, testStoreComplexWithNewValue.
+     * @throws Exception
+     */
     @Test
-    public void testStoreComplexWithNewValue() throws Exception {
-        Complex complex = CurationWSTestHelper.createComplexWithNewComplexAndSubunit();
-        Long dbId = controller.store(complex);
-        logger.info("Store a new Complex with new value: " + dbId);
+    public void testUpdateComplex() throws Exception {
+        Long dbId = 9851292L;
+        DatabaseObject complex = controller.findByDdId(dbId);
+        logger.info("Found complex: " + complex);
+        // Replace the display name
+        complex.setDisplayName("Updated Complex Name");
+        // Add literature references to test list and order
+        // Replace the second literature with a new one: 9624149L
+        Long[] refIds = {9626035L, 9622837L, 9615711L}; 
+        List<Publication> refs = Stream.of(refIds).map(id -> new LiteratureReference(id)).collect(Collectors.toList());
+        ((Complex)complex).setLiteratureReference(refs);
+        SimpleInstance instance = converter.convert(complex);
+//        converter.convert(instance);
+        controller.commit(instance);
     }
 
 }

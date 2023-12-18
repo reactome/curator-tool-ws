@@ -1,4 +1,165 @@
 {
+  "TopLevelPathway" : [ {
+    "definingType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "authored"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "crossReference"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "summation"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "literatureReference"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "structureModified"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "previousReviewStatus"
+  }, {
+    "definingType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "hasEvent"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "compartment"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "releaseStatus"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "reviewed"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "relatedSpecies"
+  }, {
+    "definingType" : "ALL_DEFINING",
+    "category" : "NOMANUALEDIT",
+    "name" : "deletedInstanceDB_ID"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "inferredFrom"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "dbId"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "figure"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "disease"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "releaseDate"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "edited"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "_doRelease"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "normalPathway"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOTDEFINED",
+    "name" : "deletedStableIdentifier"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "negativePrecedingEvent"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stId"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "REQUIRED",
+    "name" : "lastUpdatedDate"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "orthologousEvent"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "species"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "isCanonical"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "hasEHLD"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "displayName"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "evidenceType"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "goBiologicalProcess"
+  }, {
+    "definingType" : "NONE_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "reviewStatus"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "precedingEvent"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "revised"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "internalReviewed"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "doi"
+  } ],
   "NegativePrecedingEvent" : [ {
     "definingType" : "UNDEFINED",
     "category" : "REQUIRED",
