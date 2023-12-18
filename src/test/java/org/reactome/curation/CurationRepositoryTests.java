@@ -1,7 +1,6 @@
 package org.reactome.curation;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,7 +46,7 @@ class CurationRepositoryTests {
         logger.info("Test storing...");
         // Create a total new instance
         Summation summation = createSummation("Test Summation");
-        Long dbId = repository.store(summation);
+        Long dbId = repository.store(summation).getDbId();
         logger.info("Saved new Summation: " + dbId);
         // A new summation link to an old literature
         summation = createSummation("Test Summation with old lit from scratch");
@@ -58,7 +57,7 @@ class CurationRepositoryTests {
         // By using a simple empty object, the node properties will be gone though 
         // the relationships are still kept. This is not good. We have to load
         // all properties to make it work. Or just need to save relationships!
-        Long dbId1 = repository.store(summation);
+        Long dbId1 = repository.store(summation).getDbId();
         logger.info("Saved new Summation with an old lit created locally: " + dbId1);
         assertEquals(dbId + 1, dbId1);
         logger.info("Done with testing store.");
@@ -112,7 +111,7 @@ class CurationRepositoryTests {
             output.add(adp);
         reaction.setInput(input);
         reaction.setOutput(output);
-        Long dbId = repository.store(reaction);
+        Long dbId = repository.store(reaction).getDbId();
         logger.info("A new reaction stored with dbId: " + dbId);
         // ADP as the output
         logger.info("Done with testing storing Reaction.");
@@ -129,7 +128,7 @@ class CurationRepositoryTests {
     public void testSaveWithNewInstanceAsValue() throws Exception {
         logger.info("Test storing Instance using another new Instance...");
         Complex complex = CurationWSTestHelper.createComplexWithNewComplexAndSubunit();
-        Long dbId = repository.store(complex);
+        Long dbId = repository.store(complex).getDbId();
         logger.info("Newly stored complex having multiple layers of new values: " + dbId);
         logger.info("Done with storing test.");
     }

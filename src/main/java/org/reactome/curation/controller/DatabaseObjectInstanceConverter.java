@@ -83,7 +83,7 @@ public class DatabaseObjectInstanceConverter {
         return instance;
     }
     
-    private SimpleInstance convertInShell(DatabaseObject databaseObject) {
+    public SimpleInstance convertInShell(DatabaseObject databaseObject) {
         SimpleInstance instance = new SimpleInstance();
         instance.setDbId(databaseObject.getDbId());
         instance.setDisplayName(databaseObject.getDisplayName());

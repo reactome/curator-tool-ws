@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.gk.model.InstanceDisplayNameGenerator;
 import org.neo4j.cypherdsl.core.Condition;
 import org.neo4j.cypherdsl.core.Cypher;
 import org.neo4j.cypherdsl.core.Functions;
@@ -29,6 +30,8 @@ import org.springframework.data.neo4j.core.Neo4jTemplate;
 import org.springframework.data.neo4j.core.schema.Relationship;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.fasterxml.jackson.annotation.SimpleObjectIdResolver;
 
 import lombok.Data;
 
@@ -131,6 +134,16 @@ public class CurationRepository {
                                                     // as long as no exception is thrown.
         return true;
     }
+    
+    /**
+     * Check if the display name needs to be updated.
+     * @param obj
+     * @throws Exception
+     */
+    private void updateDisplayName(DatabaseObject obj) throws Exception {
+        // To be updated
+//        String newDisplayName = InstanceDisplayNameGenerator
+    }
 
     /**
      * Store a new DatabaseObject. The DatabaseObject should be new and doesn't have a POSITIVE
@@ -153,11 +166,13 @@ public class CurationRepository {
      * @throws IllegalArgumentException 
      */
     @Transactional
-    public Long store(DatabaseObject obj) throws Exception {
+    public DatabaseObject store(DatabaseObject obj) throws Exception {
         // Only instance that has not been in the database can be stored
         if (obj.getDbId() != null && neo4jTemplate.existsById(obj.getDbId(), obj.getClass())) {
             throw new IllegalStateException(obj + " is in the database and cannot be stored. Call update instead.");
         }
+        // Make sure the display name is still correct.
+        updateDisplayName(obj);
         // Get all get methods
         Map<String, Object> field2value = DatabaseObjectUtils.getAllFields(obj, false); // Use "false" to avoid empty fields
         // Make sure existing DatabaseObject referred by the passed obj still exists to
@@ -236,7 +251,7 @@ public class CurationRepository {
             // Commit these changes
             neo4jClient.query(update.build().getCypher()).run(); // Nothing should be returned
         }
-        return obj.getDbId();
+        return obj;
     }
     
     /**
@@ -245,7 +260,7 @@ public class CurationRepository {
      * @return
      * @throws Exception
      */
-    private Long storeValueObj(Object value) throws Exception {
+    private DatabaseObject storeValueObj(Object value) throws Exception {
         if (value instanceof DatabaseObject) {
             DatabaseObject valueObj = (DatabaseObject) value;
             if (valueObj.getDbId() == null || valueObj.getDbId() < 0)
@@ -437,13 +452,12 @@ public class CurationRepository {
      * TODO: Make sure there is only one transaction applied.
      */
     @Transactional
-    public Long update(DatabaseObject obj) throws Exception {
+    public DatabaseObject update(DatabaseObject obj) throws Exception {
         boolean deleted = delete(obj);
         if (!deleted)
             throw new IllegalStateException("Cannot delete the object first to update: " + 
                                 obj.getDisplayName() + " [" + obj.getDbId() + "]");
-        Long dbId = store(obj);
-        return dbId;
+        return store(obj);
     }
     
     /**
@@ -455,7 +469,7 @@ public class CurationRepository {
      * @throws Exception
      */
     @Transactional
-    public Long commit(DatabaseObject obj) throws Exception {
+    public DatabaseObject commit(DatabaseObject obj) throws Exception {
         if (obj.getDbId() != null && neo4jTemplate.existsById(obj.getDbId(), obj.getClass())) 
             return update(obj);
         else

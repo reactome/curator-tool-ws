@@ -86,17 +86,7 @@ public class CurationService {
        return objectRepository.findById(dbId, 1);
     }
     
-    /**
-     * Store a new DatabaseObject into a repository.
-     * @param obj
-     * @return
-     * @throws Exception
-     */
-    public Long store(DatabaseObject obj) throws Exception {
-        return curationRepository.store(obj);
-    }
-    
-    public Long commit(DatabaseObject obj) throws Exception {
+    public DatabaseObject commit(DatabaseObject obj) throws Exception {
         return curationRepository.commit(obj);
     }
     
@@ -127,16 +117,6 @@ public class CurationService {
         ObjectMapper mapper = new ObjectMapper();
         TypeReference<HashMap<String, List<CurationAttribute>>> typeRef = new TypeReference<>(){};
         return mapper.readValue(is, typeRef);
-    }
-    
-    /**
-     * Update the whole object.
-     * @param obj
-     * @return the original dbId of the passed obj if update works fine.
-     * @throws Exception
-     */
-    public Long update(DatabaseObject obj) throws Exception {
-        return curationRepository.update(obj);
     }
 
     /**

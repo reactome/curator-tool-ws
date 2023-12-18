@@ -70,10 +70,13 @@ public class CurationController {
      * @return
      */
     @PostMapping("commit")
-    public Long commit(@RequestBody SimpleInstance instance) {
+    public SimpleInstance commit(@RequestBody SimpleInstance instance) {
         try {
             DatabaseObject databaseObject = converter.convert(instance);
-            return service.commit(databaseObject);
+            DatabaseObject stored = service.commit(databaseObject);
+            // For the front end, we just need to return a SimpleInstance having attributes that may change
+            SimpleInstance rtn = converter.convertInShell(stored);
+            return rtn;
         }
         catch(Exception e) {
             logger.error("CurationController.commit: " + e.getMessage(), e);
