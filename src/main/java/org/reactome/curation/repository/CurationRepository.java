@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.gk.model.InstanceDisplayNameGenerator;
 import org.neo4j.cypherdsl.core.Condition;
 import org.neo4j.cypherdsl.core.Cypher;
 import org.neo4j.cypherdsl.core.Functions;
@@ -31,8 +30,6 @@ import org.springframework.data.neo4j.core.schema.Relationship;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.fasterxml.jackson.annotation.SimpleObjectIdResolver;
-
 import lombok.Data;
 
 
@@ -44,6 +41,7 @@ import lombok.Data;
  * We use a class, instead of extending Neo4jRepository interface, to implement this curation repository so that
  * we have a much better control (e.g. handling dbId, etc). This is a better approach!
  * @author wug
+ * TODO: Make sure no ReactomeTransient properties are saved!
  *
  */
 @Repository
@@ -199,13 +197,15 @@ public class CurationRepository {
         // Now we can start to store
         if (obj.getDbId() == null || obj.getDbId() < 0)
             obj.setDbId(nextDbId());
+        //TODO: To be updated to use the values directly. Right now, some system-level attributes annotated
+        // with ReactomeTransient are also saved! That is not good!
         // To do save, we create a DatabaseObject without relationships first
         DatabaseObject proxyNode = obj.getClass().getConstructor().newInstance();
         for (String field : field2value.keySet()) {
             if (field2rel.containsKey(field)) 
                 continue; // Defer this for the time being
             // Escape schemaClass
-            if (field.equals("schemaClass"))
+            if (field.equals("schemaClass")) // This is inferred from the class name. So there is no need to copy!
                 continue;
             Object value = field2value.get(field);
             Method method = CuratorToolWSUtils.getSetMethod(field, value, obj);
@@ -218,6 +218,10 @@ public class CurationRepository {
         neo4jTemplate.save(proxyNode);
         // Working on relationships 
         Node objNode = Cypher.node(getNodeLabel(obj)).named(getNodeName(obj)).withProperties("dbId", Cypher.literalOf(obj.getDbId()));
+        // Save the schemaClass here since it is escaped. But we need it!
+        var setPropStat = Cypher.match(objNode).set(objNode.property("schemaClass").to(Cypher.literalOf(proxyNode.getSchemaClass())));
+        neo4jClient.query(setPropStat.build().getCypher()).run();
+        
         OngoingReading stat = Cypher.match(objNode);
         List<org.neo4j.cypherdsl.core.Relationship> relationships = new ArrayList<>();
         for (String field : field2value.keySet()) {
@@ -398,7 +402,9 @@ public class CurationRepository {
         var query = Cypher.match(instance);
         if (condition != null)
             query.where(condition);
-        var queryBuild = query.returning(instance.property("dbId"), instance.property("displayName"))
+        var queryBuild = query.returning(instance.property("dbId"), 
+                                         instance.property("displayName"),
+                                         instance.property("schemaClass"))
              .orderBy(instance.property("displayName"))
              .skip(skip)
              .limit(limit)
@@ -416,6 +422,13 @@ public class CurationRepository {
             SimpleInstance inst = new SimpleInstance();
             inst.setDbId(Long.parseLong(map.get("inst.dbId").toString()));
             inst.setDisplayName(map.get("inst.displayName").toString());
+            Object schemaClassName = map.get("inst.schemaClass");
+            if (schemaClassName != null)
+                inst.setSchemaClassName(schemaClassName.toString());
+            else {
+                inst.setSchemaClassName(className); // Just in case! This should not happen!
+                logger.warn("No schemaClass name in the database for instance with dbId = " + inst.getDbId());
+            }
             rtn.add(inst);
         }
         return rtn;

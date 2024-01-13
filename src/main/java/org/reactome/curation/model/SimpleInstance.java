@@ -24,7 +24,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * easy parsing and tight control.
  * 
  * TODO: This is implemented as a subclass to DatabaseObject for convenience. However, more
- * tests may be needed to make sure there is no side effects existing. we may consider 
+ * tests may be needed to make sure there is no side effects existing. We may consider 
  * to use this class completely without going to DatabaseObject, just like Java API to
  * MySQL database.
  * 
