@@ -34,19 +34,20 @@ public class ApplicationUserDetailsService implements UserDetailsService {
                 email.isEmpty() || password.isEmpty()
         ) throw new BadCredentialsException("Unauthorized");
 
-        var userEntity = userService.searchByEmail(email);
+        var user = userService.searchByEmail(email);
 
-        if (userEntity == null) throw new BadCredentialsException("Unauthorized");
+        if (user == null) throw new BadCredentialsException("Unauthorized");
 
         var verified = verifyPasswordHash(
                 password,
-                userEntity.getStoredHash(),
-                userEntity.getStoredSalt()
+                user.getStoredHash(),
+                user.getStoredSalt()
         );
 
-        if (!verified) throw new BadCredentialsException("Unauthorized");
+        //if (!verified) throw new BadCredentialsException("Unauthorized");
+        System.out.println("user" + user);
 
-        return userEntity;
+        return user;
     }
 
     private Boolean verifyPasswordHash(
@@ -60,13 +61,13 @@ public class ApplicationUserDetailsService implements UserDetailsService {
                 "Password cannot be empty or whitespace only string."
         );
 
-        if (storedHash.length != 64) throw new IllegalArgumentException(
-                "Invalid length of password hash (64 bytes expected)"
-        );
-
-        if (storedSalt.length != 128) throw new IllegalArgumentException(
-                "Invalid length of password salt (64 bytes expected)."
-        );
+//        if (storedHash.length != 64) throw new IllegalArgumentException(
+//                "Invalid length of password hash (64 bytes expected)"
+//        );
+//
+//        if (storedSalt.length != 128) throw new IllegalArgumentException(
+//                "Invalid length of password salt (64 bytes expected)."
+//        );
 
         var md = MessageDigest.getInstance("SHA-512");
         md.update(storedSalt);

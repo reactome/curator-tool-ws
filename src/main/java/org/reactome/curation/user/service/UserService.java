@@ -9,14 +9,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
@@ -30,14 +28,64 @@ public class UserService {
         return repo.findByEmail(email);
     }
 
-//    public User findUserById(final UUID id) throws NotFoundException {
-//        var user = repo
-//                .findById(id)
-//                .orElseThrow(
-//                        () -> new NotFoundException("User by id " + id + " was not found")
-//                );
+    public User findUserById(final UUID id){
+        User user = null;
+        try { 
+            user = repo.findById(id);
+        }
+        catch(Error e) {
+            logger.info("User by id " + id + " was not found" + e);
+        }
+        return user;
+    }
+
+    public User createUser(User user, String password)
+            throws NoSuchAlgorithmException, IOException {
+
+        if (password.isBlank()) throw new IllegalArgumentException(
+                "Password is required"
+        );
+
+//        var existsEmail = repo.selectExistsEmail(user.getEmail());
 //
-//        return user;
+//        try{existsEmail.equals(true);}
+//        catch (Error e){logger.error("Email " + user.getEmail() + " taken");}
+
+        byte[] salt = createSalt();
+        byte[] hashedPassword = createPasswordHash(password, salt);
+
+        user.setPassword(password);
+        user.setStoredSalt(salt);
+        user.setStoredHash(hashedPassword);
+        System.out.println("hashService" + user.getStoredHash());
+
+        repo.save(user);
+
+        return user;
+    }
+
+//    public void updateUser(UUID id, UserDto userDto, String password)
+//            throws NoSuchAlgorithmException {
+//        var user = findOrThrow(id);
+//        var userParam = convertToEntity(userDto);
+//
+//        user.setEmail(userParam.getEmail());
+//        user.setMobileNumber(userParam.getMobileNumber());
+//
+//        if (!password.isBlank()) {
+//            byte[] salt = createSalt();
+//            byte[] hashedPassword = createPasswordHash(password, salt);
+//
+//            user.setStoredSalt(salt);
+//            user.setStoredHash(hashedPassword);
+//        }
+//
+//        repo.save(user);
+//    }
+//
+//    public void removeUserById(UUID id) {
+//        findOrThrow(id);
+//        repo.deleteById(id);
 //    }
 
 
@@ -53,7 +101,7 @@ public class UserService {
             throws NoSuchAlgorithmException {
         var md = MessageDigest.getInstance("SHA-512");
         md.update(salt);
-
+        System.out.println(md.digest(password.getBytes(StandardCharsets.UTF_8)));
         return md.digest(password.getBytes(StandardCharsets.UTF_8));
     }
 
@@ -66,10 +114,6 @@ public class UserService {
 
         }
         return null;
-    }
-
-    public User findUserById(UUID id) {
-        return new User();
     }
 
     public Iterable<User> findAllUsers() {

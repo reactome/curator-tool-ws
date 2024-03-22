@@ -25,4 +25,15 @@ public class User {
         this.email = email;
         this.mobileNumber = mobileNumber;
     }
+
+    public User(String email, String password, byte[] hash, byte[] salt) {
+        this.email = email;
+        this.password = password;
+        this.storedHash = hash;
+        this.storedSalt = salt;
+    }
+
+//    public void setStoredHash(String storedHash) {
+//        this.storedHash = storedHash.getBytes();
+//    }
 }
