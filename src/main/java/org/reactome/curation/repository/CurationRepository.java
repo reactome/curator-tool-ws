@@ -434,6 +434,128 @@ public class CurationRepository {
         return rtn;
     }
 
+    /**
+     * Populate attribute values in inst fron contents of map
+     * @param inst
+     * @param map
+     * @return inst with attribute values populated
+     */
+    private SimpleInstance populateAttrValues(SimpleInstance inst, Map<String, Object> map) {
+        for (String key : map.keySet()) {
+            switch(key) {
+                case "n.dbId":
+                    inst.setDbId(Long.parseLong(map.get("n.dbId").toString()));
+                    break;
+                case "n.displayName":
+                    Object displayName = map.get(key);
+                    if (displayName != null) {
+                        inst.setDisplayName(displayName.toString());
+                    } else {
+                        logger.warn(String.format("No {key} in the database for instance with dbId = ", key) + inst.getDbId());
+                    }
+                    break;
+                case "n.schemaClass":
+                    Object schemaClassName = map.get(key);
+                    if (schemaClassName != null) {
+                        inst.setSchemaClassName(schemaClassName.toString());
+                    } else {
+                        logger.warn(String.format("No {key} in the database for instance with dbId = ", key) + inst.getDbId());
+                    }
+                    break;
+                default:
+                    // n.speciesName, n._doRelease, r.order, r.stoichiometry
+                    if (!key.equals("p.dbId")) {
+                        Object obj = map.get(key);
+                        String attrName = key.split("\\.")[1];
+                        if (obj != null) {
+                            inst.setAttribute(attrName, obj.toString());
+                        }
+                    }
+            }
+        }
+        return inst;
+    }
+
+    /**
+     *
+     * @return List of top events in Neo4J
+     */
+    private List<SimpleInstance> getTopEvents() {
+        String query = "MATCH (n:Event) WHERE NOT (n)<-[:hasEvent]-() RETURN n.dbId, n.displayName, n.schemaClass, n.speciesName, n._doRelease";
+        Collection<Map<String, Object>> all = neo4jClient.query(query)
+                .fetch()
+                .all();
+        List<SimpleInstance> rtn = new ArrayList<>();
+        for (Map<String, Object> map : all) {
+            SimpleInstance inst = new SimpleInstance();
+            inst =  populateAttrValues(inst, map);
+            rtn.add(inst);
+        }
+        return rtn;
+    }
+
+    /**
+     *
+     * @return a map of parent dbId's to the list of events, related to that parent via a hasEvent relationship
+     */
+    private Map<Long, List<SimpleInstance>> getAllEvents() {
+        Map<Long, List<SimpleInstance>> parentDbId2SimpleInstances = new HashMap();
+        String query = String.format(
+                "MATCH (p:Event)-[r:hasEvent]->(n:Event) RETURN DISTINCT p.dbId, " +
+                        "n.dbId, n.schemaClass, n.speciesName, n._doRelease, r.order, r.stoichiometry");
+        Collection<Map<String, Object>> all = neo4jClient.query(query)
+                .fetch()
+                .all();
+        List<SimpleInstance> rtn = new ArrayList<>();
+        for (Map<String, Object> map : all) {
+            Long parentDbId = Long.parseLong(map.get("p.dbId").toString());
+            if (!parentDbId2SimpleInstances.keySet().contains(parentDbId)) {
+                parentDbId2SimpleInstances.put(parentDbId, new ArrayList<SimpleInstance>());
+            }
+            SimpleInstance inst = new SimpleInstance();
+            inst =  populateAttrValues(inst, map);
+            parentDbId2SimpleInstances.get(parentDbId).add(inst);
+        }
+        return parentDbId2SimpleInstances;
+    }
+
+    /**
+     * Populate into hasEvent field of inst the list of children (recursively)
+     * @param inst
+     * @param parentDbId2SimpleInstances
+     */
+    private void populateChildren(
+            SimpleInstance inst,
+            Map<Long, List<SimpleInstance>> parentDbId2SimpleInstances) {
+        Long dbId = inst.getDbId();
+        if (parentDbId2SimpleInstances.keySet().contains(dbId)) {
+            List<SimpleInstance> childEvents = parentDbId2SimpleInstances.get(dbId);
+            inst.setAttribute("hasEvent", childEvents);
+            for (SimpleInstance childInst : childEvents) {
+                populateChildren(childInst, parentDbId2SimpleInstances);
+            }
+        }
+    }
+
+    /**
+     *
+     * @return List of top events with their respective children populated into their hasEvent attribute, recursively
+     */
+    public List<SimpleInstance> getAllEventsTree() {
+        logger.info("Getting top events..");
+        List<SimpleInstance> topEvents = getTopEvents().subList(0,100);
+        Integer topEventsCount = topEvents.size();
+        logger.info(String.format("Retrieved %d top events. Getting all events..", topEventsCount));
+        Map<Long, List<SimpleInstance>> parentDbId2SimpleInstances = getAllEvents();
+        logger.info(String.format("Retrieved events for %d parents. Building events tree..",
+                parentDbId2SimpleInstances.keySet().size()));
+        for (SimpleInstance inst: topEvents) {
+            populateChildren(inst, parentDbId2SimpleInstances);
+        }
+        logger.info("Events tree is ready.");
+        return topEvents;
+    }
+
     private Condition createDisplayNameQueryCondition(String text, Node instance) {
         Condition condition = null;
         if (text != null) {

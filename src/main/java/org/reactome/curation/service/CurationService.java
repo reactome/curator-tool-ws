@@ -220,6 +220,11 @@ public class CurationService {
     public List<String> getSchemaClasses() {
         return curationRepository.getSchemaClasses();
     }
+
+    public List<SimpleInstance> getAllEventsTree() {
+        return curationRepository.getAllEventsTree();
+    }
+
     
     public Boolean delete(DatabaseObject obj) {
         return curationRepository.delete(obj);

@@ -157,4 +157,8 @@ public class CurationController {
         }
     }
 
+    @GetMapping("getAllEventsTree")
+    public List<SimpleInstance> getAllEventsTree() {
+        return service.getAllEventsTree();
+    }
 }
