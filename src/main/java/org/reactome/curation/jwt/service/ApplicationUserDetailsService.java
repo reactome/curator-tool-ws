@@ -38,13 +38,15 @@ public class ApplicationUserDetailsService implements UserDetailsService {
 
         if (user == null) throw new BadCredentialsException("Unauthorized");
 
-        var verified = verifyPasswordHash(
-                password,
-                user.getStoredHash(),
-                user.getStoredSalt()
-        );
+        var verified = (password.equals(user.getPassword()));
 
-        //if (!verified) throw new BadCredentialsException("Unauthorized");
+//        var verified = verifyPasswordHash(
+//                password,
+//                user.getStoredHash(),
+//                user.getStoredSalt()
+//        );
+
+        if (!verified) throw new BadCredentialsException("Unauthorized");
         System.out.println("user" + user);
 
         return user;
@@ -68,6 +70,7 @@ public class ApplicationUserDetailsService implements UserDetailsService {
 //        if (storedSalt.length != 128) throw new IllegalArgumentException(
 //                "Invalid length of password salt (64 bytes expected)."
 //        );
+
 
         var md = MessageDigest.getInstance("SHA-512");
         md.update(storedSalt);

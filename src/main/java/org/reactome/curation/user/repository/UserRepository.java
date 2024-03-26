@@ -58,7 +58,7 @@ public class UserRepository {
     }
 
     public User save(User user) throws IOException {
-        this.writeFile("src/main/resources/users.txt", user.getEmail() + ", " + user.getPassword());
+        this.writeFile("src/main/resources/users.txt", user.getEmail() + "," + user.getPassword());
         String hash = new String(user.getStoredHash());
         System.out.println("saveHash" + hash);
         //FileUtils.writeByteArrayToFile(new File("src/main/resources/hash.txt"), user.getStoredHash());
