@@ -3,13 +3,10 @@ package org.reactome.curation.repository;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import org.gk.model.Instance;
 import org.neo4j.cypherdsl.core.Condition;
 import org.neo4j.cypherdsl.core.Cypher;
 import org.neo4j.cypherdsl.core.Functions;
@@ -491,7 +488,30 @@ public class CurationRepository {
             inst =  populateAttrValues(inst, map);
             rtn.add(inst);
         }
+        sortByDisplayName(rtn);
         return rtn;
+    }
+
+    /**
+     * Sort events alphabetically by displayName
+     * @param events
+     */
+    public static void sortByDisplayName(List<SimpleInstance> events) {
+        Collections.sort(events, new Comparator() {
+            public int compare(Object obj1, Object obj2) {
+                SimpleInstance instance1 = (SimpleInstance) obj1;
+                SimpleInstance instance2 = (SimpleInstance) obj2;
+                String dn1 = instance1.getDisplayName();
+                if (dn1 == null) dn1 = "";
+                String dn2 = instance2.getDisplayName();
+                if (dn2 == null) dn2 = "";
+                int rtn = dn1.compareTo(dn2);
+                if (rtn == 0) {
+                    return instance1.getDbId().compareTo(instance2.getDbId());
+                }
+                return rtn;
+            }
+        });
     }
 
     /**
@@ -502,7 +522,7 @@ public class CurationRepository {
         Map<Long, List<SimpleInstance>> parentDbId2SimpleInstances = new HashMap();
         String query = String.format(
                 "MATCH (p:Event)-[r:hasEvent]->(n:Event) RETURN DISTINCT p.dbId, " +
-                        "n.dbId, n.schemaClass, n.speciesName, n._doRelease, r.order, r.stoichiometry");
+                        "n.dbId, n.displayName, n.schemaClass, n.speciesName, n._doRelease, r.order, r.stoichiometry");
         Collection<Map<String, Object>> all = neo4jClient.query(query)
                 .fetch()
                 .all();
@@ -523,16 +543,20 @@ public class CurationRepository {
      * Populate into hasEvent field of inst the list of children (recursively)
      * @param inst
      * @param parentDbId2SimpleInstances
+     * @param recursive
      */
     private void populateChildren(
             SimpleInstance inst,
-            Map<Long, List<SimpleInstance>> parentDbId2SimpleInstances) {
+            Map<Long, List<SimpleInstance>> parentDbId2SimpleInstances,
+            boolean recursive) {
         Long dbId = inst.getDbId();
         if (parentDbId2SimpleInstances.keySet().contains(dbId)) {
             List<SimpleInstance> childEvents = parentDbId2SimpleInstances.get(dbId);
             inst.setAttribute("hasEvent", childEvents);
-            for (SimpleInstance childInst : childEvents) {
-                populateChildren(childInst, parentDbId2SimpleInstances);
+            if (recursive) {
+                for (SimpleInstance childInst : childEvents) {
+                    populateChildren(childInst, parentDbId2SimpleInstances, recursive);
+                }
             }
         }
     }
@@ -543,14 +567,14 @@ public class CurationRepository {
      */
     public List<SimpleInstance> getAllEventsTree() {
         logger.info("Getting top events..");
-        List<SimpleInstance> topEvents = getTopEvents().subList(0,100);
+        List<SimpleInstance> topEvents = getTopEvents();
         Integer topEventsCount = topEvents.size();
         logger.info(String.format("Retrieved %d top events. Getting all events..", topEventsCount));
         Map<Long, List<SimpleInstance>> parentDbId2SimpleInstances = getAllEvents();
         logger.info(String.format("Retrieved events for %d parents. Building events tree..",
                 parentDbId2SimpleInstances.keySet().size()));
         for (SimpleInstance inst: topEvents) {
-            populateChildren(inst, parentDbId2SimpleInstances);
+            populateChildren(inst, parentDbId2SimpleInstances, true);
         }
         logger.info("Events tree is ready.");
         return topEvents;
