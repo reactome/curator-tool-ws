@@ -157,8 +157,11 @@ public class CurationController {
         }
     }
 
-    @GetMapping("getAllEventsTree")
-    public List<SimpleInstance> getAllEventsTree() {
-        return service.getAllEventsTree();
+    @GetMapping("getEventTree/{speciesName}")
+    public List<SimpleInstance> getEventsTree(
+            @PathVariable("speciesName") String speciesName,
+            @RequestParam("query") Optional<String> searchKey
+    ) {
+        return service.getEventTree(speciesName, searchKey.isEmpty() ? null : searchKey.get());
     }
 }
