@@ -212,6 +212,11 @@ public class CurationService {
                                               String text) {
         return curationRepository.listInstances(className, skip, limit, text);
     }
+    
+    public SimpleInstance findInstance(String displayName,
+                                       List<String> clsNames) {
+        return curationRepository.findInstance(displayName, clsNames);
+    }
 
     public Long getNextDbId(){
         return curationRepository.nextDbId();

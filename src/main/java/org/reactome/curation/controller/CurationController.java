@@ -3,6 +3,8 @@ package org.reactome.curation.controller;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.model.SimpleInstance;
@@ -128,6 +130,20 @@ public class CurationController {
                                               // Make sure to use Optional so that we can take a URL without query.
                                               @RequestParam("query") Optional<String> query) { 
         return service.listInstances(className, skip, limit, query.isEmpty() ? null : query.get());
+    }
+    
+    /**
+     * This API is used to find an instance based on its displayName in a list of provided class names.
+     * @param displayName
+     * @param clsNames
+     * @return
+     */
+    @GetMapping("findByDisplayName")
+    public SimpleInstance findByDisplayName(@RequestParam("displayName") String displayName,
+                                            @RequestParam("classNames") String clsNames) {
+        String[] tokens = clsNames.split(",");
+        List<String> clsNameList = Stream.of(tokens).map(token -> token.trim()).collect(Collectors.toList());
+        return service.findInstance(displayName, clsNameList);
     }
     
     /**
