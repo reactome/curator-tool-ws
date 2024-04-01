@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @AllArgsConstructor
-@RequestMapping(value = "api")
+@RequestMapping(value = "curatortool/api")
 @ResponseStatus(HttpStatus.CREATED)
 @CrossOrigin
 public class AuthenticateController {

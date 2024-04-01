@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @ConfigurationProperties("app")
-public class AppProperties {
+public class CuratorToolProperties {
 
     private String clientUrl;
     private String jwtSecret;
