@@ -15,18 +15,6 @@ import java.util.*;
 
 @Repository
 public class UserRepository {
-    //    @Query(
-//            "" +
-//                    "SELECT CASE WHEN COUNT(u) > 0 THEN " +
-//                    "TRUE ELSE FALSE END " +
-//                    "FROM UserEntity u " +
-//                    "WHERE u.email = ?1"
-//    )
-//    public Boolean selectExistsEmail(String email) {
-//        this.findByEmail(email);
-//    }
-
-    // @Column(unique = true) is needed in entity
     public User findByEmail(String emailFromUser) {
         ArrayList<String> lines = this.readFile("src/main/resources/users.txt");
         ArrayList<User> users = new ArrayList<>();
@@ -39,10 +27,10 @@ public class UserRepository {
             user.setPassword(password);
             users.add(user);
             if (email.equals(emailFromUser)) {
-                ArrayList<String> hashes = this.readFile("src/main/resources/hash.txt");
-                user.setStoredHash(hashes.get(index).getBytes(StandardCharsets.UTF_8));
-                ArrayList<String> salts = this.readFile("src/main/resources/salt.txt");
-                user.setStoredSalt(salts.get(index).getBytes());
+                //ArrayList<String> hashes = this.readFile("src/main/resources/hash.txt");
+                //user.setStoredHash(hashes.get(index).getBytes(StandardCharsets.UTF_8));
+                //ArrayList<String> salts = this.readFile("src/main/resources/salt.txt");
+                //user.setStoredSalt(salts.get(index).getBytes());
 //                System.out.println(hashes.get(index).getBytes());
 //                System.out.println(salts.get(index).getBytes());
                 return user;
