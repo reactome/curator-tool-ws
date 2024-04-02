@@ -4,6 +4,12 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.gk.model.Instance;
@@ -385,6 +391,43 @@ public class CurationRepository {
     }
 
     /**
+     * Find an instance with the matched display name in the specified classes.
+     * For example, find a Species instance with displayName = homo sapiens.
+     * @param displayName
+     * @param clsNames
+     * @return
+     */
+    public SimpleInstance findInstance(String displayName,
+                                       List<String> clsNames) {
+        var instance = Cypher.anyNode().named("inst");
+        var displayNameProp = instance.property("displayName");
+        // Create condition for labels (i.e. clsNames)
+        Condition labels = null;
+        for (String clsName : clsNames) {
+            if (labels == null)
+                labels = instance.hasLabels(clsName);
+            else
+                labels = labels.or(instance.hasLabels(clsName));
+        }
+        Condition condition = displayNameProp.matches("(?i)" + displayName); // Perform a case insensitive search
+
+        condition = labels.and(condition);
+        var query = Cypher.match(instance);
+        query.where(condition);
+        var queryBuild = query.returning(instance.property("dbId"),
+                instance.property("displayName"),
+                instance.property("schemaClass"))
+                .limit(1) // Just need one instance
+                .build();
+        Optional<Map<String, Object>> result = neo4jClient.query(queryBuild.getCypher()).fetch().first();
+        if (result.isEmpty())
+            return null;
+        // Use the first class is dangerous! But use it for the time being.
+        SimpleInstance inst = constructInstance(result.get(), clsNames.get(0));
+        return inst;
+    }
+
+    /**
      * Get a list of objects in SimpleInstance.
      * Note: If performance is an issue, try to create an index on displayName 
      * if it is not here like this: 
@@ -416,19 +459,25 @@ public class CurationRepository {
                 logger.error("Return result with dbId = null: " + className + ", " + skip + ", " + limit);
                 continue;
             }
-            SimpleInstance inst = new SimpleInstance();
-            inst.setDbId(Long.parseLong(map.get("inst.dbId").toString()));
-            inst.setDisplayName(map.get("inst.displayName").toString());
-            Object schemaClassName = map.get("inst.schemaClass");
-            if (schemaClassName != null)
-                inst.setSchemaClassName(schemaClassName.toString());
-            else {
-                inst.setSchemaClassName(className); // Just in case! This should not happen!
-                logger.warn("No schemaClass name in the database for instance with dbId = " + inst.getDbId());
-            }
+            SimpleInstance inst = constructInstance(map, className);
             rtn.add(inst);
         }
         return rtn;
+    }
+
+    private SimpleInstance constructInstance(Map<String, Object> map,
+                                             String className) {
+        SimpleInstance inst = new SimpleInstance();
+        inst.setDbId(Long.parseLong(map.get("inst.dbId").toString()));
+        inst.setDisplayName(map.get("inst.displayName").toString());
+        Object schemaClassName = map.get("inst.schemaClass");
+        if (schemaClassName != null)
+            inst.setSchemaClassName(schemaClassName.toString());
+        else {
+            inst.setSchemaClassName(className); // Just in case! This should not happen!
+            logger.warn("No schemaClass name in the database for instance with dbId = " + inst.getDbId());
+        }
+        return inst;
     }
 
     /**

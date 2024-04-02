@@ -139,7 +139,7 @@ public class CurationService {
         Method getMethod = classOfObject.getMethod("get" + attributeName);
         Object value = getMethod.invoke(o);
         if(isRelationship(o, attName)){
-            Collection<?> relationships = (Collection<?>) value;
+            Collection<?> relationships = (Collection<?>) value; // check if extends collection
             for(Object relationship : relationships){
                 // Use references for physical entities, value may need to be queried
                 DatabaseObject relationshipObject = (DatabaseObject) relationship;
@@ -206,6 +206,11 @@ public class CurationService {
                                               int limit,
                                               String text) {
         return curationRepository.listInstances(className, skip, limit, text);
+    }
+    
+    public SimpleInstance findInstance(String displayName,
+                                       List<String> clsNames) {
+        return curationRepository.findInstance(displayName, clsNames);
     }
 
     public Long getNextDbId(){

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.gk.model.ReactomeJavaConstants;
 import org.junit.jupiter.api.Test;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.repository.CurationRepository;
@@ -81,6 +82,18 @@ class CurationRepositoryTests {
         System.out.println("\nList some pathways having TP53:");
         instances = repository.listInstances(className, 0, 10, "TP53");
         instances.forEach(instance -> System.out.println(instance));
+    }
+    
+    @Test
+    public void testFindInstance() {
+        logger.info("Test findInstance based on display name...");
+        List<String> clsNames = new ArrayList<>();
+        clsNames.add(ReactomeJavaConstants.PhysicalEntity);
+        clsNames.add(ReactomeJavaConstants.Species);
+        String displayName = "homo sapiens"; // Should be case insensitive
+        SimpleInstance instance = repository.findInstance(displayName, clsNames);
+        logger.info("Found instance for " + displayName + "...");
+        logger.info(instance.toString());
     }
     
     /**

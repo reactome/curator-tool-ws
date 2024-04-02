@@ -99,6 +99,22 @@ class RESTfulAPITests {
     }
     
     @Test
+    public void testFindByDisplayName() throws Exception {
+        logger.info("Test findByDisplayName...");
+        assertNotNull(mockMvc);
+        String displayName = "homo sapiens";
+        String clsNames = "PhysicalEntity,Species,Pathway";
+        String url = BASE_URL + "findByDisplayName?displayName=" + displayName + "&classNames=" + clsNames;
+        logger.info("URL: " + url);
+        String json = mockMvc.perform(get(url))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        System.out.println(json);
+    }
+    
+    @Test
     public void testCountInstances() throws Exception {
         String className = "Reaction";
         String url = BASE_URL + "countInstances/" + className;
