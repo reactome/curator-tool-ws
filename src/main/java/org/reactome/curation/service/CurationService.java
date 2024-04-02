@@ -144,7 +144,7 @@ public class CurationService {
         Method getMethod = classOfObject.getMethod("get" + attributeName);
         Object value = getMethod.invoke(o);
         if(isRelationship(o, attName)){
-            Collection<?> relationships = (Collection<?>) value;
+            Collection<?> relationships = (Collection<?>) value; // check if extends collection
             for(Object relationship : relationships){
                 // Use references for physical entities, value may need to be queried
                 DatabaseObject relationshipObject = (DatabaseObject) relationship;
