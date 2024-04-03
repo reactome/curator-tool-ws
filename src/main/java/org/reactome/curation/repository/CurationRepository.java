@@ -539,14 +539,20 @@ public class CurationRepository {
      *
      */
     private List<SimpleInstance> getTopEvents(String speciesName, String searchKey) {
+        String dbId = null;
+        if (searchKey != null && searchKey.toLowerCase().startsWith("dbid:")) {
+            dbId = searchKey.split(":")[1];
+        }
         String query =
                 String.format("MATCH (n:Event) WHERE %s NOT (n)<-[:hasEvent]-() RETURN n.dbId, " +
                 "n.displayName, n.schemaClass, n.speciesName, n._doRelease %s",
                         !speciesName.equalsIgnoreCase("All") ?
                                 String.format("n.speciesName = '%s' and ", speciesName) :
                                 "",
-                        searchKey != null ?
-                                String.format(", CASE WHEN n.displayName =~ '(?i).*%s.*' THEN true ELSE false END as match", searchKey) :
+                        dbId != null ?
+                                String.format(", CASE WHEN n.dbId = %s THEN true ELSE false END as match", dbId) :
+                                searchKey != null ?
+                                    String.format(", CASE WHEN n.displayName =~ '(?i).*%s.*' THEN true ELSE false END as match", searchKey) :
                                 "");
 
         Collection<Map<String, Object>> all = neo4jClient.query(query)
@@ -592,15 +598,19 @@ public class CurationRepository {
      * @return a map of parent dbId's to the list of events, related to that parent via a hasEvent relationship
      */
     private Map<Long, List<SimpleInstance>> getAllEvents(String searchKey) {
+        String dbId = null;
+        if (searchKey != null && searchKey.toLowerCase().startsWith("dbid:")) {
+            dbId = searchKey.split(":")[1];
+        }
         Map<Long, List<SimpleInstance>> parentDbId2SimpleInstances = new HashMap();
         String query =
                 String.format("MATCH (p:Event)-[r:hasEvent]->(n:Event) RETURN DISTINCT p.dbId, " +
                                 "n.dbId, n.displayName, n.schemaClass, n.speciesName, n._doRelease, r.order, r.stoichiometry %s ",
-                        searchKey != null ?
-                                // TODO: confirm if the regex match needs to be case-insensitive or not: '(?i).*%s.*' vs '.*%s.*'
-                                String.format(", CASE WHEN n.displayName =~ '.*%s.*' THEN true ELSE false END as match", searchKey) :
-                                "");
-
+                        dbId != null ?
+                                String.format(", CASE WHEN n.dbId = %s THEN true ELSE false END as match", dbId) :
+                                searchKey != null ?
+                                        String.format(", CASE WHEN n.displayName =~ '(?i).*%s.*' THEN true ELSE false END as match", searchKey) :
+                                        "");
 
         Collection<Map<String, Object>> all = neo4jClient.query(query)
                 .fetch()
