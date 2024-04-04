@@ -2,12 +2,7 @@ package org.reactome.curation.service;
 
 import java.io.InputStream;
 import java.lang.reflect.Method;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -225,6 +220,11 @@ public class CurationService {
     public List<String> getSchemaClasses() {
         return curationRepository.getSchemaClasses();
     }
+
+    public List<SimpleInstance> getEventTree(String speciesName, String searchKey) {
+        return curationRepository.getEventTree(speciesName, searchKey);
+    }
+
     
     public Boolean delete(DatabaseObject obj) {
         return curationRepository.delete(obj);

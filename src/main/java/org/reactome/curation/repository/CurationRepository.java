@@ -3,6 +3,7 @@ package org.reactome.curation.repository;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -11,6 +12,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.gk.model.Instance;
 import org.neo4j.cypherdsl.core.Condition;
 import org.neo4j.cypherdsl.core.Cypher;
 import org.neo4j.cypherdsl.core.Functions;
@@ -387,7 +389,7 @@ public class CurationRepository {
         }
         return null; // Don't care
     }
-    
+
     /**
      * Find an instance with the matched display name in the specified classes.
      * For example, find a Species instance with displayName = homo sapiens.
@@ -408,11 +410,11 @@ public class CurationRepository {
                 labels = labels.or(instance.hasLabels(clsName));
         }
         Condition condition = displayNameProp.matches("(?i)" + displayName); // Perform a case insensitive search
-        
+
         condition = labels.and(condition);
         var query = Cypher.match(instance);
         query.where(condition);
-        var queryBuild = query.returning(instance.property("dbId"), 
+        var queryBuild = query.returning(instance.property("dbId"),
                 instance.property("displayName"),
                 instance.property("schemaClass"))
                 .limit(1) // Just need one instance
@@ -462,7 +464,7 @@ public class CurationRepository {
         }
         return rtn;
     }
-    
+
     private SimpleInstance constructInstance(Map<String, Object> map,
                                              String className) {
         SimpleInstance inst = new SimpleInstance();
@@ -476,6 +478,218 @@ public class CurationRepository {
             logger.warn("No schemaClass name in the database for instance with dbId = " + inst.getDbId());
         }
         return inst;
+    }
+
+    /**
+     * Populate attribute values in inst fron contents of map
+     * @param inst
+     * @param map
+     * @return inst with attribute values populated
+     */
+    private SimpleInstance populateAttrValues(SimpleInstance inst, Map<String, Object> map) {
+        for (String key : map.keySet()) {
+            switch(key) {
+                case "n.dbId":
+                    inst.setDbId(Long.parseLong(map.get("n.dbId").toString()));
+                    break;
+                case "n.displayName":
+                    Object displayName = map.get(key);
+                    if (displayName != null) {
+                        inst.setDisplayName(displayName.toString());
+                    } else {
+                        logger.warn(String.format("No {key} in the database for instance with dbId = ", key) + inst.getDbId());
+                    }
+                    break;
+                case "n.schemaClass":
+                    Object schemaClassName = map.get(key);
+                    if (schemaClassName != null) {
+                        inst.setSchemaClassName(schemaClassName.toString());
+                    } else {
+                        logger.warn(String.format("No {key} in the database for instance with dbId = ", key) + inst.getDbId());
+                    }
+                    break;
+                default:
+                    // n.speciesName, n._doRelease, r.order, r.stoichiometry, match
+                    if (!key.equals("p.dbId")) {
+                        Object obj = map.get(key);
+                        String attrName;
+                        if (key.equals("match")) {
+                            attrName = key;
+                            if (obj != null) {
+                                inst.setAttribute(attrName, obj);
+                            }
+                        } else {
+                            attrName = key.split("\\.")[1];
+                            if (obj != null) {
+                                inst.setAttribute(attrName, obj.toString());
+                            }
+                        }
+                    }
+            }
+        }
+        return inst;
+    }
+
+    /**
+     * Note that in each returned instance a match attribute is set to true if that instance's displayName
+     * contains searchKey
+     * @param speciesName
+     * @param searchKey
+     * @return List of top event instances that match speciesName (or any species if speciesName == "All").
+     *
+     */
+    private List<SimpleInstance> getTopEvents(String speciesName, String searchKey) {
+        String dbId = null;
+        if (searchKey != null && searchKey.toLowerCase().startsWith("dbid:")) {
+            dbId = searchKey.split(":")[1];
+        }
+        String query =
+                String.format("MATCH (n:Event) WHERE %s NOT (n)<-[:hasEvent]-() RETURN n.dbId, " +
+                "n.displayName, n.schemaClass, n.speciesName, n._doRelease %s",
+                        !speciesName.equalsIgnoreCase("All") ?
+                                String.format("n.speciesName = '%s' and ", speciesName) :
+                                "",
+                        dbId != null ?
+                                String.format(", CASE WHEN n.dbId = %s THEN true ELSE false END as match", dbId) :
+                                searchKey != null ?
+                                    String.format(", CASE WHEN n.displayName =~ '(?i).*%s.*' THEN true ELSE false END as match", searchKey) :
+                                "");
+
+        Collection<Map<String, Object>> all = neo4jClient.query(query)
+                .fetch()
+                .all();
+        List<SimpleInstance> rtn = new ArrayList<>();
+        for (Map<String, Object> map : all) {
+            SimpleInstance inst = new SimpleInstance();
+            inst =  populateAttrValues(inst, map);
+            rtn.add(inst);
+        }
+        sortByDisplayName(rtn);
+        return rtn;
+    }
+
+    /**
+     * Sort events alphabetically by displayName
+     * @param events
+     */
+    public static void sortByDisplayName(List<SimpleInstance> events) {
+        Collections.sort(events, new Comparator() {
+            public int compare(Object obj1, Object obj2) {
+                SimpleInstance instance1 = (SimpleInstance) obj1;
+                SimpleInstance instance2 = (SimpleInstance) obj2;
+                String dn1 = instance1.getDisplayName();
+                if (dn1 == null) dn1 = "";
+                String dn2 = instance2.getDisplayName();
+                if (dn2 == null) dn2 = "";
+                int rtn = dn1.compareTo(dn2);
+                if (rtn == 0) {
+                    return instance1.getDbId().compareTo(instance2.getDbId());
+                }
+                return rtn;
+            }
+        });
+    }
+
+    /**
+     * Note that in each returned instance a match attribute is set to true if that instance's displayName
+     * contains searchKey
+     *
+     * @param searchKey
+     * @return a map of parent dbId's to the list of events, related to that parent via a hasEvent relationship
+     */
+    private Map<Long, List<SimpleInstance>> getAllEvents(String searchKey) {
+        String dbId = null;
+        if (searchKey != null && searchKey.toLowerCase().startsWith("dbid:")) {
+            dbId = searchKey.split(":")[1];
+        }
+        Map<Long, List<SimpleInstance>> parentDbId2SimpleInstances = new HashMap();
+        String query =
+                String.format("MATCH (p:Event)-[r:hasEvent]->(n:Event) RETURN DISTINCT p.dbId, " +
+                                "n.dbId, n.displayName, n.schemaClass, n.speciesName, n._doRelease, r.order, r.stoichiometry %s ",
+                        dbId != null ?
+                                String.format(", CASE WHEN n.dbId = %s THEN true ELSE false END as match", dbId) :
+                                searchKey != null ?
+                                        String.format(", CASE WHEN n.displayName =~ '(?i).*%s.*' THEN true ELSE false END as match", searchKey) :
+                                        "");
+
+        Collection<Map<String, Object>> all = neo4jClient.query(query)
+                .fetch()
+                .all();
+        List<SimpleInstance> rtn = new ArrayList<>();
+        for (Map<String, Object> map : all) {
+            Long parentDbId = Long.parseLong(map.get("p.dbId").toString());
+            if (!parentDbId2SimpleInstances.keySet().contains(parentDbId)) {
+                parentDbId2SimpleInstances.put(parentDbId, new ArrayList<SimpleInstance>());
+            }
+            SimpleInstance inst = new SimpleInstance();
+            inst =  populateAttrValues(inst, map);
+            parentDbId2SimpleInstances.get(parentDbId).add(inst);
+        }
+        return parentDbId2SimpleInstances;
+    }
+
+
+    /**
+     * Populate into hasEvent field of inst the list of children (recursively)
+     * @param inst
+     * @param parentDbId2SimpleInstances
+     * @param recursive
+     * @return flag to indicate that at least one child (recursively) matched searchKey
+     * (see: getTopEvents() and getAllEvents()
+     */
+    private boolean populateChildren(
+            SimpleInstance inst,
+            Map<Long, List<SimpleInstance>> parentDbId2SimpleInstances,
+            boolean recursive) {
+        boolean expandNodeFlag = false;
+        Long dbId = inst.getDbId();
+        if (parentDbId2SimpleInstances.keySet().contains(dbId)) {
+            List<SimpleInstance> childEvents = parentDbId2SimpleInstances.get(dbId);
+            inst.setAttribute("hasEvent", childEvents);
+            if (recursive) {
+                for (SimpleInstance childInst : childEvents) {
+                    if (!expandNodeFlag && childInst.getAttributes().containsKey("match") &&
+                            childInst.getAttributes().get("match").toString() == "true") {
+                        expandNodeFlag = true;
+                    }
+                    boolean match = populateChildren(childInst, parentDbId2SimpleInstances, recursive);
+                    if (!expandNodeFlag && match) {
+                        expandNodeFlag = true;
+                    }
+                }
+            }
+            if (expandNodeFlag) {
+                // If any of inst's children (recursively) have match attribute set to true,
+                // set inst's attribute expand to true also - this will be used by the front-end
+                // to check which tree nodes should be expanded
+                inst.getAttributes().put("expand", expandNodeFlag);
+            }
+        }
+        return expandNodeFlag;
+    }
+
+    /**
+     *
+     * @param speciesName
+     * @param searchKey
+     * @return List of top events with their respective children populated into their hasEvent attribute, recursively,
+     * where the top event matches speciesName (or any species if speciesName == "All"),
+     * and the nodes matching searchKey have attribute match set to true, and all parents of the
+     * those matching nodes have attribute expand set to true.
+     */
+    public List<SimpleInstance> getEventTree(String speciesName, String searchKey) {
+        logger.info("Getting top events..");
+        List<SimpleInstance> topEvents = getTopEvents(speciesName, searchKey);
+        Integer topEventsCount = topEvents.size();
+        logger.info(String.format("Retrieved %d top events. Getting all events..", topEventsCount));
+        Map<Long, List<SimpleInstance>> parentDbId2SimpleInstances = getAllEvents(searchKey);
+        logger.info(String.format("Retrieved events for %d parents. Building events tree..",
+                parentDbId2SimpleInstances.keySet().size()));
+        for (SimpleInstance inst: topEvents) {
+            populateChildren(inst, parentDbId2SimpleInstances, true);
+        }
+        logger.info("Events tree is ready.");
+        return topEvents;
     }
 
     private Condition createDisplayNameQueryCondition(String text, Node instance) {
