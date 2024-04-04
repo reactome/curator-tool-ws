@@ -174,7 +174,7 @@ public class CurationController {
     }
 
     @GetMapping("getEventTree/{speciesName}")
-    public List<SimpleInstance> getEventsTree(
+    public List<SimpleInstance> getEventTree(
             @PathVariable("speciesName") String speciesName,
             @RequestParam("query") Optional<String> searchKey
     ) {
