@@ -544,10 +544,10 @@ public class CurationRepository {
             dbId = searchKey.split(":")[1];
         }
         String query =
-                String.format("MATCH (n:Event) WHERE %s NOT (n)<-[:hasEvent]-() RETURN n.dbId, " +
-                "n.displayName, n.schemaClass, n.speciesName, n._doRelease %s",
+                String.format("MATCH (n:TopLevelPathway) %s " +
+                "RETURN n.dbId, n.displayName, n.schemaClass, n.speciesName, n._doRelease %s",
                         !speciesName.equalsIgnoreCase("All") ?
-                                String.format("n.speciesName = '%s' and ", speciesName) :
+                                String.format("WHERE n.speciesName = '%s'", speciesName) :
                                 "",
                         dbId != null ?
                                 String.format(", CASE WHEN n.dbId = %s THEN true ELSE false END as match", dbId) :
@@ -678,7 +678,7 @@ public class CurationRepository {
      * those matching nodes have attribute expand set to true.
      */
     public List<SimpleInstance> getEventTree(String speciesName, String searchKey) {
-        logger.info("Getting top events..");
+        logger.info("Getting TopLevelPathway events..");
         List<SimpleInstance> topEvents = getTopEvents(speciesName, searchKey);
         Integer topEventsCount = topEvents.size();
         logger.info(String.format("Retrieved %d top events. Getting all events..", topEventsCount));
