@@ -554,24 +554,24 @@ public class CurationRepository {
                                     String.format("WHERE n.speciesName = '%s'", speciesName) :
                                     "");
         if (className != null && attribute != null &&
-                className == "TopLevelPathway" && Arrays.asList("displayName", "dbId").contains(attribute)) {
+                className.equals("TopLevelPathway") && Arrays.asList("displayName", "dbId").contains(attribute)) {
             // Attempt to match TopLevelPathway's by displayName or dbId only
             if (searchKey != null || (operand != null && operand.contains("NULL"))) {
                 switch (operand) {
                     case "Equals":
-                        query += String.format(", CASE WHEN n.%s = '%s' THEN true ELSE false END as match", attribute, searchKey);
+                        query += String.format(", CASE WHEN toString(n.%s) = '%s' THEN true ELSE false END as match", attribute, searchKey);
                         break;
                     case "!=":
-                        query += String.format(", CASE WHEN n.%s <> '%s' THEN true ELSE false END as match", attribute, searchKey);
+                        query += String.format(", CASE WHEN toString(n.%s) <> '%s' THEN true ELSE false END as match", attribute, searchKey);
                         break;
                     case "Contains":
-                        query += String.format(", CASE WHEN n.%s =~ '(?i).*%s.*' THEN true ELSE false END as match", attribute, searchKey);
+                        query += String.format(", CASE WHEN toString(n.%s) =~ '(?i).*%s.*' THEN true ELSE false END as match", attribute, searchKey);
                         break;
                     case "Does Not Contain":
-                        query += String.format(", CASE WHEN n.%s !~ '(?i).*%s.*' THEN true ELSE false END as match", attribute, searchKey);
+                        query += String.format(", CASE WHEN toString(n.%s) !~ '(?i).*%s.*' THEN true ELSE false END as match", attribute, searchKey);
                         break;
                     case "Use REGEXP":
-                        query += String.format(", CASE WHEN n.%s =~ '%s' THEN true ELSE false END as match", attribute, searchKey);
+                        query += String.format(", CASE WHEN toString(n.%s) =~ '%s' THEN true ELSE false END as match", attribute, searchKey);
                         break;
                     case "IS NOT NULL":
                     case "IS NULL":
@@ -639,23 +639,23 @@ public class CurationRepository {
         if (searchKey != null || (operand != null && operand.contains("NULL"))) {
             switch (operand) {
                 case "Equals":
-                    query += String.format(", CASE WHEN n.schemaClass = '%s' AND n.%s = '%s' THEN true ELSE false END as match",
+                    query += String.format(", CASE WHEN n.schemaClass = '%s' AND toString(n.%s) = '%s' THEN true ELSE false END as match",
                             className, attribute, searchKey);
                     break;
                 case "!=":
-                    query += String.format(", CASE WHEN n.schemaClass = '%s' AND n.%s <> '%s' THEN true ELSE false END as match",
+                    query += String.format(", CASE WHEN n.schemaClass = '%s' AND toString(n.%s) <> '%s' THEN true ELSE false END as match",
                             className, attribute, searchKey);
                     break;
                 case "Contains":
-                    query += String.format(", CASE WHEN n.schemaClass = '%s' AND n.%s =~ '(?i).*%s.*' THEN true ELSE false END as match",
+                    query += String.format(", CASE WHEN n.schemaClass = '%s' AND toString(n.%s) =~ '(?i).*%s.*' THEN true ELSE false END as match",
                             className, attribute, searchKey);
                     break;
                 case "Does Not Contain":
-                    query += String.format(", CASE WHEN n.schemaClass = '%s' AND n.%s !~ '(?i).*%s.*' THEN true ELSE false END as match",
+                    query += String.format(", CASE WHEN n.schemaClass = '%s' AND toString(n.%s) !~ '(?i).*%s.*' THEN true ELSE false END as match",
                             className, attribute, searchKey);
                     break;
                 case "Use REGEXP":
-                    query += String.format(", CASE WHEN n.schemaClass = '%s' AND n.%s =~ '%s' THEN true ELSE false END as match",
+                    query += String.format(", CASE WHEN n.schemaClass = '%s' AND toString(n.%s) =~ '%s' THEN true ELSE false END as match",
                             className, attribute, searchKey);
                     break;
                 case "IS NOT NULL":
