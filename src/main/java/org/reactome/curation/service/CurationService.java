@@ -221,8 +221,12 @@ public class CurationService {
         return curationRepository.getSchemaClasses();
     }
 
-    public List<SimpleInstance> getEventTree(String speciesName, String searchKey) {
-        return curationRepository.getEventTree(speciesName, searchKey);
+    public List<SimpleInstance> getEventTree(String speciesName,
+                                             String className,
+                                             String attribute,
+                                             String operand,
+                                             String searchKey) {
+        return curationRepository.getEventTree(speciesName, className, attribute, operand, searchKey);
     }
 
     

@@ -176,8 +176,15 @@ public class CurationController {
     @GetMapping("getEventTree/{speciesName}")
     public List<SimpleInstance> getEventTree(
             @PathVariable("speciesName") String speciesName,
+            @RequestParam("class") Optional<String> className,
+            @RequestParam("attribute") Optional<String> attribute,
+            @RequestParam("operand") Optional<String> operand,
             @RequestParam("query") Optional<String> searchKey
     ) {
-        return service.getEventTree(speciesName, searchKey.isEmpty() ? null : searchKey.get());
+        return service.getEventTree(speciesName,
+                className.isEmpty() ? null : className.get(),
+                attribute.isEmpty() ? null : attribute.get(),
+                operand.isEmpty() ? null : operand.get(),
+                searchKey.isEmpty() ? null : searchKey.get());
     }
 }
