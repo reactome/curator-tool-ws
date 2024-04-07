@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import org.gk.model.ReactomeJavaConstants;
 import org.junit.jupiter.api.Test;
 import org.reactome.curation.controller.DatabaseObjectInstanceConverter;
 import org.reactome.curation.model.SimpleInstance;
@@ -335,6 +336,33 @@ class RESTfulAPITests {
                 .getResponse()
                 .getContentAsString();
         logger.info("Done saving a new Reaction: " + dbId);
+    }
+    
+    @Test
+    public void testFillReference() throws Exception {
+        assertNotNull(mockMvc);
+        
+        String url = BASE_URL + "fillReference";
+        logger.info("URL: " + url);
+        
+        ObjectMapper mapper = CurationWSTestHelper.createObjectMapper();
+        
+        SimpleInstance reference = new SimpleInstance();
+        reference.setDbId(-1L);
+        reference.setSchemaClassName(ReactomeJavaConstants.LiteratureReference);
+        // There is a collectiveName here
+        reference.setAttribute(ReactomeJavaConstants.pubMedIdentifier, 21794845);
+        String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(reference);
+        logger.info("Reaction in JSON:\n" + json);
+        
+        // Store
+        String rtn = mockMvc.perform(post(url).contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        logger.info("Done filling a reference: " + rtn);
     }
 
 }

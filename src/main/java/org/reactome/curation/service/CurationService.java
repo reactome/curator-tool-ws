@@ -2,10 +2,16 @@ package org.reactome.curation.service;
 
 import java.io.InputStream;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.gk.model.ReactomeJavaConstants;
 import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.model.SimpleSchemaClass;
@@ -51,6 +57,10 @@ public class CurationService {
 //    private DatabaseObjectUtils databaseObjectUtils;
     @Autowired
     private CurationRepository curationRepository;
+    
+    // Helper with auto filling literature reference
+    @Autowired
+    private LiteratureReferenceAttributeAutoFiller lrFiller;
     
     public CurationService() {
         // Load clsName2Attributes to avoid any thread issue: clsName2Attributes
@@ -179,6 +189,19 @@ public class CurationService {
         // Therefore, this needs to be refreshed for each call.
         countInstances(schemaClassTree);
         return schemaClassTree;
+    }
+    
+    /**
+     * Automatically fill the attributes of a LiteratureReference instance based on its PMID.
+     * @param instance
+     * @return
+     * @throws Exception
+     */
+    public SimpleInstance fillLiteratureReference(SimpleInstance instance) throws Exception {
+        if (!instance.getSchemaClassName().equals(ReactomeJavaConstants.LiteratureReference))
+            throw new IllegalArgumentException("The passed instance is not a LiteratureReference.");
+        lrFiller.process(instance);
+        return instance;
     }
     
     /**

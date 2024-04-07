@@ -1,17 +1,16 @@
 package org.reactome.curation.user.repository;
 
-import org.apache.commons.io.FileUtils;
-import org.reactome.curation.user.model.User;
-import org.springframework.stereotype.Repository;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.Array;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Scanner;
+import java.util.UUID;
+
+import org.reactome.curation.user.model.User;
+import org.springframework.stereotype.Repository;
 
 @Repository
 public class UserRepository {
