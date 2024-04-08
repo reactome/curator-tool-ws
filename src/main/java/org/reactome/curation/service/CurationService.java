@@ -68,6 +68,8 @@ public class CurationService {
         try {
             logger.info("Loading clsName2Attributes...");
             clsName2Attributes = loadClsName2Attributes();
+            // TODO: Eliminate this hack to get round class name changes between curation and web schemas
+            clsName2Attributes.put("ReactionLikeEvent", clsName2Attributes.get("ReactionlikeEvent"));
             clsName2attName2Attribute = initMapForClassDefinitions(clsName2Attributes);
             logger.info("Done loading.");
         }
@@ -247,9 +249,10 @@ public class CurationService {
     public List<SimpleInstance> getEventTree(String speciesName,
                                              String className,
                                              String attribute,
+                                             String attributeType,
                                              String operand,
                                              String searchKey) {
-        return curationRepository.getEventTree(speciesName, className, attribute, operand, searchKey);
+        return curationRepository.getEventTree(speciesName, className, attribute, attributeType, operand, searchKey);
     }
 
     

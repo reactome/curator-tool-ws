@@ -196,12 +196,14 @@ public class CurationController {
             @PathVariable("speciesName") String speciesName,
             @RequestParam("class") Optional<String> className,
             @RequestParam("attribute") Optional<String> attribute,
+            @RequestParam("attributeType") Optional<String> attributeType,
             @RequestParam("operand") Optional<String> operand,
             @RequestParam("query") Optional<String> searchKey
     ) {
         return service.getEventTree(speciesName,
                 className.isEmpty() ? null : className.get(),
                 attribute.isEmpty() ? null : attribute.get(),
+                attributeType.isEmpty() ? null : attributeType.get(),
                 operand.isEmpty() ? null : operand.get(),
                 searchKey.isEmpty() ? null : searchKey.get());
     }
