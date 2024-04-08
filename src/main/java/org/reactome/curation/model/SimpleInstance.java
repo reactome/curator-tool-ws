@@ -46,6 +46,12 @@ public class SimpleInstance extends DatabaseObject {
             attributes = new HashMap<>();
         attributes.put(attributeName, value);
     }
+    
+    public Object getAttribute(String attributeName) {
+        if (attributes == null)
+            return null;
+        return attributes.get(attributeName);
+    }
 
     public String getSchemaClassName() {
         return schemaClassName;

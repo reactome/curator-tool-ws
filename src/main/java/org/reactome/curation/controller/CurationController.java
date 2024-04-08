@@ -61,6 +61,24 @@ public class CurationController {
             throw new IllegalStateException(e.getMessage());
         }
     }
+    
+    /**
+     * Call this method to fill the attributes for a LiteratureReference represented in
+     * the passed SimpleInstance.
+     * @param instance
+     * @return
+     */
+    @PostMapping("fillReference")
+    public SimpleInstance fillReference(@RequestBody SimpleInstance instance) {
+        try {
+            SimpleInstance rtn = service.fillLiteratureReference(instance);
+            return rtn;
+        }
+        catch(Exception e) {
+            logger.error("CurationController.fillReference: " + e.getMessage(), e);
+            throw new IllegalStateException(e.getMessage());
+        } 
+    }
 
     //TODO: The error handling needs to be updated
     // See: https://www.toptal.com/java/spring-boot-rest-api-error-handling  

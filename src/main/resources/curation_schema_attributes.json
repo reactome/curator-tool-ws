@@ -2325,7 +2325,7 @@
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "MANDATORY",
-    "name" : "regulation"
+    "name" : "regulatedBy"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
