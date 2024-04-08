@@ -618,11 +618,14 @@ public class CurationRepository {
     }
 
     /**
-     * Note that in each returned instance a match attribute is set to true if that instance's displayName
-     * contains searchKey
+     * Note that in each returned instance a match attribute is set to true if either:
+     * 1. (attributeType == "primitive") that instance's attribute matches searchKey (in the way stipulated via operand), or
+     * 2. (attribute == "instance") at least one instance that is connected the returned instance via relationship: attribute
+     *     has either displayName or dbId that matches searchKey (in the way stipulated via operand)
      *
      * @param className
      * @param attribute
+     * @param attributeType,
      * @param operand
      * @param searchKey
      * @return a map of parent dbId's to the list of events, related to that parent via a hasEvent relationship
@@ -630,33 +633,80 @@ public class CurationRepository {
     private Map<Long, List<SimpleInstance>> getAllEvents(
             String className,
             String attribute,
+            String attributeType,
             String operand,
             String searchKey) {
         Map<Long, List<SimpleInstance>> parentDbId2SimpleInstances = new HashMap();
-        String query =
-                String.format("MATCH (p:Event)-[r:hasEvent]->(n:Event) RETURN DISTINCT p.dbId, " +
-                                "n.dbId, n.displayName, n.schemaClass, n.speciesName, n._doRelease, r.order, r.stoichiometry");
+        String query;
+        if (attributeType == null || attributeType.equals("primitive")) {
+            query = "MATCH (p:Event)-[r:hasEvent]->(n:Event) RETURN DISTINCT p.dbId, " +
+                    "n.dbId, n.displayName, n.schemaClass, n.speciesName, n._doRelease, r.order, r.stoichiometry";
+        } else {
+            // attributeType.equals("instance")
+            query =
+                    String.format("MATCH (p:Event)-[r:hasEvent]->(n:Event)-[r1:%s]->(q) RETURN DISTINCT p.dbId, " +
+                            "n.dbId, n.displayName, n.schemaClass, n.speciesName, n._doRelease, r.order, r.stoichiometry", attribute);
+        }
         if (searchKey != null || (operand != null && operand.contains("NULL"))) {
             switch (operand) {
                 case "Equals":
-                    query += String.format(", CASE WHEN n.schemaClass = '%s' AND toString(n.%s) = '%s' THEN true ELSE false END as match",
-                            className, attribute, searchKey);
+                    if (attributeType.equals("primitive")) {
+                        query += String.format(", CASE WHEN n.schemaClass = '%s' AND toString(n.%s) = '%s' THEN true ELSE false END as match",
+                                className, attribute, searchKey);
+                    } else {
+                        // attributeType.equals("instance")
+                        query += String.format(", CASE WHEN n.schemaClass = '%s' AND (toString(q.displayName) = '%s' OR toString(q.dbId) = '%s') " +
+                                        "THEN true ELSE false END as match",
+                                className, searchKey, searchKey);
+                    }
                     break;
                 case "!=":
-                    query += String.format(", CASE WHEN n.schemaClass = '%s' AND toString(n.%s) <> '%s' THEN true ELSE false END as match",
-                            className, attribute, searchKey);
+                    if (attributeType.equals("primitive")) {
+                        query += String.format(", CASE WHEN n.schemaClass = '%s' AND toString(n.%s) <> '%s' THEN true ELSE false END as match",
+                                className, attribute, searchKey);
+                    } else {
+                        // attributeType.equals("instance")
+                        query += String.format(", CASE WHEN n.schemaClass = '%s' AND " +
+                                        "(toString(q.displayName) <> '%s' OR toString(q.dbId) = '%s') " +
+                                        "THEN true ELSE false END as match",
+                                className, searchKey, searchKey);
+                    }
                     break;
                 case "Contains":
-                    query += String.format(", CASE WHEN n.schemaClass = '%s' AND toString(n.%s) =~ '(?i).*%s.*' THEN true ELSE false END as match",
-                            className, attribute, searchKey);
+                    if (attributeType.equals("primitive")) {
+                        query += String.format(", CASE WHEN n.schemaClass = '%s' AND toString(n.%s) =~ '(?i).*%s.*' THEN true ELSE false END as match",
+                                className, attribute, searchKey);
+                    } else {
+                        // attributeType.equals("instance")
+                        query += String.format(", CASE WHEN n.schemaClass = '%s' AND " +
+                                        "(toString(q.displayName) =~ '(?i).*%s.*' OR toString(q.dbId) =~ '(?i).*%s.*') " +
+                                        "THEN true ELSE false END as match",
+                                className, searchKey, searchKey);
+                    }
                     break;
                 case "Does Not Contain":
-                    query += String.format(", CASE WHEN n.schemaClass = '%s' AND toString(n.%s) !~ '(?i).*%s.*' THEN true ELSE false END as match",
-                            className, attribute, searchKey);
+                    if (attributeType.equals("primitive")) {
+                        query += String.format(", CASE WHEN n.schemaClass = '%s' AND toString(n.%s) !~ '(?i).*%s.*' THEN true ELSE false END as match",
+                                className, attribute, searchKey);
+                    } else {
+                        // attributeType.equals("instance")
+                        query += String.format(", CASE WHEN n.schemaClass = '%s' AND " +
+                                        "(toString(q.displayName) !~ '(?i).*%s.*' AND toString(q.dbId) = !~ '(?i).*%s.*') " +
+                                        "THEN true ELSE false END as match",
+                                className, searchKey, searchKey);
+                    }
                     break;
                 case "Use REGEXP":
-                    query += String.format(", CASE WHEN n.schemaClass = '%s' AND toString(n.%s) =~ '%s' THEN true ELSE false END as match",
+                    if (attributeType.equals("primitive")) {
+                        query += String.format(", CASE WHEN n.schemaClass = '%s' AND toString(n.%s) =~ '%s' THEN true ELSE false END as match",
                             className, attribute, searchKey);
+                    } else {
+                        // attributeType.equals("instance")
+                        query += String.format(", CASE WHEN n.schemaClass = '%s' AND " +
+                                        "(toString(q.displayName) =~ '%s' OR toString(q.dbId) =~ '%s') " +
+                                        "THEN true ELSE false END as match",
+                                className, searchKey, searchKey);
+                    }
                     break;
                 case "IS NOT NULL":
                 case "IS NULL":
@@ -729,24 +779,31 @@ public class CurationRepository {
      * @param searchKey
      * @param className
      * @param attribute
+     * @param attributeType
      * @param operand
      * @param searchKey
      * @return List of top events with their respective children populated into their hasEvent attribute, recursively,
      * where the top event matches speciesName (or any species if speciesName == "All"),
-     * and the nodes matching searchKey have attribute match set to true, and all parents of the
+     * and the nodes:
+     * 1. In the case attributeType == "primitive" - with attribute matching searchKey, or
+     * 2. In the case of attributeType == "instance" - with either dbId or displayName
+     *    in any node related to the node of className via relationship attribute - matching searchKey:
+     * have attribute match set to true, and all parents of the
      * those matching nodes have attribute expand set to true.
      */
     public List<SimpleInstance> getEventTree(
             String speciesName,
             String className,
             String attribute,
+            String attributeType,
             String operand,
             String searchKey) {
         logger.info("Getting TopLevelPathway events..");
         List<SimpleInstance> topEvents = getTopEvents(speciesName, className, attribute, operand, searchKey);
         Integer topEventsCount = topEvents.size();
         logger.info(String.format("Retrieved %d top events. Getting all events..", topEventsCount));
-        Map<Long, List<SimpleInstance>> parentDbId2SimpleInstances = getAllEvents(className, attribute, operand, searchKey);
+        Map<Long, List<SimpleInstance>> parentDbId2SimpleInstances =
+                getAllEvents(className, attribute, attributeType, operand, searchKey);
         logger.info(String.format("Retrieved events for %d parents. Building events tree..",
                 parentDbId2SimpleInstances.keySet().size()));
         for (SimpleInstance inst: topEvents) {
