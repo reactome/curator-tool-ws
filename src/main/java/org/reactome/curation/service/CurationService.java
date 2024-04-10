@@ -248,11 +248,11 @@ public class CurationService {
 
     public List<SimpleInstance> getEventTree(String speciesName,
                                              String className,
-                                             String attribute,
-                                             String attributeType,
-                                             String operand,
-                                             String searchKey) {
-        return curationRepository.getEventTree(speciesName, className, attribute, attributeType, operand, searchKey);
+                                             String attributes,
+                                             String attributeTypes,
+                                             String operands,
+                                             String searchKeys) {
+        return curationRepository.getEventTree(speciesName, className, attributes, attributeTypes, operands, searchKeys);
     }
 
     
