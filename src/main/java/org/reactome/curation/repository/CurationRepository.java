@@ -611,6 +611,7 @@ public class CurationRepository {
         String matchClausePrefix = String.format(", CASE WHEN n.schemaClass = '%s' ", className);
         String matchClause = "";
         String matchClauseSuffix = "THEN true ELSE false END as match";
+        boolean foundInstanceAttribute = false;
         for (int i = 0; i < operands.size(); i++) {
             String attribute = attributes.get(i);
             String attributeType = attributeTypes.get(i);
@@ -618,7 +619,12 @@ public class CurationRepository {
             String searchKey = searchKeys.get(i);
 
             if (attributeType.equals("instance")) {
-                queryRoot += String.format(", (n:Event)-[rel%d:%s]->(q%d)", i, attribute, i);
+                if (!foundInstanceAttribute) {
+                    queryRoot += " OPTIONAL MATCH ";
+                } else {
+                    queryRoot += ", ";
+                }
+                queryRoot += String.format("(n:Event)-[rel%d:%s]->(q%d)", i, attribute, i);
             }
 
             if (!searchKey.equals("na") || operand.contains("NULL")) {
