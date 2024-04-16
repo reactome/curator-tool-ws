@@ -209,17 +209,16 @@ public class CurationController {
                 searchKeys.isEmpty() ? null : searchKeys.get());
     }
 
-    @GetMapping("getHierarchicalPlotData/{dbId}")
+    @GetMapping("getEventPlotData/{dbId}")
     public Map<String, List<Map<String, Object>>> getHierarchicalPlotData(
-            @PathVariable("dbId") Long dbId
+            @PathVariable("dbId") Long dbId,
+            @RequestParam("type") String type
     ) {
-        return service.getHierarchicalPlotData(dbId);
-    }
-
-    @GetMapping("getReactionPlotData/{dbId}")
-    public Map<String, List<Map<String, Object>>> getReactionPlotData(
-            @PathVariable("dbId") Long dbId
-    ) {
-        return service.getReactionPlotData(dbId);
+        if (type.equals("hierarchical"))
+            return service.getHierarchicalPlotData(dbId);
+        else if (type.equals("reaction"))
+            return service.getReactionPlotData(dbId);
+        else
+            return null;
     }
 }
