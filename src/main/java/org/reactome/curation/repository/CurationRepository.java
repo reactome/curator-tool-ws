@@ -908,11 +908,8 @@ public class CurationRepository {
                 .fetch()
                 .all();
 
-        // Add 3 dummy nodes: central Reaction one, plus two nodes for inputs to go into/outputs to come out from respectively
-        // central - note that its description is populated when the cypher query results are processed below - node2id is populated
-        // here only so that edges between it and inputsTarget/outputsSource can be created below.
-        node2Id.put("central", "0");
-        // inputsTarget node
+        // Add 3 dummy nodes: central Reaction one (populated when the cypher query results are processed below),
+        // plus two nodes for inputs to go into/outputs to come out from respectively
         Map<String, Object>  node = new HashMap();
         node.put("class", "DummyIO");
         node.put("id", "1");
@@ -929,7 +926,7 @@ public class CurationRepository {
         // Now connect via edges DummyCentral to DummyInputsTarget and DummyOutputsSource
         Map<String, Object> edge = new HashMap();
         String sourceId = node2Id.get("inputsTarget");
-        String targetId = node2Id.get("central");
+        String targetId = "0";
         edge.put("edgeEndShape","");
         edge.put("source", sourceId);
         edge.put("target", targetId);
@@ -937,7 +934,7 @@ public class CurationRepository {
         edge.put("targetAnchor", "0");
         edges.add(edge);
         edge = new HashMap();
-        sourceId = node2Id.get("central");
+        sourceId = "0";
         targetId = node2Id.get("outputsSource");
         edge.put("edgeEndShape","");
         edge.put("source", sourceId);
@@ -966,11 +963,14 @@ public class CurationRepository {
                     schemaClass = map.get(String.format("%s.schemaClass", prefix)) != null ?
                             map.get(String.format("%s.schemaClass", prefix)).toString() : null;
                     displayName = map.get(String.format("%s.displayName", prefix)).toString();
-                    node = new HashMap();
-                    node.put("class", "DummyCentral");
-                    node.put("id", "0");
-                    node.put("description", schemaClass + ": " + displayName);
-                    nodes.add(node);
+                    if (!node2Id.keySet().contains("central")) {
+                        node2Id.put("central", "0");
+                        node = new HashMap();
+                        node.put("class", "DummyCentral");
+                        node.put("id", "0");
+                        node.put("description", schemaClass + ": " + displayName);
+                        nodes.add(node);
+                    }
                     schemaClass = null;
                 } else if (prefix.endsWith("cr") || prefix.endsWith("re")) {
                     // process crossReference and referenceEntity - their class will affect the node shape
