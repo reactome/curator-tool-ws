@@ -858,6 +858,7 @@ public class CurationRepository {
                 edge.put("source", sourceId);
                 edge.put("target", targetId);
                 edge.put("width", 1.0);
+                edge.put("edgeEndShape", "black_arrow");
                 edges.add(edge);
             }
         }
