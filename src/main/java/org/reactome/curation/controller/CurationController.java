@@ -2,6 +2,7 @@ package org.reactome.curation.controller;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -206,5 +207,18 @@ public class CurationController {
                 attributeTypes.isEmpty() ? null : attributeTypes.get(),
                 operands.isEmpty() ? null : operands.get(),
                 searchKeys.isEmpty() ? null : searchKeys.get());
+    }
+
+    @GetMapping("getEventPlotData/{dbId}")
+    public Map<String, List<Map<String, Object>>> getHierarchicalPlotData(
+            @PathVariable("dbId") Long dbId,
+            @RequestParam("type") String type
+    ) {
+        if (type.equals("hierarchical"))
+            return service.getHierarchicalPlotData(dbId);
+        else if (type.equals("reaction"))
+            return service.getReactionPlotData(dbId);
+        else
+            return null;
     }
 }

@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang.WordUtils;
 import org.gk.model.Instance;
 import org.neo4j.cypherdsl.core.Condition;
 import org.neo4j.cypherdsl.core.Cypher;
@@ -794,6 +795,303 @@ public class CurationRepository {
         return topEvents;
     }
 
+    /**
+     * @param dbId
+     * @return For a given event identified by dbId, a list of "nodes" and "edges", that themselves are maps of node/edge
+     * attribute->value respectively
+     */
+    public Map<String, List<Map<String, Object>>> getHierarchicalPlotData(Long dbId) {
+        // Lists of nodes and edges that will be accumulated from the result of the cypher query below
+        List<Map<String, Object>> nodes = new ArrayList();
+        List<Map<String, Object>> edges = new ArrayList();
+        // A map of node displayName to the id that is unique within the plot that will be generated in the front end
+        // This map is needed to prevent node duplicates (different id but the same displayName)
+        Map<String, String> node2Id = new HashMap();
+        // Data structure that will be returned by this function
+        Map<String, List<Map<String, Object>>> ret = new HashMap();
+        // Retrieve all events in hasEvent relationship with the event dbId, and their preceding events (if they exist)
+        String query = String.format("MATCH(n:Event{dbId:%d})-[r:hasEvent]->(e:Event) " +
+                "OPTIONAL MATCH (e:Event)-[:precedingEvent]->(c:Event) " +
+                "RETURN e.dbId, e.schemaClass, e.displayName, c.dbId, c.displayName", dbId);
+        // Execute the query
+        Collection<Map<String, Object>> all = neo4jClient.query(query)
+                .fetch()
+                .all();
+
+        // Get edges and nodes
+        Integer id = 0;
+        for (Map<String, Object> map : all) {
+            // label2DbId is needed to store dbId for each node label - used to construct a schema_view/instance/dbId
+            // link below
+            Map<String, String> label2DbId = new HashMap();
+            String source = null;
+            String sourceDbId;
+            String schemaClass = map.get("e.schemaClass").toString();
+            String target = wordWrap(map.get("e.displayName").toString());
+            String targetDbId = map.get("e.dbId").toString();
+            label2DbId.put(target, targetDbId);
+            if (map.get("c.displayName") != null) {
+                source = wordWrap(map.get("c.displayName").toString());
+                sourceDbId = map.get("c.dbId").toString();
+                label2DbId.put(source, sourceDbId);
+            }
+            // Create the node if it doesn't already exist
+            for (String label : label2DbId.keySet()) {
+                String labelDbId = label2DbId.get(label);
+                if (label != null && !node2Id.keySet().contains(label)) {
+                    node2Id.put(label, id.toString());
+                    Map<String, Object> node = new HashMap();
+                    node.put("class", schemaClass);
+                    node.put("id", id.toString());
+                    node.put("label", label);
+                    node.put("description", String.format("%s: %s", schemaClass, label));
+                    node.put("url", String.format("http://localhost:4200/schema_view/instance/%s", labelDbId));
+                    nodes.add(node);
+                    id++;
+                }
+            }
+            // Create an edge between the preceding event's node and the node above
+            if (source != null) {
+                String sourceId = node2Id.get(source);
+                String targetId = node2Id.get(target);
+                Map<String, Object> edge = new HashMap();
+                edge.put("source", sourceId);
+                edge.put("target", targetId);
+                edge.put("width", 1.0);
+                edge.put("edgeEndShape", "black_arrow");
+                edges.add(edge);
+            }
+        }
+        ret.put("nodes", nodes);
+        ret.put("edges", edges);
+        return ret;
+    }
+
+    /**
+     *
+     * @param dbId
+     * @return For a given Reaction event identified by dbId, a list of "nodes" and "edges", that themselves are maps of node/edge
+     *      * attribute->value respectively
+     */
+    public Map<String, List<Map<String, Object>>> getReactionPlotData(Long dbId) {
+        // Lists of nodes and edges that will be accumulated from the result of the cypher query below
+        List<Map<String, Object>> nodes = new ArrayList();
+        List<Map<String, Object>> edges = new ArrayList();
+        // A map of node displayName to the id that is unique within the plot that will be generated in the front end
+        // This map is needed to prevent node duplicates (different id but the same displayName)
+        Map<String, String> node2Id = new HashMap();
+        // Data structure that will be returned by this function
+        Map<String, List<Map<String, Object>>> ret = new HashMap();
+        // A cypher query to retrieve all the relevant data for the Reaction plot in the front end
+        String query = String.format("MATCH(n:Reaction{dbId:%d}) " +
+                "OPTIONAL MATCH (n)-[ri:input]->(i) " +
+                "OPTIONAL MATCH (i)-[:crossReference]->(icr) " +
+                "OPTIONAL MATCH (i)-[:referenceEntity]->(ire) " +
+                "OPTIONAL MATCH (n)-[ro:output]->(o) " +
+                "OPTIONAL MATCH (o)-[:crossReference]->(ocr) " +
+                "OPTIONAL MATCH (o)-[:referenceEntity]->(ore) " +
+                "OPTIONAL MATCH (n)-[:regulatedBy]->(reg) " +
+                "OPTIONAL MATCH (reg)-[:regulator]->(r) " +
+                "OPTIONAL MATCH (r)-[:crossReference]->(rcr) " +
+                "OPTIONAL MATCH (r)-[:referenceEntity]->(rre) " +
+                "OPTIONAL MATCH (n)-[:catalystActivity]->(cat) " +
+                "OPTIONAL MATCH (cat)-[:physicalEntity]->(c) " +
+                "OPTIONAL MATCH (c)-[:crossReference]->(ccr) " +
+                "OPTIONAL MATCH (c)-[:referenceEntity]->(cre) " +
+                "RETURN n.displayName, n.schemaClass, " +
+                "ri.stoichiometry, i.dbId, i.displayName, i.schemaClass, icr.displayName, ire.displayName, " +
+                "ro.stoichiometry, o.dbId, o.displayName, o.schemaClass, ocr.displayName, ore.displayName ," +
+                "reg.schemaClass, r.dbId, r.displayName, r.schemaClass, rcr.displayName, rre.displayName, " +
+                "cat.schemaClass, c.dbId, c.displayName, c.schemaClass, ccr.displayName, cre.displayName", dbId);
+
+        // Execute the query
+        Collection<Map<String, Object>> all = neo4jClient.query(query)
+                .fetch()
+                .all();
+
+        // Add 3 dummy nodes: central Reaction one (populated when the cypher query results are processed below),
+        // plus two nodes for inputs to go into/outputs to come out from respectively
+        Map<String, Object>  node = new HashMap();
+        node.put("class", "DummyIO");
+        node.put("id", "1");
+        nodes.add(node);
+        node2Id.put("inputsTarget", "1");
+        // outputsSource node
+        node = new HashMap();
+        node.put("class", "DummyIO");
+        node.put("id", "2");
+        nodes.add(node);
+        node2Id.put("outputsSource", "2");
+
+        Integer id = 3;
+        // Now connect via edges DummyCentral to DummyInputsTarget and DummyOutputsSource
+        Map<String, Object> edge = new HashMap();
+        String sourceId = node2Id.get("inputsTarget");
+        String targetId = "0";
+        edge.put("edgeEndShape","");
+        edge.put("source", sourceId);
+        edge.put("target", targetId);
+        edge.put("width", 1.0);
+        edge.put("targetAnchor", "0");
+        edges.add(edge);
+        edge = new HashMap();
+        sourceId = "0";
+        targetId = node2Id.get("outputsSource");
+        edge.put("edgeEndShape","");
+        edge.put("source", sourceId);
+        edge.put("target", targetId);
+        edge.put("width", 1.0);
+        edge.put("sourceAnchor", "4");
+        edges.add(edge);
+
+        // Get edges and nodes
+        for (Map<String, Object> map : all) {
+            // label2DbId is needed to store dbId for each node label - used to construct a schema_view/instance/dbId
+            // link below
+            Map<String, String> label2DbId = new HashMap();
+            // prefixes from the cypher query above, in the order in which they should be processed
+            String[] prefixes =
+                    {"n", "ri", "icr", "ire", "i", "ro", "ocr", "ore", "o", "reg", "r", "rcr", "rre", "cat", "c", "ccr", "cre"};
+            // Used to store schemaClass of either regulatedBy or catalystActivity instance
+            String regCatSchemaClass = "";
+            // Used to store stoichiometry of either input or output relationship
+            String ioStoichiometry = "";
+            String schemaClass = null;
+            String displayName;
+            for (String prefix : prefixes) {
+                if (prefix.equals("n")) {
+                    // Populate description of the central dummy node
+                    schemaClass = map.get(String.format("%s.schemaClass", prefix)) != null ?
+                            map.get(String.format("%s.schemaClass", prefix)).toString() : null;
+                    displayName = map.get(String.format("%s.displayName", prefix)).toString();
+                    if (!node2Id.keySet().contains("central")) {
+                        node2Id.put("central", "0");
+                        node = new HashMap();
+                        node.put("class", "DummyCentral");
+                        node.put("id", "0");
+                        node.put("description", schemaClass + ": " + displayName);
+                        nodes.add(node);
+                    }
+                    schemaClass = null;
+                } else if (prefix.endsWith("cr") || prefix.endsWith("re")) {
+                    // process crossReference and referenceEntity - their class will affect the node shape
+                    // in the Reaction plot in the front-end
+                    if (map.get(String.format("%s.displayName", prefix)) != null) {
+                        String dispName = map.get(String.format("%s.displayName", prefix)).toString();
+                        if (dispName.startsWith("COMPOUND")) {
+                            schemaClass = "Compound";
+                        } else if (dispName.startsWith("UniProt")) {
+                            schemaClass = "Protein";
+                        } else if (dispName.startsWith("ENSEMBL")) {
+                            if (dispName.contains("ENSG")) {
+                                schemaClass = "Gene";
+                            } else if (dispName.contains("ENST")) {
+                                schemaClass = "RNA";
+                            }
+                        } else if (dispName.contains("RNA")) {
+                            schemaClass = "RNA";
+                        }
+                    }
+                } else if (prefix.equals("ri") || prefix.equals("ro")) {
+                    // Retrieve stoichiometry from input/output relationships
+                    Object stoichiometry = map.get(String.format("%s.stoichiometry", prefix));
+                    ioStoichiometry = stoichiometry != null && Integer.parseInt(stoichiometry.toString()) > 1 ?
+                            map.get(String.format("%s.stoichiometry", prefix)).toString() : "";
+                } else if (map.get(String.format("%s.schemaClass", prefix)) != null) {
+                    if (prefix.equals("reg") || prefix.equals("cat")) {
+                        // Retrieve schemaClass from either regulatedBy or catalystActivity instance - it will affect
+                        // the edge-end shape between it and the central node - in the Reaction plot in the front end
+                        regCatSchemaClass = map.get(String.format("%s.schemaClass", prefix)).toString();
+                    } else {
+                        // Deal with all the remaining prefixes for which schemaClass, displayName and dbId are returned
+                        // by the cypher query above
+                        if (schemaClass == null) {
+                            // Note that schemaClass may have been populated from crossReference and referenceEntity above
+                            // as that's more specific, it trumps the schema class retrieved here - hence the null check above.
+                            schemaClass = map.get(String.format("%s.schemaClass", prefix)) != null ?
+                                    map.get(String.format("%s.schemaClass", prefix)).toString() : null;
+                        }
+                        displayName = map.get(String.format("%s.displayName", prefix)) != null ?
+                                wordWrap(map.get(String.format("%s.displayName", prefix)).toString()) : null;
+
+                        String nodeDbId = map.get(String.format("%s.dbId", prefix)) != null ?
+                                map.get(String.format("%s.dbId", prefix)).toString() : null;
+                        String displayNamePlusStoichiometry = displayName;
+                        if (ioStoichiometry != "" && (prefix.equals("i") || prefix.equals("o"))) {
+                            displayNamePlusStoichiometry = ioStoichiometry + " " + displayName;
+                        }
+                        String prefixPlusDisplayName = prefix + displayName;
+                        label2DbId.put(prefixPlusDisplayName, nodeDbId);
+                        // Create the node
+                        if (!node2Id.keySet().contains(prefixPlusDisplayName)) {
+                            // NB. Sometimes the same displayName can be shared between e.g. input and catalystActivity,
+                            // but within a give input/output/catalystActivity/regulatedBy group of nodes, each displayName
+                            // must be unique.
+                            node2Id.put(prefixPlusDisplayName, id.toString());
+                            node = new HashMap();
+                            node.put("class", schemaClass);
+                            node.put("id", id.toString());
+                            // In input/output node names in the plot we want to display stoichiometry, if that's > 1
+                            node.put("label", displayNamePlusStoichiometry);
+                            node.put("description", String.format("%s: %s", schemaClass, displayName));
+                            node.put("url", String.format("http://localhost:4200/schema_view/instance/%s", label2DbId.get(prefixPlusDisplayName)));
+                            nodes.add(node);
+                            id++;
+
+                            // Create the edge
+                            edge = new HashMap();
+                            if (prefix.equals("o")) {
+                                sourceId = "2";
+                                targetId = node2Id.get(prefixPlusDisplayName);
+                            } else if (prefix.equals("i")) {
+                                sourceId = node2Id.get(prefixPlusDisplayName);
+                                targetId = "1";
+                            } else {
+                                sourceId = node2Id.get(prefixPlusDisplayName);
+                                targetId = "0";
+                            }
+                            // N.B. edge-end shape is dictated by the value of regCatSchemaClass, unless it is the output edge -
+                            // in which case it gets a black arrow end
+                            edge.put("edgeEndShape",
+                                    prefix.equals("c") && regCatSchemaClass.equals("CatalystActivity") ? "circle" :
+                                            regCatSchemaClass.equals("PositiveRegulation") ? "white_arrow" :
+                                                    regCatSchemaClass.equals("NegativeRegulation") ? "pipe" :
+                                                            sourceId.equals("2") ? "black_arrow" : "");
+                            edge.put("source", sourceId);
+                            edge.put("target", targetId);
+                            if (prefix.equals("i") || prefix.equals("o")) {
+                                // For input/output nodes, if label the edge with stoichimetry, if that's > 1
+                                edge.put("stoichiometry", ioStoichiometry);
+                            } else {
+                                // This below is to spread the entry points of different types of edges across the
+                                // central node (so that edge-end shapes - e.g. white circle, white arrow or a line)
+                                // don't end up onscuring each other
+                                if (regCatSchemaClass.equals("CatalystActivity")) {
+                                    edge.put("targetAnchor", "1");
+                                } else if (regCatSchemaClass.equals("NegativeRegulation")) {
+                                    edge.put("targetAnchor", "2");
+                                } else if (regCatSchemaClass.equals("PositiveRegulation")) {
+                                    edge.put("targetAnchor", "3");
+                                } else {
+                                    edge.put("targetAnchor", "0");
+                                }
+                            }
+
+                            edge.put("width", 1.0);
+                            edges.add(edge);
+                            ioStoichiometry = "";
+                            regCatSchemaClass = "";
+                            schemaClass = null;
+                        }
+                    }
+                }
+            }
+        }
+        ret.put("nodes", nodes);
+        ret.put("edges", edges);
+        return ret;
+    }
+
     private Condition createDisplayNameQueryCondition(String text, Node instance) {
         Condition condition = null;
         if (text != null) {
@@ -876,4 +1174,31 @@ public class CurationRepository {
         neo4jClient.query(query).run();
     }
 
+    /**
+     * Try and word-wrap by spaces to lines no longer than 20 chars. If that doesn't work (for example
+     * for very long complex names that don't have spaces in them), split label by commas, and within
+     * each line further split it by hyphens, up to the max length of 20 chars.
+     * @param label
+     * @return label with words wrapped as described above
+     */
+    private String wordWrap(String label) {
+        String ret = WordUtils.wrap(label, 20);
+        if (ret.length() == label.length()) {
+            // No spaces in label - in that case:
+            // First split on commas
+            String[] arr = label.split(",");
+            // Then, in case any part after split is still longer than 20 char, split it into subparts
+            // that are at most 20 chars
+            StringBuilder sb = new StringBuilder();
+            for (String part : arr) {
+                if (sb.length() > 0) {
+                    sb.append(",");
+                }
+                sb.append(WordUtils.wrap(part.replaceAll("-"," "), 20)
+                        .replaceAll("\n","-\n"));
+            }
+            ret = sb.toString();
+        }
+        return ret;
+    }
 }
