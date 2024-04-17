@@ -831,7 +831,7 @@ public class CurationRepository {
             String targetDbId = map.get("e.dbId").toString();
             label2DbId.put(target, targetDbId);
             if (map.get("c.displayName") != null) {
-                source = wordWrap(map.get("e.displayName").toString());
+                source = wordWrap(map.get("c.displayName").toString());
                 sourceDbId = map.get("c.dbId").toString();
                 label2DbId.put(source, sourceDbId);
             }
@@ -1190,6 +1190,9 @@ public class CurationRepository {
             // that are at most 20 chars
             StringBuilder sb = new StringBuilder();
             for (String part : arr) {
+                if (sb.length() > 0) {
+                    sb.append(",");
+                }
                 sb.append(WordUtils.wrap(part.replaceAll("-"," "), 20)
                         .replaceAll("\n","-\n"));
             }
