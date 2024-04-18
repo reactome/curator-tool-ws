@@ -733,7 +733,6 @@ public class CurationRepository {
         Long dbId = inst.getDbId();
         if (parentDbId2DbId2SimpleInstance.keySet().contains(dbId)) {
             List<SimpleInstance> childEvents = new ArrayList(parentDbId2DbId2SimpleInstance.get(dbId).values());
-            inst.setAttribute("hasEvent", childEvents);
             if (recursive) {
                 for (SimpleInstance childInst : childEvents) {
                     if (!expandNodeFlag && childInst.getAttributes().containsKey("match") &&
@@ -746,6 +745,11 @@ public class CurationRepository {
                     }
                 }
             }
+            List<SimpleInstance> clonedChildEvents = new ArrayList<>();
+            for (SimpleInstance simpleInstance : childEvents) {
+                clonedChildEvents.add(cloneSimpleInstance(simpleInstance));
+            }
+            inst.setAttribute("hasEvent", clonedChildEvents);
             if (expandNodeFlag) {
                 // If any of inst's children (recursively) have match attribute set to true,
                 // set inst's attribute expand to true also - this will be used by the front-end
@@ -1201,4 +1205,22 @@ public class CurationRepository {
         }
         return ret;
     }
+
+    /**
+     * This method is needed to prevent Jackson returning (from API end points) Object id instead of the full object
+     * - in the case when that Object occurs in multiple places in the returned JSON
+     * @param si
+     * @return cloned si
+     */
+    private SimpleInstance cloneSimpleInstance(SimpleInstance si) {
+        SimpleInstance ret = new SimpleInstance();
+        ret.setDbId(si.getDbId());
+        ret.setDisplayName(si.getDisplayName());
+        ret.setSchemaClassName(si.getSchemaClassName());
+        for (String attr: si.getAttributes().keySet()) {
+            ret.setAttribute(attr, si.getAttribute(attr));
+        }
+        return ret;
+    }
+
 }
