@@ -849,7 +849,8 @@ public class CurationRepository {
                     node.put("id", id.toString());
                     node.put("label", label);
                     node.put("description", String.format("%s: %s", schemaClass, label));
-                    node.put("url", String.format("http://localhost:4200/schema_view/instance/%s", labelDbId));
+                    node.put("instanceViewUrl", String.format("/schema_view/instance/%s", labelDbId));
+                    node.put("plotParams", String.format("%s:%s", labelDbId, schemaClass));
                     nodes.add(node);
                     id++;
                 }
