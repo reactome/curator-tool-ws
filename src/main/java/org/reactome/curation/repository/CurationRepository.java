@@ -814,9 +814,9 @@ public class CurationRepository {
         // Data structure that will be returned by this function
         Map<String, List<Map<String, Object>>> ret = new HashMap();
         // Retrieve all events in hasEvent relationship with the event dbId, and their preceding events (if they exist)
-        String query = String.format("MATCH(n:Event{dbId:%d})-[r:hasEvent]->(e:Event) " +
-                "OPTIONAL MATCH (e:Event)-[:precedingEvent]->(c:Event) " +
-                "RETURN e.dbId, e.schemaClass, e.displayName, c.dbId, c.displayName", dbId);
+        String query = String.format("MATCH(n:Event{dbId:%d})-[:hasEvent]->(e:Event) " +
+                "OPTIONAL MATCH (e:Event)-[:precedingEvent]->(c:Event) MATCH(n:Event{dbId:%d})-[:hasEvent]->(c:Event)" +
+                "RETURN e.dbId, e.schemaClass, e.displayName, c.dbId, c.displayName", dbId, dbId);
         // Execute the query
         Collection<Map<String, Object>> all = neo4jClient.query(query)
                 .fetch()
