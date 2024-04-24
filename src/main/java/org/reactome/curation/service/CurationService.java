@@ -258,6 +258,34 @@ public class CurationService {
         return curationRepository.getReactionPlotData(dbId);
     }
 
+    /**
+     * A placeholder for a QA check in order to prototype the interaction with the front-end
+     * @param dbId
+     * @param editedAttributeNames
+     * @param editedAttributeValues
+     * @return A list of modified attributes that have no value (such values come in as "null" in the API call)
+     */
+    public List<List<String>> getTestQACheckReportUrl(
+            Long dbId,
+            List<String> editedAttributeNames,
+            List<String> editedAttributeValues) {
+        List<List<String>> ret = new ArrayList();
+        int i = 0;
+        for (String attr : editedAttributeNames) {
+            String val = editedAttributeValues.get(i);
+            if (val.equals("null")) {
+                if (ret.isEmpty()) {
+                    ret.add(Arrays.asList("dbId", "Attribute Name", "Attribute Value"));
+                }
+                ret.add(Arrays.asList(dbId.toString(), attr, val));
+                i++;
+            }
+        }
+        return ret;
+    }
+
+
+
     public Boolean delete(DatabaseObject obj) {
         return curationRepository.delete(obj);
     }
