@@ -265,7 +265,7 @@ public class CurationService {
      * @param editedAttributeValues
      * @return A list of modified attributes that have no value (such values come in as "null" in the API call)
      */
-    public List<List<String>> getTestQACheckReportUrl(
+    public List<List<String>> getTestQACheckReport(
             Long dbId,
             List<String> editedAttributeNames,
             List<String> editedAttributeValues) {
@@ -278,8 +278,8 @@ public class CurationService {
                     ret.add(Arrays.asList("dbId", "Attribute Name", "Attribute Value"));
                 }
                 ret.add(Arrays.asList(dbId.toString(), attr, val));
-                i++;
             }
+            i++;
         }
         return ret;
     }
