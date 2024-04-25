@@ -223,10 +223,12 @@ public class CurationController {
     @GetMapping("getTestQACheckReport/{dbId}")
     public List<List<String>> getTestQACheckReport(
             @PathVariable("dbId") Long dbId,
+            @RequestParam("checkType") String checkType,
             @RequestParam("editedAttributeNames") String editedAttributeNames,
             @RequestParam("editedAttributeValues") String editedAttributeValues
     ) {
         return service.getTestQACheckReport(dbId,
+                checkType,
                 Arrays.asList(editedAttributeNames.split(",")),
                 Arrays.asList(editedAttributeValues.split(",")));
     }
