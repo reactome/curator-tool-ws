@@ -1,9 +1,6 @@
 package org.reactome.curation.controller;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -220,5 +217,19 @@ public class CurationController {
             return service.getReactionPlotData(dbId);
         else
             return null;
+    }
+
+
+    @GetMapping("getTestQACheckReport/{dbId}")
+    public List<List<String>> getTestQACheckReport(
+            @PathVariable("dbId") Long dbId,
+            @RequestParam("checkType") String checkType,
+            @RequestParam("editedAttributeNames") String editedAttributeNames,
+            @RequestParam("editedAttributeValues") String editedAttributeValues
+    ) {
+        return service.getTestQACheckReport(dbId,
+                checkType,
+                Arrays.asList(editedAttributeNames.split(",")),
+                Arrays.asList(editedAttributeValues.split(",")));
     }
 }
