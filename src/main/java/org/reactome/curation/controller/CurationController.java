@@ -4,6 +4,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.websocket.server.PathParam;
+
 import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.model.SimpleSchemaClass;
@@ -184,8 +186,32 @@ public class CurationController {
             return service.loadSchemaClassTree();
         }
         catch(Exception e) {
-            logger.error("CurtionController.getSchemaClassTree: " + e.getMessage(), e);
+            logger.error("CurationController.getSchemaClassTree: " + e.getMessage(), e);
             return new SimpleSchemaClass(); // Just return an empty node
+        }
+    }
+    
+    //TODO: Need to change the account into a more secure way. Currently just for prototyping!
+    @GetMapping("loadInstances/{account}")
+    public List<SimpleInstance> loadInstances(@PathVariable("account") String account) {
+        try {
+            return service.loadInstances(account);
+        }
+        catch(Exception e) {
+            logger.error("CurationController.loadInstances: " + e.getMessage(), e);
+            return Collections.EMPTY_LIST;
+        }
+    }
+    
+    //TODO: Need to change the account into a more secure way!!!
+    @PostMapping("persistInstances/{account}")
+    public void persistInstances(@RequestBody List<SimpleInstance> instances,
+                                 @PathVariable("account") String account) {
+        try {
+            service.persitInstances(instances, account);
+        }
+        catch(Exception e) {
+            logger.error("CurationController.persistInstances: " + e.getMessage(), e);
         }
     }
 

@@ -20,7 +20,6 @@ import org.jdom.input.SAXBuilder;
 import org.jdom.output.XMLOutputter;
 import org.junit.Test;
 import org.reactome.curation.config.CuratorToolEnv;
-import org.reactome.curation.config.CuratorToolProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
