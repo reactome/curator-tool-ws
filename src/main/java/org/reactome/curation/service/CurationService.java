@@ -260,13 +260,20 @@ public class CurationService {
     
     public void persitInstances(List<SimpleInstance> instances,
                                 String accountName) throws Exception {
-        File file = new File(toolEnv.getFileRepoDir(), accountName + ".json");
-        fileRepository.persist(instances, file.getAbsolutePath());
+        fileRepository.persist(instances, getFileForPersistedInstances(accountName));
     }
     
     public List<SimpleInstance> loadInstances(String accountName) throws Exception {
+        return fileRepository.load(getFileForPersistedInstances(accountName));
+    }
+    
+    private String getFileForPersistedInstances(String accountName) {
         File file = new File(toolEnv.getFileRepoDir(), accountName + ".json");
-        return fileRepository.load(file.getAbsolutePath());
+        return file.getAbsolutePath();
+    }
+    
+    public void deletePersistedInstances(String accountName) throws Exception {
+        fileRepository.deleteFile(getFileForPersistedInstances(accountName));
     }
 
     public List<SimpleInstance> getEventTree(String speciesName,

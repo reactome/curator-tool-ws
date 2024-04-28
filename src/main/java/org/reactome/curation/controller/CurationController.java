@@ -1,10 +1,12 @@
 package org.reactome.curation.controller;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import javax.websocket.server.PathParam;
 
 import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.model.SimpleInstance;
@@ -15,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -200,6 +203,17 @@ public class CurationController {
         catch(Exception e) {
             logger.error("CurationController.loadInstances: " + e.getMessage(), e);
             return Collections.EMPTY_LIST;
+        }
+    }
+    
+    //TODO: Need to change the account into a more secure way!!!
+    @DeleteMapping("deletePersistedInstances/{account}")
+    public void deletePersistedInstances(@PathVariable("account") String account) {
+        try {
+            service.deletePersistedInstances(account);
+        }
+        catch(Exception e) {
+            logger.error("CurationController.deletePersistedInstances: " + e.getMessage(), e);
         }
     }
     

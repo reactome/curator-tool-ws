@@ -23,10 +23,11 @@ public class CurationFileRepository {
     private Logger logger = LoggerFactory.getLogger(CurationFileRepository.class);
     
     public CurationFileRepository() {
-        
     }
 
     //TODO: Roll over the file name so that we can keep at least five backups!
+    // 1). Keep 5 days
+    // 2). Each day keep 5 backups
     public void persist(List<SimpleInstance> instances,
                         String fileName) throws Exception {
         File file = new File(fileName);
@@ -34,6 +35,17 @@ public class CurationFileRepository {
         // Give it some format
         mapper.writerWithDefaultPrettyPrinter().writeValue(file, instances);
         logger.info("Saved instances to " + file.getAbsolutePath());
+    }
+    
+    /**
+     * Delete the persisted instances for a case like users have committed all changed instances.
+     * @param fileName
+     * @throws Exception
+     */
+    public void deleteFile(String fileName) throws Exception {
+        File file = new File(fileName);
+        if (file.exists())
+            file.delete();
     }
   
     public List<SimpleInstance> load(String fileName) throws Exception {
