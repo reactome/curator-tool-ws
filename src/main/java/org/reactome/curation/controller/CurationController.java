@@ -1,6 +1,10 @@
 package org.reactome.curation.controller;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -13,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -184,8 +189,43 @@ public class CurationController {
             return service.loadSchemaClassTree();
         }
         catch(Exception e) {
-            logger.error("CurtionController.getSchemaClassTree: " + e.getMessage(), e);
+            logger.error("CurationController.getSchemaClassTree: " + e.getMessage(), e);
             return new SimpleSchemaClass(); // Just return an empty node
+        }
+    }
+    
+    //TODO: Need to change the account into a more secure way. Currently just for prototyping!
+    @GetMapping("loadInstances/{account}")
+    public List<SimpleInstance> loadInstances(@PathVariable("account") String account) {
+        try {
+            return service.loadInstances(account);
+        }
+        catch(Exception e) {
+            logger.error("CurationController.loadInstances: " + e.getMessage(), e);
+            return Collections.EMPTY_LIST;
+        }
+    }
+    
+    //TODO: Need to change the account into a more secure way!!!
+    @DeleteMapping("deletePersistedInstances/{account}")
+    public void deletePersistedInstances(@PathVariable("account") String account) {
+        try {
+            service.deletePersistedInstances(account);
+        }
+        catch(Exception e) {
+            logger.error("CurationController.deletePersistedInstances: " + e.getMessage(), e);
+        }
+    }
+    
+    //TODO: Need to change the account into a more secure way!!!
+    @PostMapping("persistInstances/{account}")
+    public void persistInstances(@RequestBody List<SimpleInstance> instances,
+                                 @PathVariable("account") String account) {
+        try {
+            service.persitInstances(instances, account);
+        }
+        catch(Exception e) {
+            logger.error("CurationController.persistInstances: " + e.getMessage(), e);
         }
     }
 

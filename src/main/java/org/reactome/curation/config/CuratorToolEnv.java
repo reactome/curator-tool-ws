@@ -29,5 +29,8 @@ public class CuratorToolEnv {
         return env.getProperty("pubmedUrl2");
     }
 
+    public String getFileRepoDir() {
+        return env.getProperty("file_repo_dir");
+    }
 
 }
