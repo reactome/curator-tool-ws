@@ -609,7 +609,12 @@ public class CurationRepository {
         String queryRoot = "MATCH (p:Event)-[r:hasEvent]->(n:Event)";
         String queryReturnClause = " RETURN DISTINCT p.dbId, " +
                 "n.dbId, n.displayName, n.schemaClass, n.speciesName, n._doRelease, r.order, r.stoichiometry";
-        String matchClausePrefix = String.format(", CASE WHEN n.schemaClass = '%s' ", className);
+        String matchClausePrefix;
+        if (className != null && className != "") {
+            matchClausePrefix = String.format(", CASE WHEN n.schemaClass = '%s' ", className);
+        } else {
+            matchClausePrefix = String.format(", CASE WHEN n.schemaClass IS NOT NULL ");
+        }
         String matchClause = "";
         String matchClauseSuffix = "THEN true ELSE false END as match";
         boolean foundInstanceAttribute = false;
