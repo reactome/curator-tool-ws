@@ -5,6 +5,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.gk.model.ReactomeJavaConstants;
 import org.junit.jupiter.api.Test;
 import org.reactome.curation.controller.DatabaseObjectInstanceConverter;
@@ -36,6 +39,46 @@ class RESTfulAPITests {
     @Test
     void contextLoads() {
     }
+    
+    @Test
+    public void testPersistAndLoadInstances() throws Exception {
+        assertNotNull(mockMvc);
+        
+        ObjectMapper mapper = CurationWSTestHelper.createObjectMapper();
+        
+        Complex complex = CurationWSTestHelper.createComplexWithNewComplexAndSubunit();
+        SimpleInstance instance = converter.convert(complex);
+        
+        Reaction reaction = CurationWSTestHelper.createReaction();
+        SimpleInstance reationInstance = converter.convert(reaction);
+        
+        List<SimpleInstance> instances = new ArrayList<>();
+        instances.add(instance);
+        instances.add(reationInstance);
+        
+        String instancesJSON = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(instances);
+        logger.info("Instances in JSON:\n" + instancesJSON);
+        
+        // Persist
+        String url = BASE_URL + "persistInstances/test";
+        String dbId = mockMvc.perform(post(url).contentType(MediaType.APPLICATION_JSON)
+                           .content(instancesJSON))
+                           .andExpect(status().isOk())
+                           .andReturn()
+                           .getResponse()
+                           .getContentAsString();
+        logger.info("Done saving: " + dbId);
+        
+        // Load back
+        url = BASE_URL + "loadInstances/test";
+        String json = mockMvc.perform(get(url))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        System.out.println(json);
+    }
+    
     
     @Test
     public void testGetSchemaClassTree() throws Exception {

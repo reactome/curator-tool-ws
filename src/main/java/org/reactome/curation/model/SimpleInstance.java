@@ -40,6 +40,7 @@ public class SimpleInstance extends DatabaseObject {
 //    private String displayName;
     private String schemaClassName;
     private Map<String, Object> attributes;
+    private List<String> modifiedAttributes; // Names of attributes that have been updated.
 
     public void setAttribute(String attributeName, Object value) {
         if (attributes == null)
@@ -47,6 +48,14 @@ public class SimpleInstance extends DatabaseObject {
         attributes.put(attributeName, value);
     }
     
+    public List<String> getModifiedAttributes() {
+        return modifiedAttributes;
+    }
+
+    public void setModifiedAttributes(List<String> modifiedAttributes) {
+        this.modifiedAttributes = modifiedAttributes;
+    }
+
     public Object getAttribute(String attributeName) {
         if (attributes == null)
             return null;
@@ -98,7 +107,15 @@ class SimpleInstanceDeserializer extends JsonDeserializer<SimpleInstance> {
                     instance.setDisplayName(fieldValue.asText());
                 } else if ("schemaClassName".equals(fieldName)) {
                     instance.setSchemaClassName(fieldValue.asText());
-                } else if ("attributes".equals(fieldName)) {
+                } else if ("modifiedAttributes".equals(fieldName)) {
+                    // This should be an array
+                    List<String> names = new ArrayList<>();
+                    for (JsonNode subNode : fieldValue) {
+                        names.add(deserializeNode(subNode) + "");
+                    }
+                    instance.setModifiedAttributes(names);
+                }
+                else if ("attributes".equals(fieldName)) {
                     // attributes is an object
                     Iterator<Map.Entry<String, JsonNode>> attributeFields = fieldValue.fields();
                     while (attributeFields.hasNext()) {

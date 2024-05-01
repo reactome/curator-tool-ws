@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 import org.gk.model.ReactomeJavaConstants;
 import org.junit.jupiter.api.Test;
 import org.reactome.curation.model.SimpleInstance;
+import org.reactome.curation.repository.CurationFileRepository;
 import org.reactome.curation.repository.CurationRepository;
 import org.reactome.server.graph.domain.model.Complex;
 import org.reactome.server.graph.domain.model.LiteratureReference;
@@ -23,6 +24,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 //Note: To test the newly saved or stored objects in the neo4j database using the content service API, try to 
 // start a content service at an external terminal by following README at https://github.com/reactome/content-service
@@ -157,6 +161,37 @@ class CurationRepositoryTests {
         // Don't expect to delete this reaction after a test.
         boolean rtn = repository.delete(reaction);
         logger.info("Done: " + rtn);
+    }
+    
+    /**
+     * Test file-based persistence repository.
+     * @throws Exception
+     */
+    @Test
+    public void testFileRepository() throws Exception {
+        SimpleInstance inst1 = new SimpleInstance();
+        inst1.setDisplayName("TestReaction");
+        inst1.setDbId(1000L);
+        inst1.setSchemaClassName(ReactomeJavaConstants.Reaction);
+        inst1.setAttribute("name", "TestReaction");
+        inst1.setAttribute("created", "test");
+        
+        SimpleInstance inst2 = new SimpleInstance();
+        inst2.setDisplayName("TestEWAS");
+        inst2.setDbId(1002L);
+        inst2.setSchemaClassName(ReactomeJavaConstants.EntityWithAccessionedSequence);
+        List<SimpleInstance> instances = new ArrayList<>();
+        
+        instances.add(inst1);
+        instances.add(inst2);
+        
+        String fileName = "test.json";
+        // Save
+        CurationFileRepository fileRepo = new CurationFileRepository();
+        fileRepo.persist(instances, fileName);
+        // Load back
+        List<SimpleInstance> loaded = fileRepo.load(fileName);
+        System.out.println("Loaded instances: " + loaded);
     }
     
 }

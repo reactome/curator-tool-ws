@@ -3,9 +3,11 @@ package org.reactome.curation.repository;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,7 +15,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang.WordUtils;
-import org.gk.model.Instance;
 import org.neo4j.cypherdsl.core.Condition;
 import org.neo4j.cypherdsl.core.Cypher;
 import org.neo4j.cypherdsl.core.Functions;
@@ -609,7 +610,12 @@ public class CurationRepository {
         String queryRoot = "MATCH (p:Event)-[r:hasEvent]->(n:Event)";
         String queryReturnClause = " RETURN DISTINCT p.dbId, " +
                 "n.dbId, n.displayName, n.schemaClass, n.speciesName, n._doRelease, r.order, r.stoichiometry";
-        String matchClausePrefix = String.format(", CASE WHEN n.schemaClass = '%s' ", className);
+        String matchClausePrefix;
+        if (className != null && className != "") {
+            matchClausePrefix = String.format(", CASE WHEN n.schemaClass = '%s' ", className);
+        } else {
+            matchClausePrefix = String.format(", CASE WHEN n.schemaClass IS NOT NULL ");
+        }
         String matchClause = "";
         String matchClauseSuffix = "THEN true ELSE false END as match";
         boolean foundInstanceAttribute = false;

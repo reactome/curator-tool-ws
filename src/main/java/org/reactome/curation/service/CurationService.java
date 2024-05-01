@@ -1,15 +1,25 @@
 package org.reactome.curation.service;
 
+import java.io.File;
 import java.io.InputStream;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.gk.model.ReactomeJavaConstants;
+import org.reactome.curation.config.CuratorToolEnv;
 import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.model.SimpleSchemaClass;
+import org.reactome.curation.repository.CurationFileRepository;
 import org.reactome.curation.repository.CurationRepository;
 //import org.reactome.server.graph.aop.LazyFetchAspect;
 import org.reactome.server.graph.domain.model.DatabaseObject;
@@ -52,10 +62,17 @@ public class CurationService {
 //    private DatabaseObjectUtils databaseObjectUtils;
     @Autowired
     private CurationRepository curationRepository;
+    // For file-based repository
+    @Autowired
+    private CurationFileRepository fileRepository;
+    
+    @Autowired
+    private CuratorToolEnv toolEnv;
     
     // Helper with auto filling literature reference
     @Autowired
     private LiteratureReferenceAttributeAutoFiller lrFiller;
+    
     
     public CurationService() {
         // Load clsName2Attributes to avoid any thread issue: clsName2Attributes
@@ -240,6 +257,24 @@ public class CurationService {
     public List<String> getSchemaClasses() {
         return curationRepository.getSchemaClasses();
     }
+    
+    public void persitInstances(List<SimpleInstance> instances,
+                                String accountName) throws Exception {
+        fileRepository.persist(instances, getFileForPersistedInstances(accountName));
+    }
+    
+    public List<SimpleInstance> loadInstances(String accountName) throws Exception {
+        return fileRepository.load(getFileForPersistedInstances(accountName));
+    }
+    
+    private String getFileForPersistedInstances(String accountName) {
+        File file = new File(toolEnv.getFileRepoDir(), accountName + ".json");
+        return file.getAbsolutePath();
+    }
+    
+    public void deletePersistedInstances(String accountName) throws Exception {
+        fileRepository.deleteFile(getFileForPersistedInstances(accountName));
+    }
 
     public List<SimpleInstance> getEventTree(String speciesName,
                                              String className,
@@ -257,6 +292,49 @@ public class CurationService {
     public Map<String, List<Map<String, Object>>> getReactionPlotData(Long dbId) {
         return curationRepository.getReactionPlotData(dbId);
     }
+
+    /**
+     * A placeholder for a QA check in order to prototype the interaction with the front-end
+     * @param dbId
+     * @param checkType
+     * @param editedAttributeNames
+     * @param editedAttributeValues
+     * @return A list of modified attributes that have no value (such values come in as "null" in the API call)
+     */
+    public List<List<String>> getTestQACheckReport(
+            Long dbId,
+            String checkType,
+            List<String> editedAttributeNames,
+            List<String> editedAttributeValues) {
+        List<List<String>> ret = new ArrayList<>();
+        int i = 0;
+        for (String attr : editedAttributeNames) {
+            String val = editedAttributeValues.get(i);
+            if (checkType.equals("NonNullCheck")) {
+                if (val.equals("null")) {
+                    if (ret.isEmpty()) {
+                        ret.add(Arrays.asList("dbId", "Attribute Name", "Attribute Value"));
+                    }
+                    ret.add(Arrays.asList(dbId.toString(), attr, val));
+                }
+            } else if (checkType.equals("NegativeValueCheck")) {
+                try {
+                    if (Integer.parseInt(val) < 0) {
+                        if (ret.isEmpty()) {
+                            ret.add(Arrays.asList("dbId", "Attribute Name", "Attribute Value"));
+                        }
+                        ret.add(Arrays.asList(dbId.toString(), attr, val));
+                    }
+                } catch (NumberFormatException e) {
+                    // quiesce
+                }
+            }
+            i++;
+        }
+        return ret;
+    }
+
+
 
     public Boolean delete(DatabaseObject obj) {
         return curationRepository.delete(obj);
