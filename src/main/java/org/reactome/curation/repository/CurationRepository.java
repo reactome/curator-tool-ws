@@ -15,10 +15,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang.WordUtils;
-import org.neo4j.cypherdsl.core.Condition;
-import org.neo4j.cypherdsl.core.Cypher;
-import org.neo4j.cypherdsl.core.Functions;
-import org.neo4j.cypherdsl.core.Node;
+import org.neo4j.cypherdsl.core.*;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReading;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingUpdate;
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
@@ -115,7 +112,7 @@ public class CurationRepository {
     
     /**
      * Delete an object as specified.
-     * @param dbId
+     * @param obj
      * @return true if nothing wrong. The detailed information is not returned here.
      * @throws Exception
      */
@@ -431,8 +428,8 @@ public class CurationRepository {
 
     /**
      * Get a list of objects in SimpleInstance.
-     * Note: If performance is an issue, try to create an index on displayName 
-     * if it is not here like this: 
+     * Note: If performance is an issue, try to create an index on displayName
+     * if it is not here like this:
      * CREATE INDEX ON :DatabaseObject(displayName)
      */
     public List<SimpleInstance> listInstances(String className,
@@ -444,6 +441,50 @@ public class CurationRepository {
         var query = Cypher.match(instance);
         if (condition != null)
             query.where(condition);
+        var queryBuild = query.returning(instance.property("dbId"),
+                        instance.property("displayName"),
+                        instance.property("schemaClass"))
+                .orderBy(instance.property("displayName"))
+                .skip(skip)
+                .limit(limit)
+                .build();
+        Collection<Map<String, Object>> all = neo4jClient.query(queryBuild.getCypher())
+                .fetch()
+                .all();
+        List<SimpleInstance> rtn = new ArrayList<>();
+        for (Map<String, Object> map : all) {
+            // This should not occur. However, just in case
+            if (map.get("inst.dbId") == null) {
+                logger.error("Return result with dbId = null: " + className + ", " + skip + ", " + limit);
+                continue;
+            }
+            SimpleInstance inst = constructInstance(map, className);
+            rtn.add(inst);
+        }
+        return rtn;
+    }
+
+    /**
+     * Get a list of objects in SimpleInstance.
+     * Note: If performance is an issue, try to create an index on displayName 
+     * if it is not here like this: 
+     * CREATE INDEX ON :DatabaseObject(displayName)
+     */
+    public List<SimpleInstance> listInstances(String className,
+                                              int skip,
+                                              int limit,
+                                              String attributes,
+                                              String attributeTypes,
+                                              String operands,
+                                              String searchKeys) {
+        var instance = Cypher.node(className).named("inst");
+        var query = Cypher.match(instance);
+        // TODO: if attribute is an instance, need to go into this node
+        List<Condition> attributeConditions = createQueryCondition(attributes, attributeTypes, operands, searchKeys, instance);
+        for(Condition attCondition : attributeConditions){
+            if (attCondition != null)
+                query.where(attCondition);
+        }
         var queryBuild = query.returning(instance.property("dbId"), 
                                          instance.property("displayName"),
                                          instance.property("schemaClass"))
@@ -1111,6 +1152,63 @@ public class CurationRepository {
             condition = displayName.matches(".*(?i)" + text + ".*");
         }
         return condition;
+    }
+
+    private List<Condition> createQueryCondition(String attributesCsv, String attributeTypesCsv,
+        String operandsCsv, String searchKeysCsv, Node instance) {
+            List<String> attributes = attributesCsv != null ? Arrays.asList(attributesCsv.split(",")) : Collections.emptyList();
+            List<String> attributeTypes = attributeTypesCsv != null ? Arrays.asList(attributeTypesCsv.split(",")) : Collections.emptyList();
+            List<String> operands = operandsCsv != null ? Arrays.asList(operandsCsv.split(",")) : Collections.emptyList();
+            List<String> searchKeys = searchKeysCsv != null ? Arrays.asList(searchKeysCsv.split(",")) : Collections.emptyList();
+        List<Condition> conditions = new ArrayList<>();
+        if (!attributes.isEmpty() && !operands.isEmpty() && !searchKeys.isEmpty()) {
+            // Find attribute containing search key using regex
+            for(int i=0; i<attributes.size(); i++) {
+                var attributeName = instance.property(attributes.get(i));
+                var searchKey = searchKeys.get(i);
+//                if (attributeTypes.get(i).equals("instance")) {
+//                    if (!foundInstanceAttribute) {
+//                        queryRoot += " OPTIONAL MATCH ";
+//                    } else {
+//                        queryRoot += ", ";
+//                    }
+//                    queryRoot += String.format("(n:Event)-[rel%d:%s]->(q%d)", i, attribute, i);
+//                }
+
+                if (!searchKeys.get(i).equals("na") || operands.get(i).contains("NULL")) {
+                    switch (operands.get(i)) {
+                        case "Equals":
+                            conditions.add(attributeName.isEqualTo(Cypher.literalOf(searchKey)));
+                            break;
+                        case "!=":
+                            conditions.add(attributeName.isNotEqualTo(Cypher.literalOf(searchKey)));
+                            break;
+                        case "Contains":
+                            conditions.add(attributeName.contains(Cypher.literalOf(searchKey)));
+                            break;
+//                        case "Does Not Contain":
+//                            //conditions.add(att.(Cypher.literalOf(searchKeys.get(i))));
+//                            break;
+                        case "Use REGEXP":
+                            //conditions.add(attributeName.)
+                            if (attributeTypes.get(i).equals("primitive")) {
+                                //matchClause = String.format("AND toString(n.%s) =~ '%s' ", attributes.get(i), searchKeys.get(i));
+                            } else {
+                                // attributeType.equals("instance")
+//                                matchClause = String.format("AND (toString(q%d.displayName) =~ '%s' OR toString(q%d.dbId) =~ '%s') ",
+//                                        i, searchKeys.get(i), i, searchKeys.get(i));
+                            }
+                            break;
+                        case "IS NOT NULL":
+                        case "IS NULL":
+                            //matchClause = String.format("AND n.%s %s ", attributes.get(i), operands.get(i));
+                            break;
+                        default:
+                    }
+                }
+            }
+        }
+        return conditions;
     }
     
     public Integer countInstances(String clsName, String text) {

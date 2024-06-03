@@ -149,8 +149,18 @@ public class CurationController {
                                               @PathVariable("skip") Integer skip,
                                               @PathVariable("limit") Integer limit,
                                               // Make sure to use Optional so that we can take a URL without query.
-                                              @RequestParam("query") Optional<String> query) { 
-        return service.listInstances(className, skip, limit, query.isEmpty() ? null : query.get());
+                                              @RequestParam("query") Optional<String> query,
+                                              @RequestParam("attributes") Optional<String> attributes,
+                                              @RequestParam("attributeTypes") Optional<String> attributeTypes,
+                                              @RequestParam("operands") Optional<String> operands,
+                                              @RequestParam("searchKeys") Optional<String> searchKeys) {
+        return service.listInstances(className, skip, limit,
+                query.isEmpty() ? null : query.get(),
+                attributes.isEmpty() ? null : attributes.get(),
+                attributeTypes.isEmpty() ? null : attributeTypes.get(),
+                operands.isEmpty() ? null : operands.get(),
+                searchKeys.isEmpty() ? null : searchKeys.get());
+
     }
     
     /**

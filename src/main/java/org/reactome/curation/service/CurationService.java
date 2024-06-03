@@ -221,7 +221,7 @@ public class CurationService {
     /**
      * A helper method to count instances for each class and then add to its respective 
      * class object.
-     * @param root the root class, i.e., DatabaseObject.
+     * @param cls the root class, i.e., DatabaseObject.
      * @throws Exception
      */
     private void countInstances(SimpleSchemaClass cls) {
@@ -241,8 +241,16 @@ public class CurationService {
     public List<SimpleInstance> listInstances(String className,
                                               int skip,
                                               int limit,
-                                              String text) {
+                                              String text,
+                                              String attributes,
+                                              String attributeTypes,
+                                              String operands,
+                                              String searchKeys) {
+        if (attributes == null)
         return curationRepository.listInstances(className, skip, limit, text);
+        else
+        return curationRepository.listInstances(className, skip, limit, attributes,
+                attributeTypes, operands, searchKeys);
     }
     
     public SimpleInstance findInstance(String displayName,
