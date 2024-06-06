@@ -215,7 +215,6 @@ class CurationRepositoryTests {
 
         var instance = Cypher.node(className).named("inst");
         var query = Cypher.match(instance);
-        // TODO: if attribute is an instance, need to go into this node
 
         List<Condition> attributeConditions = new ArrayList<>();
         List<Relationship> relationships = new ArrayList<>();

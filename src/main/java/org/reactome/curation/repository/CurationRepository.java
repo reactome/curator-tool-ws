@@ -43,9 +43,9 @@ import lombok.Data;
  * should be based on graph-core.
  * We use a class, instead of extending Neo4jRepository interface, to implement this curation repository so that
  * we have a much better control (e.g. handling dbId, etc). This is a better approach!
+ *
  * @author wug
  * TODO: Make sure no ReactomeTransient properties are saved!
- *
  */
 @Repository
 @Data
@@ -99,8 +99,9 @@ public class CurationRepository {
 
     /**
      * Get the next dbId that can be used to create a new DatabaseObject.
-     * This is a synchronized method so that it can be accessed by one thread only 
+     * This is a synchronized method so that it can be accessed by one thread only
      * to avoid any id conflict.
+     *
      * @return
      */
     public synchronized Long nextDbId() {
@@ -110,9 +111,10 @@ public class CurationRepository {
     private Long getMaxDbId() {
         return neo4jClient.query(MAX_DB_ID_QUERY).fetchAs(Long.class).one().get();
     }
-    
+
     /**
      * Delete an object as specified.
+     *
      * @param obj
      * @return true if nothing wrong. The detailed information is not returned here.
      * @throws Exception
@@ -126,18 +128,19 @@ public class CurationRepository {
         }
         // Build a dsl query to delete the node having this dbId
         Node objNode = Cypher.node(getNodeLabel(obj))
-                             .named(getNodeName(obj))
-                             .withProperties("dbId", Cypher.literalOf(obj.getDbId()));
+                .named(getNodeName(obj))
+                .withProperties("dbId", Cypher.literalOf(obj.getDbId()));
         var query = Cypher.match(objNode).detachDelete(objNode).build();
 //        System.out.println(Renderer.getDefaultRenderer().render(query));
         // Commit the deletion
         neo4jClient.query(query.getCypher()).run(); // This may return something. But for the time being, we don't care
-                                                    // as long as no exception is thrown.
+        // as long as no exception is thrown.
         return true;
     }
-    
+
     /**
      * Check if the display name needs to be updated.
+     *
      * @param obj
      * @throws Exception
      */
@@ -152,19 +155,20 @@ public class CurationRepository {
      * value object to reduce the query time.
      * TODO: If the passed obj has a new DatabaseObject referred, this method will not return the DB_ID for that object.
      * For the time being, the client should call findByDbId to reload the passed object to get the DB_ID for that object.
-     * This may need to change in the future. 
+     * This may need to change in the future.
      * Note: There is a bug in the original graph-core code regarding the order of StoichiometryObject
      * used in input, output, and hasComponent. The order is _displayName based, which most likely is
      * not true. This needs a further investigation.
      * TODO: Check relationships encoded by specific classes, e.g., input, output, hasMember.
+     *
      * @param obj
      * @return
-     * @throws IllegalAccessException 
-     * @throws InstantiationException 
-     * @throws SecurityException 
-     * @throws NoSuchMethodException 
-     * @throws InvocationTargetException 
-     * @throws IllegalArgumentException 
+     * @throws IllegalAccessException
+     * @throws InstantiationException
+     * @throws SecurityException
+     * @throws NoSuchMethodException
+     * @throws InvocationTargetException
+     * @throws IllegalArgumentException
      */
     @Transactional
     public DatabaseObject store(DatabaseObject obj) throws Exception {
@@ -185,16 +189,15 @@ public class CurationRepository {
         Map<String, Relationship> field2rel = getField2rel(obj.getClass());
         // Recursive calling to store all new instances
         for (String field : field2value.keySet()) {
-            if (!field2rel.containsKey(field)) 
-                continue; 
+            if (!field2rel.containsKey(field))
+                continue;
             Object value = field2value.get(field);
             if (value instanceof List) {
                 List<?> list = (List<?>) value;
                 for (var tmp : list) {
                     storeValueObj(tmp);
                 }
-            }
-            else
+            } else
                 storeValueObj(value);
         }
         // Now we can start to store
@@ -205,7 +208,7 @@ public class CurationRepository {
         // To do save, we create a DatabaseObject without relationships first
         DatabaseObject proxyNode = obj.getClass().getConstructor().newInstance();
         for (String field : field2value.keySet()) {
-            if (field2rel.containsKey(field)) 
+            if (field2rel.containsKey(field))
                 continue; // Defer this for the time being
             // Escape schemaClass
             if (field.equals("schemaClass")) // This is inferred from the class name. So there is no need to copy!
@@ -224,7 +227,7 @@ public class CurationRepository {
         // Save the schemaClass here since it is escaped. But we need it!
         var setPropStat = Cypher.match(objNode).set(objNode.property("schemaClass").to(Cypher.literalOf(proxyNode.getSchemaClass())));
         neo4jClient.query(setPropStat.build().getCypher()).run();
-        
+
         OngoingReading stat = Cypher.match(objNode);
         List<org.neo4j.cypherdsl.core.Relationship> relationships = new ArrayList<>();
         for (String field : field2value.keySet()) {
@@ -240,8 +243,7 @@ public class CurationRepository {
                     var tmp = list.get(i);
                     stat = handleValueObj(objNode, tmp, rel, i, relationships, stat);
                 }
-            }
-            else {
+            } else {
                 stat = handleValueObj(objNode, value, rel, null, relationships, stat);
             }
         }
@@ -260,9 +262,10 @@ public class CurationRepository {
         }
         return obj;
     }
-    
+
     /**
      * A helper to store value object. This method is used as an helper for recursive calling of store(DatabaseObject).
+     *
      * @param value
      * @return
      * @throws Exception
@@ -272,15 +275,14 @@ public class CurationRepository {
             DatabaseObject valueObj = (DatabaseObject) value;
             if (valueObj.getDbId() == null || valueObj.getDbId() < 0)
                 return store(valueObj); // We should not let Spring creates another transaction for this call (see https://www.marcobehler.com/guides/spring-transaction-management-transactional-in-depth)
-        }
-        else if (value instanceof StoichiometryObject) {
+        } else if (value instanceof StoichiometryObject) {
             StoichiometryObject stoiObj = (StoichiometryObject) value;
             if (stoiObj.getObject().getDbId() == null || stoiObj.getObject().getDbId() < 0)
                 return store(stoiObj.getObject());
         }
         return null;
     }
-    
+
     /**
      * A helper method to create relationship and match a node.
      */
@@ -309,8 +311,7 @@ public class CurationRepository {
         org.neo4j.cypherdsl.core.Relationship relationship = null;
         if (rel.direction() == Relationship.Direction.OUTGOING) {
             relationship = objNode.relationshipTo(valueNode, rel.type());
-        }
-        else if (rel.direction() == Relationship.Direction.INCOMING)
+        } else if (rel.direction() == Relationship.Direction.INCOMING)
             relationship = objNode.relationshipFrom(valueNode, rel.type());
         else // This should never happen
             relationship = objNode.relationshipBetween(valueNode, rel.type());
@@ -333,6 +334,7 @@ public class CurationRepository {
 
     /**
      * A utility to create a unique name for a node
+     *
      * @param obj
      * @return
      */
@@ -343,6 +345,7 @@ public class CurationRepository {
     /**
      * Make sure all object values referred by a DatabaseObject have not deleted. This method checks for
      * DatabaseObjects having dbIds assigned.
+     *
      * @return
      */
     private DatabaseObject findAnyDeletedValue(Map<String, Object> field2value) {
@@ -357,8 +360,7 @@ public class CurationRepository {
                     if (deleted != null)
                         return deleted;
                 }
-            }
-            else {
+            } else {
                 DatabaseObject deleted = checkIfDeleted(value);
                 if (deleted != null)
                     return deleted;
@@ -369,6 +371,7 @@ public class CurationRepository {
 
     /**
      * Return the deleted object from the passed value.
+     *
      * @param value
      * @return
      */
@@ -379,9 +382,8 @@ public class CurationRepository {
                 return null;
             if (!neo4jTemplate.existsById(dObj.getDbId(), DatabaseObject.class))
                 return dObj;
-        }
-        else if (value instanceof StoichiometryObject) {
-            DatabaseObject dObj = ((StoichiometryObject)value).getObject();
+        } else if (value instanceof StoichiometryObject) {
+            DatabaseObject dObj = ((StoichiometryObject) value).getObject();
             if (dObj.getDbId() == null || dObj.getDbId() < 0)
                 return null;
             if (!neo4jTemplate.existsById(dObj.getDbId(), DatabaseObject.class))
@@ -393,6 +395,7 @@ public class CurationRepository {
     /**
      * Find an instance with the matched display name in the specified classes.
      * For example, find a Species instance with displayName = homo sapiens.
+     *
      * @param displayName
      * @param clsNames
      * @return
@@ -415,8 +418,8 @@ public class CurationRepository {
         var query = Cypher.match(instance);
         query.where(condition);
         var queryBuild = query.returning(instance.property("dbId"),
-                instance.property("displayName"),
-                instance.property("schemaClass"))
+                        instance.property("displayName"),
+                        instance.property("schemaClass"))
                 .limit(1) // Just need one instance
                 .build();
         Optional<Map<String, Object>> result = neo4jClient.query(queryBuild.getCypher()).fetch().first();
@@ -467,32 +470,55 @@ public class CurationRepository {
 
     /**
      * Get a list of objects in SimpleInstance.
-     * Note: If performance is an issue, try to create an index on displayName 
-     * if it is not here like this: 
+     * Note: If performance is an issue, try to create an index on displayName
+     * if it is not here like this:
      * CREATE INDEX ON :DatabaseObject(displayName)
      */
     public List<SimpleInstance> listInstances(String className,
                                               int skip,
                                               int limit,
-                                              String attributes,
-                                              String attributeTypes,
-                                              String operands,
-                                              String searchKeys) {
+                                              String attributesCsv,
+                                              String attributeTypesCsv,
+                                              String operandsCsv,
+                                              String searchKeysCsv) {
+        List<String> attributes = attributesCsv != null ? Arrays.asList(attributesCsv.split(",")) : Collections.emptyList();
+        List<String> attributeTypes = attributeTypesCsv != null ? Arrays.asList(attributeTypesCsv.split(",")) : Collections.emptyList();
+        List<String> operands = operandsCsv != null ? Arrays.asList(operandsCsv.split(",")) : Collections.emptyList();
+        List<String> searchKeys = searchKeysCsv != null ? Arrays.asList(searchKeysCsv.split(",")) : Collections.emptyList();
+
         var instance = Cypher.node(className).named("inst");
         var query = Cypher.match(instance);
-        // TODO: if attribute is an instance, need to go into this node
-        List<Condition> attributeConditions = createQueryCondition(attributes, attributeTypes, operands, searchKeys, instance);
-        for(Condition attCondition : attributeConditions){
+
+        List<Condition> attributeConditions = new ArrayList<>();
+        List<org.neo4j.cypherdsl.core.Relationship> relationships = new ArrayList<>();
+        List<Condition> relationshipConditions = new ArrayList<>();
+
+        for (int i = 0; i < attributes.size(); i++) {
+            if (attributeTypes.get(i).equals("primitive")) {
+                var attributeName = instance.property(attributes.get(i));
+                attributeConditions.add(createQueryCondition(attributes.get(i), operands.get(i), searchKeys.get(i), instance));
+            } else {
+                var attributeNode = Cypher.node("DatabaseObject").named(attributes.get(i));
+                relationships.add(instance.relationshipBetween(attributeNode, attributes.get(i)));
+                relationshipConditions.add(createDisplayNameQueryCondition(searchKeys.get(i), attributeNode));
+            }
+        }
+        for (Condition attCondition : attributeConditions) {
             if (attCondition != null)
                 query.where(attCondition);
         }
-        var queryBuild = query.returning(instance.property("dbId"), 
-                                         instance.property("displayName"),
-                                         instance.property("schemaClass"))
-             .orderBy(instance.property("displayName"))
-             .skip(skip)
-             .limit(limit)
-             .build();
+        for (org.neo4j.cypherdsl.core.Relationship relationship : relationships) {
+            if (relationship != null)
+                query.match(relationship);
+            query.where(relationshipConditions.get(0));
+        }
+        var queryBuild = query.returning(instance.property("dbId"),
+                        instance.property("displayName"),
+                        instance.property("schemaClass"))
+                .orderBy(instance.property("displayName"))
+                .skip(skip)
+                .limit(limit)
+                .build();
         Collection<Map<String, Object>> all = neo4jClient.query(queryBuild.getCypher())
                 .fetch()
                 .all();
@@ -526,13 +552,14 @@ public class CurationRepository {
 
     /**
      * Populate attribute values in inst fron contents of map
+     *
      * @param inst
      * @param map
      * @return inst with attribute values populated
      */
     private SimpleInstance populateAttrValues(SimpleInstance inst, Map<String, Object> map) {
         for (String key : map.keySet()) {
-            switch(key) {
+            switch (key) {
                 case "n.dbId":
                     inst.setDbId(Long.parseLong(map.get("n.dbId").toString()));
                     break;
@@ -577,17 +604,17 @@ public class CurationRepository {
     /**
      * Note that in each returned instance a match attribute is set to true if that instance's displayName
      * contains searchKey
+     *
      * @param speciesName
      * @return List of top event instances that match speciesName (or any species if speciesName == "All").
-     *
      */
     private List<SimpleInstance> getTopEvents(String speciesName) {
         String query =
                 String.format("MATCH (n:TopLevelPathway) %s " +
-                    "RETURN n.dbId, n.displayName, n.schemaClass, n.speciesName, n._doRelease",
-                            !speciesName.equalsIgnoreCase("All") ?
-                                    String.format("WHERE n.speciesName = '%s'", speciesName) :
-                                    "");
+                                "RETURN n.dbId, n.displayName, n.schemaClass, n.speciesName, n._doRelease",
+                        !speciesName.equalsIgnoreCase("All") ?
+                                String.format("WHERE n.speciesName = '%s'", speciesName) :
+                                "");
 
         Collection<Map<String, Object>> all = neo4jClient.query(query)
                 .fetch()
@@ -595,7 +622,7 @@ public class CurationRepository {
         List<SimpleInstance> rtn = new ArrayList<>();
         for (Map<String, Object> map : all) {
             SimpleInstance inst = new SimpleInstance();
-            inst =  populateAttrValues(inst, map);
+            inst = populateAttrValues(inst, map);
             rtn.add(inst);
         }
         sortByDisplayName(rtn);
@@ -604,6 +631,7 @@ public class CurationRepository {
 
     /**
      * Sort events alphabetically by displayName
+     *
      * @param events
      */
     public static void sortByDisplayName(List<SimpleInstance> events) {
@@ -628,7 +656,7 @@ public class CurationRepository {
      * Note that in each returned instance a match attribute is set to true if either:
      * 1. (attributeType == "primitive") that instance's attribute matches searchKey (in the way stipulated via operand), or
      * 2. (attribute == "instance") at least one instance that is connected the returned instance via relationship: attribute
-     *     has either displayName or dbId that matches searchKey (in the way stipulated via operand)
+     * has either displayName or dbId that matches searchKey (in the way stipulated via operand)
      *
      * @param className
      * @param attributesCsv
@@ -747,7 +775,7 @@ public class CurationRepository {
                 parentDbId2DbId2SimpleInstance.put(parentDbId, new HashMap());
             }
             SimpleInstance inst = new SimpleInstance();
-            inst =  populateAttrValues(inst, map);
+            inst = populateAttrValues(inst, map);
             if (parentDbId2DbId2SimpleInstance.get(parentDbId).keySet().contains(inst.getDbId())) {
                 SimpleInstance previouslyFoundInstance = parentDbId2DbId2SimpleInstance.get(parentDbId).get(inst.getDbId());
                 if (previouslyFoundInstance.getAttributes().containsKey("match") &&
@@ -767,6 +795,7 @@ public class CurationRepository {
 
     /**
      * Populate into hasEvent field of inst the list of children (recursively)
+     *
      * @param inst
      * @param parentDbId2DbId2SimpleInstance
      * @param recursive
@@ -809,7 +838,6 @@ public class CurationRepository {
     }
 
     /**
-     *
      * @param speciesName
      * @param className
      * @param attributes
@@ -821,7 +849,7 @@ public class CurationRepository {
      * and the nodes:
      * 1. In the case attributeType == "primitive" - with attribute matching searchKey, or
      * 2. In the case of attributeType == "instance" - with either dbId or displayName
-     *    in any node related to the node of className via relationship attribute - matching searchKey:
+     * in any node related to the node of className via relationship attribute - matching searchKey:
      * have attribute match set to true, and all parents of the
      * those matching nodes have attribute expand set to true.
      */
@@ -840,7 +868,7 @@ public class CurationRepository {
                 getAllEvents(className, attributes, attributeTypes, operands, searchKeys);
         logger.info(String.format("Retrieved events for %d parents. Building events tree..",
                 parentDbId2DbId2SimpleInstance.keySet().size()));
-        for (SimpleInstance inst: topEvents) {
+        for (SimpleInstance inst : topEvents) {
             populateChildren(inst, parentDbId2DbId2SimpleInstance, true);
         }
         logger.info("Events tree is ready.");
@@ -921,10 +949,9 @@ public class CurationRepository {
     }
 
     /**
-     *
      * @param dbId
      * @return For a given Reaction event identified by dbId, a list of "nodes" and "edges", that themselves are maps of node/edge
-     *      * attribute->value respectively
+     * * attribute->value respectively
      */
     public Map<String, List<Map<String, Object>>> getReactionPlotData(Long dbId) {
         // Lists of nodes and edges that will be accumulated from the result of the cypher query below
@@ -964,7 +991,7 @@ public class CurationRepository {
 
         // Add 3 dummy nodes: central Reaction one (populated when the cypher query results are processed below),
         // plus two nodes for inputs to go into/outputs to come out from respectively
-        Map<String, Object>  node = new HashMap();
+        Map<String, Object> node = new HashMap();
         node.put("class", "DummyIO");
         node.put("id", "1");
         nodes.add(node);
@@ -981,7 +1008,7 @@ public class CurationRepository {
         Map<String, Object> edge = new HashMap();
         String sourceId = node2Id.get("inputsTarget");
         String targetId = "0";
-        edge.put("edgeEndShape","");
+        edge.put("edgeEndShape", "");
         edge.put("source", sourceId);
         edge.put("target", targetId);
         edge.put("width", 1.0);
@@ -990,7 +1017,7 @@ public class CurationRepository {
         edge = new HashMap();
         sourceId = "0";
         targetId = node2Id.get("outputsSource");
-        edge.put("edgeEndShape","");
+        edge.put("edgeEndShape", "");
         edge.put("source", sourceId);
         edge.put("target", targetId);
         edge.put("width", 1.0);
@@ -1155,66 +1182,46 @@ public class CurationRepository {
         return condition;
     }
 
-    public List<Condition> createQueryCondition(String attributesCsv, String attributeTypesCsv,
-        String operandsCsv, String searchKeysCsv, Node instance) {
-            List<String> attributes = attributesCsv != null ? Arrays.asList(attributesCsv.split(",")) : Collections.emptyList();
-            List<String> attributeTypes = attributeTypesCsv != null ? Arrays.asList(attributeTypesCsv.split(",")) : Collections.emptyList();
-            List<String> operands = operandsCsv != null ? Arrays.asList(operandsCsv.split(",")) : Collections.emptyList();
-            List<String> searchKeys = searchKeysCsv != null ? Arrays.asList(searchKeysCsv.split(",")) : Collections.emptyList();
-        List<Condition> conditions = new ArrayList<>();
-        if (!attributes.isEmpty() && !operands.isEmpty() && !searchKeys.isEmpty()) {
-            // Find attribute containing search key using regex
-            for(int i=0; i<attributes.size(); i++) {
-                var attributeName = instance.property(attributes.get(i));
-                var searchKey = searchKeys.get(i);
+    public Condition createQueryCondition(String attribute,
+                                                String operand,
+                                                String searchKey,
+                                                Node instance) {
+        Condition condition = null;
+        // Find attribute containing search key using regex
+        var attributeName = instance.property(attribute);
 
-                if (attributeTypes.get(i).equals("instance")) {
-                    // Working on relationships
-                    var attributeNode = Cypher.node("DatabaseObject").named(attributeName.getName());
-                    var displayName = attributeNode.property("displayName");
-                    conditions.add(displayName.matches(".*(?i)" + searchKey + ".*"));
-                    var attributeRelationship = instance.relationshipBetween(attributeNode, String.valueOf(attributeName));
-                    conditions.add(attributeRelationship.asCondition());
-
-                }
-                else {
-                    if (!searchKeys.get(i).equals("na") || operands.get(i).contains("NULL")) {
-                        switch (operands.get(i)) {
-                            case "Equals":
-                                conditions.add(attributeName.isEqualTo(Cypher.literalOf(searchKey)));
-                                break;
-                            case "!=":
-                                conditions.add(attributeName.isNotEqualTo(Cypher.literalOf(searchKey)));
-                                break;
-                            case "Contains":
-                                conditions.add(attributeName.contains(Cypher.literalOf(searchKey)));
-                                break;
-//                        case "Does Not Contain":
-//                            //conditions.add(att.(Cypher.literalOf(searchKeys.get(i))));
-//                            break;
-                            case "Use REGEXP":
-                                //conditions.add(attributeName.)
-                                if (attributeTypes.get(i).equals("primitive")) {
-                                    //matchClause = String.format("AND toString(n.%s) =~ '%s' ", attributes.get(i), searchKeys.get(i));
-                                } else {
-                                    // attributeType.equals("instance")
-//                                matchClause = String.format("AND (toString(q%d.displayName) =~ '%s' OR toString(q%d.dbId) =~ '%s') ",
-//                                        i, searchKeys.get(i), i, searchKeys.get(i));
-                                }
-                                break;
-                            case "IS NOT NULL":
-                            case "IS NULL":
-                                //matchClause = String.format("AND n.%s %s ", attributes.get(i), operands.get(i));
-                                break;
-                            default:
-                        }
-                    }
-                }
+        if (!searchKey.equals("na") || operand.contains("NULL")) {
+            switch (operand) {
+                case "Equals":
+                    condition = (attributeName.isEqualTo(Cypher.literalOf(searchKey)));
+                    break;
+                case "!=":
+                    condition = (attributeName.isNotEqualTo(Cypher.literalOf(searchKey)));
+                    break;
+                case "Contains":
+                    condition = (attributeName.contains(Cypher.literalOf(searchKey)));
+                    break;
+                case "Use REGEXP":
+                    //conditions.add(attributeName.)
+//                    if (attributeTypes.get(i).equals("primitive")) {
+//                        matchClause = String.format("AND toString(n.%s) =~ '%s' ", attributes.get(i), searchKeys.get(i));
+//                    }
+//                    else {
+//                         attributeType.equals("instance")
+////                                matchClause = String.format("AND (toString(q%d.displayName) =~ '%s' OR toString(q%d.dbId) =~ '%s') ",
+////                                        i, searchKeys.get(i), i, searchKeys.get(i));
+//                    }
+                    break;
+                case "IS NOT NULL":
+                case "IS NULL":
+                    //matchClause = String.format("AND n.%s %s ", attributes.get(i), operands.get(i));
+                    break;
+                default:
             }
         }
-        return conditions;
+        return condition;
     }
-    
+
     public Integer countInstances(String clsName, String text) {
         var instance = Cypher.node(clsName).named("inst");
         Condition condition = createDisplayNameQueryCondition(text, instance);
@@ -1224,37 +1231,38 @@ public class CurationRepository {
         var queryBuild = query.returning(Functions.count(instance)).build();
         return neo4jClient.query(queryBuild.getCypher()).fetchAs(Integer.class).one().get();
     }
-    
-    
+
+
     /**
      * Update the DatabaseObject stored in the database. The current implementation is first to delete
-     * this object and then store it. This two-step process probably is the cleanest and the most simply 
-     * one, but with performance penalty. 
+     * this object and then store it. This two-step process probably is the cleanest and the most simply
+     * one, but with performance penalty.
+     *
      * @param obj
      * @return The original DB_ID should be returned if update works fine.
-     * @throws Exception
-     * TODO: Make sure there is only one transaction applied.
+     * @throws Exception TODO: Make sure there is only one transaction applied.
      */
     @Transactional
     public DatabaseObject update(DatabaseObject obj) throws Exception {
         boolean deleted = delete(obj);
         if (!deleted)
-            throw new IllegalStateException("Cannot delete the object first to update: " + 
-                                obj.getDisplayName() + " [" + obj.getDbId() + "]");
+            throw new IllegalStateException("Cannot delete the object first to update: " +
+                    obj.getDisplayName() + " [" + obj.getDbId() + "]");
         return store(obj);
     }
-    
+
     /**
      * Though the client to this object can call update or store, it is recommended to
-     * call this method directly and let it to figure out the passed object should be 
+     * call this method directly and let it to figure out the passed object should be
      * store or update.
+     *
      * @param obj
      * @return
      * @throws Exception
      */
     @Transactional
     public DatabaseObject commit(DatabaseObject obj) throws Exception {
-        if (obj.getDbId() != null && neo4jTemplate.existsById(obj.getDbId(), obj.getClass())) 
+        if (obj.getDbId() != null && neo4jTemplate.existsById(obj.getDbId(), obj.getClass()))
             return update(obj);
         else
             return store(obj);
@@ -1262,6 +1270,7 @@ public class CurationRepository {
 
     /**
      * Get the list of class names in the database.
+     *
      * @return
      */
     public List<String> getSchemaClasses() {
@@ -1269,7 +1278,7 @@ public class CurationRepository {
     }
 
     /**
-     * Use this method to create index for DatabaseObject's DB_ID. 
+     * Use this method to create index for DatabaseObject's DB_ID.
      */
     public void createDbIdIndex() {
         // This should be called once so the query is kept here
@@ -1278,7 +1287,7 @@ public class CurationRepository {
         // Create another index for _displayName for named based search (e.g. contains)
         query = "CREATE TEXT INDEX databaseobject_text_index_displayname IF "
                 + "NOT EXISTS FOR (n:DatabaseObject) ON (n.displayName)";
-        neo4jClient.query(query).run(); 
+        neo4jClient.query(query).run();
 //        // Create range index for order by displayName
 //        query = "CREATE RANGE INDEX databaseobject_range_index_displayname IF NOT EXISTS for (n:DatabaseObject) on (n.displayName)";
 //        neo4jClient.query(query).run();
@@ -1291,6 +1300,7 @@ public class CurationRepository {
      * Try and word-wrap by spaces to lines no longer than 20 chars. If that doesn't work (for example
      * for very long complex names that don't have spaces in them), split label by commas, and within
      * each line further split it by hyphens, up to the max length of 20 chars.
+     *
      * @param label
      * @return label with words wrapped as described above
      */
@@ -1307,8 +1317,8 @@ public class CurationRepository {
                 if (sb.length() > 0) {
                     sb.append(",");
                 }
-                sb.append(WordUtils.wrap(part.replaceAll("-"," "), 20)
-                        .replaceAll("\n","-\n"));
+                sb.append(WordUtils.wrap(part.replaceAll("-", " "), 20)
+                        .replaceAll("\n", "-\n"));
             }
             ret = sb.toString();
         }
@@ -1318,6 +1328,7 @@ public class CurationRepository {
     /**
      * This method is needed to prevent Jackson returning (from API end points) Object id instead of the full object
      * - in the case when that Object occurs in multiple places in the returned JSON
+     *
      * @param si
      * @return cloned si
      */
@@ -1326,7 +1337,7 @@ public class CurationRepository {
         ret.setDbId(si.getDbId());
         ret.setDisplayName(si.getDisplayName());
         ret.setSchemaClassName(si.getSchemaClassName());
-        for (String attr: si.getAttributes().keySet()) {
+        for (String attr : si.getAttributes().keySet()) {
             ret.setAttribute(attr, si.getAttribute(attr));
         }
         return ret;
