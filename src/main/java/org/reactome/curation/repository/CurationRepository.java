@@ -22,6 +22,7 @@ import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
 import org.reactome.curation.model.CuratorToolWSUtils;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.server.graph.domain.model.DatabaseObject;
+import org.reactome.server.graph.domain.model.Reaction;
 import org.reactome.server.graph.service.helper.StoichiometryObject;
 import org.reactome.server.graph.service.util.DatabaseObjectUtils;
 import org.slf4j.Logger;
@@ -77,7 +78,7 @@ public class CurationRepository {
         maxDbId = getMaxDbId();
     }
 
-    private Map<String, Relationship> getField2rel(Class<? extends DatabaseObject> cls) {
+    private Map<String, Relationship> getField2rel(Class<?> cls) {
         if (cls2field2rel.containsKey(cls.getName()))
             return cls2field2rel.get(cls.getName());
         // Need to build field2rel relationship
@@ -1154,7 +1155,7 @@ public class CurationRepository {
         return condition;
     }
 
-    private List<Condition> createQueryCondition(String attributesCsv, String attributeTypesCsv,
+    public List<Condition> createQueryCondition(String attributesCsv, String attributeTypesCsv,
         String operandsCsv, String searchKeysCsv, Node instance) {
             List<String> attributes = attributesCsv != null ? Arrays.asList(attributesCsv.split(",")) : Collections.emptyList();
             List<String> attributeTypes = attributeTypesCsv != null ? Arrays.asList(attributeTypesCsv.split(",")) : Collections.emptyList();
@@ -1166,44 +1167,47 @@ public class CurationRepository {
             for(int i=0; i<attributes.size(); i++) {
                 var attributeName = instance.property(attributes.get(i));
                 var searchKey = searchKeys.get(i);
-//                if (attributeTypes.get(i).equals("instance")) {
-//                    if (!foundInstanceAttribute) {
-//                        queryRoot += " OPTIONAL MATCH ";
-//                    } else {
-//                        queryRoot += ", ";
-//                    }
-//                    queryRoot += String.format("(n:Event)-[rel%d:%s]->(q%d)", i, attribute, i);
-//                }
 
-                if (!searchKeys.get(i).equals("na") || operands.get(i).contains("NULL")) {
-                    switch (operands.get(i)) {
-                        case "Equals":
-                            conditions.add(attributeName.isEqualTo(Cypher.literalOf(searchKey)));
-                            break;
-                        case "!=":
-                            conditions.add(attributeName.isNotEqualTo(Cypher.literalOf(searchKey)));
-                            break;
-                        case "Contains":
-                            conditions.add(attributeName.contains(Cypher.literalOf(searchKey)));
-                            break;
+                if (attributeTypes.get(i).equals("instance")) {
+                    // Working on relationships
+                    var attributeNode = Cypher.node("DatabaseObject").named(attributeName.getName());
+                    var displayName = attributeNode.property("displayName");
+                    conditions.add(displayName.matches(".*(?i)" + searchKey + ".*"));
+                    var attributeRelationship = instance.relationshipBetween(attributeNode, String.valueOf(attributeName));
+                    conditions.add(attributeRelationship.asCondition());
+
+                }
+                else {
+                    if (!searchKeys.get(i).equals("na") || operands.get(i).contains("NULL")) {
+                        switch (operands.get(i)) {
+                            case "Equals":
+                                conditions.add(attributeName.isEqualTo(Cypher.literalOf(searchKey)));
+                                break;
+                            case "!=":
+                                conditions.add(attributeName.isNotEqualTo(Cypher.literalOf(searchKey)));
+                                break;
+                            case "Contains":
+                                conditions.add(attributeName.contains(Cypher.literalOf(searchKey)));
+                                break;
 //                        case "Does Not Contain":
 //                            //conditions.add(att.(Cypher.literalOf(searchKeys.get(i))));
 //                            break;
-                        case "Use REGEXP":
-                            //conditions.add(attributeName.)
-                            if (attributeTypes.get(i).equals("primitive")) {
-                                //matchClause = String.format("AND toString(n.%s) =~ '%s' ", attributes.get(i), searchKeys.get(i));
-                            } else {
-                                // attributeType.equals("instance")
+                            case "Use REGEXP":
+                                //conditions.add(attributeName.)
+                                if (attributeTypes.get(i).equals("primitive")) {
+                                    //matchClause = String.format("AND toString(n.%s) =~ '%s' ", attributes.get(i), searchKeys.get(i));
+                                } else {
+                                    // attributeType.equals("instance")
 //                                matchClause = String.format("AND (toString(q%d.displayName) =~ '%s' OR toString(q%d.dbId) =~ '%s') ",
 //                                        i, searchKeys.get(i), i, searchKeys.get(i));
-                            }
-                            break;
-                        case "IS NOT NULL":
-                        case "IS NULL":
-                            //matchClause = String.format("AND n.%s %s ", attributes.get(i), operands.get(i));
-                            break;
-                        default:
+                                }
+                                break;
+                            case "IS NOT NULL":
+                            case "IS NULL":
+                                //matchClause = String.format("AND n.%s %s ", attributes.get(i), operands.get(i));
+                                break;
+                            default:
+                        }
                     }
                 }
             }

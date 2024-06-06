@@ -1,14 +1,22 @@
 package org.reactome.curation;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.gk.model.ReactomeJavaConstants;
 import org.junit.jupiter.api.Test;
+import org.neo4j.cypherdsl.core.Condition;
+import org.neo4j.cypherdsl.core.Cypher;
+import org.neo4j.cypherdsl.core.Relationship;
+import org.neo4j.cypherdsl.core.StatementBuilder;
+import org.neo4j.cypherdsl.core.renderer.Renderer;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.repository.CurationFileRepository;
 import org.reactome.curation.repository.CurationRepository;
@@ -34,18 +42,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @SpringBootTest
 class CurationRepositoryTests {
     private final static Logger logger = LoggerFactory.getLogger(CurationRepositoryTests.class);
-    
+
     @Autowired
     private CurationRepository repository;
     @Autowired
     private AdvancedDatabaseObjectRepository queryRepo;
-    
+
     //TODO: To test store, we need the following use cases
     //1). Summation having more than one LiteratureReferences to check order
     //2). Summation with a new LiteartureReference as the second with the first and the third are old
     //3). Reaction: input, output. Check order and stoichioemtry.
     //4). Complex: New with new EWAS instances with multiple copies. Check order and stoichiometires and store.
-    
+
     @Test // This is jupiter.api.Test. Not JUnit test. Otherwise, it doesn't work!!!
     public void testSaveSummations() throws Exception {
         logger.info("Test storing...");
@@ -67,14 +75,14 @@ class CurationRepositoryTests {
         assertEquals(dbId + 1, dbId1);
         logger.info("Done with testing store.");
     }
-    
+
     private Summation createSummation(String displayName) {
         Summation summation = new Summation();
         summation.setText("This is a test summation!");
         summation.setDisplayName(displayName);
         return summation;
     }
-    
+
     @Test
     public void testListInstances() {
         logger.info("Test listInstance...");
@@ -87,7 +95,7 @@ class CurationRepositoryTests {
         instances = repository.listInstances(className, 0, 10, "TP53");
         instances.forEach(instance -> System.out.println(instance));
     }
-    
+
     @Test
     public void testFindInstance() {
         logger.info("Test findInstance based on display name...");
@@ -99,13 +107,14 @@ class CurationRepositoryTests {
         logger.info("Found instance for " + displayName + "...");
         logger.info(instance.toString());
     }
-    
+
     /**
      * Reactions use Stoichiometry for inputs and outputs. The following test is used to check
      * if this works.
      * Note: the content-service api shows the detailed information once only. Others are just listed
      * by their DB_IDs. e.g. R-HSA-453337 has 2 ATP as its input. The first ATP shows its detailed information
      * while the second just its DB_ID, 113592, in JSON.
+     *
      * @throws Exception
      */
     @Test
@@ -133,12 +142,13 @@ class CurationRepositoryTests {
         // ADP as the output
         logger.info("Done with testing storing Reaction.");
     }
-    
+
     /**
      * This method is used to test store a new instance using another new instance as one of its value.
-     * It is expected that both of these values should be saved. 
+     * It is expected that both of these values should be saved.
      * Note: Complex.setHashComponent(List<PhysicalEntity>) relies on DB_IDs to key HasComponent
      * in a Set. This is not good. We have to give them some fake DB_IDs first and then remove them.
+     *
      * @throws Exception
      */
     @Test
@@ -149,7 +159,7 @@ class CurationRepositoryTests {
         logger.info("Newly stored complex having multiple layers of new values: " + dbId);
         logger.info("Done with storing test.");
     }
-    
+
     /**
      * Use this method to test delete a DatabaseObject.
      */
@@ -162,9 +172,10 @@ class CurationRepositoryTests {
         boolean rtn = repository.delete(reaction);
         logger.info("Done: " + rtn);
     }
-    
+
     /**
      * Test file-based persistence repository.
+     *
      * @throws Exception
      */
     @Test
@@ -175,16 +186,16 @@ class CurationRepositoryTests {
         inst1.setSchemaClassName(ReactomeJavaConstants.Reaction);
         inst1.setAttribute("name", "TestReaction");
         inst1.setAttribute("created", "test");
-        
+
         SimpleInstance inst2 = new SimpleInstance();
         inst2.setDisplayName("TestEWAS");
         inst2.setDbId(1002L);
         inst2.setSchemaClassName(ReactomeJavaConstants.EntityWithAccessionedSequence);
         List<SimpleInstance> instances = new ArrayList<>();
-        
+
         instances.add(inst1);
         instances.add(inst2);
-        
+
         String fileName = "test.json";
         // Save
         CurationFileRepository fileRepo = new CurationFileRepository();
@@ -193,5 +204,51 @@ class CurationRepositoryTests {
         List<SimpleInstance> loaded = fileRepo.load(fileName);
         System.out.println("Loaded instances: " + loaded);
     }
-    
+
+    @Test
+    public void testListInstancesFilter() throws Exception {
+        var className = "Reaction";
+        String attributes[] = new String[]{"displayName", "compartment"};
+        String attributeTypes[] = new String[]{"primitive", "instance"};
+        String operands[] = new String[]{"contains", "contains"};
+        String searchKeys[] = new String[]{"phosphorylates MDM2", "nucleoplasm"};
+
+        var instance = Cypher.node(className).named("inst");
+        var query = Cypher.match(instance);
+        // TODO: if attribute is an instance, need to go into this node
+
+        List<Condition> attributeConditions = new ArrayList<>();
+        List<Relationship> relationships = new ArrayList<>();
+        List<Condition> relationshipConditions = new ArrayList<>();
+
+        for (int i = 0; i < attributes.length; i++) {
+            if (attributeTypes[i].equals("primitive")) {
+                var attributeName = instance.property(attributes[i]);
+                attributeConditions.add(attributeName.contains(Cypher.literalOf(searchKeys[i])));
+            } else {
+                var attributeNode = Cypher.node("DatabaseObject").named(attributes[i]);
+                relationships.add(instance.relationshipBetween(attributeNode, attributes[i]));
+                var displayName = attributeNode.property("displayName");
+                relationshipConditions.add(displayName.matches(".*(?i)" + searchKeys[i] + ".*"));
+            }
+        }
+        for (Condition attCondition : attributeConditions) {
+            if (attCondition != null)
+                query.where(attCondition);
+        }
+        for(Relationship relationship : relationships){
+            if(relationship != null)
+                query.match(relationship);
+                query.where(relationshipConditions.get(0));
+        }
+        var queryBuild = query.returning(instance.property("dbId"),
+                        instance.property("displayName"),
+                        instance.property("schemaClass"))
+                .orderBy(instance.property("displayName"))
+                .build();
+
+        System.out.println(Renderer.getDefaultRenderer().render(queryBuild));
+
+    }
+
 }
