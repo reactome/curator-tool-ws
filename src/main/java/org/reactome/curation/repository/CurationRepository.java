@@ -495,22 +495,22 @@ public class CurationRepository {
 
         for (int i = 0; i < attributes.size(); i++) {
             if (attributeTypes.get(i).equals("primitive")) {
-                var attributeName = instance.property(attributes.get(i));
                 attributeConditions.add(createQueryCondition(attributes.get(i), operands.get(i), searchKeys.get(i), instance));
             } else {
                 var attributeNode = Cypher.node("DatabaseObject").named(attributes.get(i));
-                relationships.add(instance.relationshipBetween(attributeNode, attributes.get(i)));
-                relationshipConditions.add(createDisplayNameQueryCondition(searchKeys.get(i), attributeNode));
+                relationships.add(instance.relationshipBetween(attributeNode, attributes.get(i)).named("r"));
+                // TODO: check that attribute names match their schema class
+                relationshipConditions.add(createQueryCondition("displayName", operands.get(i), searchKeys.get(i), attributeNode));
             }
         }
         for (Condition attCondition : attributeConditions) {
             if (attCondition != null)
                 query.where(attCondition);
         }
-        for (org.neo4j.cypherdsl.core.Relationship relationship : relationships) {
-            if (relationship != null)
-                query.match(relationship);
-            query.where(relationshipConditions.get(0));
+        for (int j=0; j < relationships.size(); j++) {
+            if (relationships.get(j) != null)
+                query.match(relationships.get(j));
+                query.where(relationshipConditions.get(j));
         }
         var queryBuild = query.returning(instance.property("dbId"),
                         instance.property("displayName"),
@@ -1191,6 +1191,9 @@ public class CurationRepository {
         var attributeName = instance.property(attribute);
 
         if (!searchKey.equals("na") || operand.contains("NULL")) {
+            String[] keys = searchKey.split("--");
+            searchKey = "";
+            for(String key : keys){searchKey += " " + key;}
             switch (operand) {
                 case "Equals":
                     condition = (attributeName.isEqualTo(Cypher.literalOf(searchKey)));
@@ -1200,17 +1203,6 @@ public class CurationRepository {
                     break;
                 case "Contains":
                     condition = (attributeName.contains(Cypher.literalOf(searchKey)));
-                    break;
-                case "Use REGEXP":
-                    //conditions.add(attributeName.)
-//                    if (attributeTypes.get(i).equals("primitive")) {
-//                        matchClause = String.format("AND toString(n.%s) =~ '%s' ", attributes.get(i), searchKeys.get(i));
-//                    }
-//                    else {
-//                         attributeType.equals("instance")
-////                                matchClause = String.format("AND (toString(q%d.displayName) =~ '%s' OR toString(q%d.dbId) =~ '%s') ",
-////                                        i, searchKeys.get(i), i, searchKeys.get(i));
-//                    }
                     break;
                 case "IS NOT NULL":
                 case "IS NULL":
