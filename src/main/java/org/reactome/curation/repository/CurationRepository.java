@@ -1191,9 +1191,6 @@ public class CurationRepository {
         var attributeName = instance.property(attribute);
 
         if (!searchKey.equals("na") || operand.contains("NULL")) {
-            String[] keys = searchKey.split("--");
-            searchKey = "";
-            for(String key : keys){searchKey += " " + key;}
             switch (operand) {
                 case "Equals":
                     condition = (attributeName.isEqualTo(Cypher.literalOf(searchKey)));
