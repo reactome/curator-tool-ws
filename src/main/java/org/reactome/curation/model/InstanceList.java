@@ -13,5 +13,6 @@ import lombok.NoArgsConstructor;
 @JsonInclude(Include.NON_NULL)
 public class InstanceList {
     private List<SimpleInstance> instances;
+    // Total count of the query results
     private Integer totalCount;
 }

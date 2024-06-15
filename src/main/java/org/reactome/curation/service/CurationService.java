@@ -17,6 +17,8 @@ import java.util.stream.Collectors;
 import org.gk.model.ReactomeJavaConstants;
 import org.reactome.curation.config.CuratorToolEnv;
 import org.reactome.curation.model.CurationAttribute;
+import org.reactome.curation.model.InstanceList;
+import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.model.SimpleSchemaClass;
 import org.reactome.curation.repository.CurationFileRepository;
@@ -192,6 +194,24 @@ public class CurationService {
         return attCls.isValueTypeDatabaseObject();
     }
     
+    public boolean isInstanceType(String clsName, String attName) throws Exception {
+        // Have to call this method first to make sure all attributes have been loaded.
+        // In the server env, there should be no performance penality since the map 
+        // should be loaded anyway
+        this.getAttributes(clsName);
+        Map<String, CurationAttribute> attName2Att = clsName2attName2Attribute.get(clsName);
+        if (attName2Att == null || !attName2Att.keySet().contains(attName))
+            throw new IllegalArgumentException(attName + " is not defined in " + clsName);
+        CurationAttribute att = attName2Att.get(attName);
+        AttributeProperties attProps = att.getProperties();
+        List<AttributeClass> attClses = attProps.getAttributeClasses();
+        for (AttributeClass attCls : attClses) {
+            if (attCls.isValueTypeDatabaseObject())
+                return true; // We will not mixed two types of attributes together
+        }
+        return false;
+    }
+    
     public SimpleSchemaClass loadSchemaClassTree() throws Exception {
         if (schemaClassTree == null) {
             // Load it 
@@ -238,19 +258,22 @@ public class CurationService {
         return curationRepository.countInstances(clsName, query);
     }
     
-    public List<SimpleInstance> listInstances(String className,
-                                              int skip,
-                                              int limit,
-                                              String text,
-                                              String attributes,
-                                              String attributeTypes,
-                                              String operands,
-                                              String searchKeys) {
-        if (attributes == null)
-        return curationRepository.listInstances(className, skip, limit, text);
-        else
+    public InstanceList listInstances(String className,
+                                      int skip,
+                                      int limit,
+                                      List<String> attributes,
+                                      List<String> attributeTypes,
+                                      List<ListOperand> operands,
+                                      List<String> searchKeys) {
         return curationRepository.listInstances(className, skip, limit, attributes,
-                attributeTypes, operands, searchKeys);
+                    attributeTypes, operands, searchKeys);
+    }
+    
+    public InstanceList listInstances(String className,
+                                      int skip,
+                                      int limit,
+                                      String text) {
+        return curationRepository.listInstances(className, skip, limit, text);
     }
     
     public SimpleInstance findInstance(String displayName,

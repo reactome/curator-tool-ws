@@ -1,5 +1,6 @@
 package org.reactome.curation.controller;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -9,6 +10,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.reactome.curation.model.CurationAttribute;
+import org.reactome.curation.model.InstanceList;
+import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.model.SimpleSchemaClass;
 import org.reactome.curation.service.CurationService;
@@ -145,23 +148,79 @@ public class CurationController {
      * @return
      */
     @GetMapping("listInstances/{className}/{skip}/{limit}")
-    public List<SimpleInstance> listInstances(@PathVariable("className") String className,
-                                              @PathVariable("skip") Integer skip,
-                                              @PathVariable("limit") Integer limit,
-                                              // Make sure to use Optional so that we can take a URL without query.
-                                              @RequestParam("query") Optional<String> query,
-                                              @RequestParam("attributes") Optional<String> attributes,
-                                              @RequestParam("attributeTypes") Optional<String> attributeTypes,
-                                              @RequestParam("operands") Optional<String> operands,
-                                              @RequestParam("searchKeys") Optional<String> searchKeys) {
-        return service.listInstances(className, skip, limit,
-                query.isEmpty() ? null : query.get(),
-                attributes.isEmpty() ? null : attributes.get(),
-                attributeTypes.isEmpty() ? null : attributeTypes.get(),
-                operands.isEmpty() ? null : operands.get(),
-                searchKeys.isEmpty() ? null : searchKeys.get());
-
+    public InstanceList listInstances(@PathVariable("className") String className,
+                                      @PathVariable("skip") Integer skip,
+                                      @PathVariable("limit") Integer limit,
+                                      // Make sure to use Optional so that we can take a URL without query.
+                                      @RequestParam("query") Optional<String> query) {
+        return service.listInstances(className, 
+                skip, 
+                limit,
+                query.isEmpty() ? null : query.get());
     }
+    
+
+    /**
+     * Search instances for lists of attributes, operands and searckKeys. Basically this is a more 
+     * powerful listInstances. But to make the API simpler, this method is split from listInstances.
+     * The frontend should determine what API should be called.
+     * @param className
+     * @param skip
+     * @param limit
+     * @param attributes
+     * @param operands
+     * @param searchKeys
+     * @return
+     */
+    @GetMapping("searchInstances/{className}/{skip}/{limit}")
+    public InstanceList searchInstances(@PathVariable("className") String className,
+                                        @PathVariable("skip") Integer skip,
+                                        @PathVariable("limit") Integer limit,
+                                        @RequestParam("attributes") Optional<String> attributes,
+                                        @RequestParam("operands") Optional<String> operands,
+                                        @RequestParam("searchKeys") Optional<String> searchKeys) {
+        try {
+            // In any of the following case, we will use listInstances
+            if (attributes.isEmpty() || operands.isEmpty() || searchKeys.isEmpty())
+                return service.listInstances(className, skip, limit, null);
+            List<String> attributeList = List.of(attributes.get().split(","));
+            List<String> operandList = List.of(operands.get().split(","));
+            List<String> keyList = List.of(searchKeys.get().split(","));
+            // Make sure all three lists have the same length
+            if ((attributeList.size() != operandList.size()) ||
+                    (attributeList.size() != keyList.size())) {
+                String error = "The query parameters for searchInstances have different length.";
+                logger.error(error);
+                return new InstanceList(); // Just return an empty object.
+            }
+            // Need to find the attribute type for each attribute
+            List<String> attributeTypeList = new ArrayList<>(attributeList.size());
+            for (String attribute : attributeList) {
+                if (service.isInstanceType(className, attribute))
+                    attributeTypeList.add("instance"); // Doesn't matter whatever this is called.
+                else
+                    attributeTypeList.add("property");
+            }
+            // Need to map to the operands
+            List<ListOperand> listOperandList = new ArrayList<>(operandList.size());
+            for (String operand : operandList) {
+                ListOperand listOperand = ListOperand.map(operand);
+                listOperandList.add(listOperand);
+            }
+            return service.listInstances(className, 
+                    skip, 
+                    limit,
+                    attributeList,
+                    attributeTypeList,
+                    listOperandList,
+                    keyList);
+        }
+        catch(Exception e) {
+            logger.error("searchInstances: " + e.getMessage(), e);
+            return new InstanceList(); // Return an empty object.
+        }
+    }
+    
     
     /**
      * This API is used to find an instance based on its displayName in a list of provided class names.
@@ -257,7 +316,7 @@ public class CurationController {
     }
 
     @GetMapping("getEventPlotData/{dbId}")
-    public Map<String, List<Map<String, Object>>> getHierarchicalPlotData(
+    public Map<String, List<Map<String, Object>>> getHierarchicalPlotData (
             @PathVariable("dbId") Long dbId,
             @RequestParam("type") String type
     ) {

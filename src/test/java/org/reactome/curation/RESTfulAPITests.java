@@ -5,12 +5,16 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.gk.model.ReactomeJavaConstants;
 import org.junit.jupiter.api.Test;
 import org.reactome.curation.controller.DatabaseObjectInstanceConverter;
+import org.reactome.curation.model.InstanceList;
+import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.server.graph.domain.model.Complex;
 import org.reactome.server.graph.domain.model.Reaction;
@@ -124,22 +128,102 @@ class RESTfulAPITests {
         assertNotNull(mockMvc);
         String className = "ProteinDrug";
         className = "ReactionType";
-        String url = BASE_URL + "listInstances/" + className + "/0/20";
+        String url = BASE_URL + "listInstances/" + className + "/0/10";
         String json = mockMvc.perform(get(url))
                 .andExpect(status().isOk())
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
-        System.out.println(json);
+        outputInstanceList(json);
+        
         // Try reactions
         className = "Reaction";
-        url = BASE_URL + "listInstances/" + className + "/100/20?query=EGFR";
+        url = BASE_URL + "listInstances/" + className + "/100/10?query=EGFR";
         json = mockMvc.perform(get(url))
                 .andExpect(status().isOk())
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
-        System.out.println(json);
+        outputInstanceList(json);
+        
+        // Try reactions with space
+        className = "Reaction";
+        url = BASE_URL + "listInstances/" + className + "/0/10?query=R5C dephosp";
+        json = mockMvc.perform(get(url))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        outputInstanceList(json);
+    }
+    
+    private void outputInstanceList(String json) throws Exception {
+        ObjectMapper mapper = CurationWSTestHelper.createObjectMapper();
+        InstanceList instanceList = mapper.readValue(json, InstanceList.class);
+        
+        System.out.println(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(instanceList));
+    }
+    
+    @Test
+    public void testSearchInstances() throws Exception {
+        assertNotNull(mockMvc);
+        var className = "Reaction";
+        List<String> attributes = new ArrayList<>(List.of("displayName", "compartment"));
+        List<String> operands = new ArrayList<>(List.of("Contain", "Equal"));
+        List<String> searchKeys = new ArrayList<>(List.of("phosphorylates MDM2", "nucleoplasm"));
+        _testSearchInstances(className, attributes, operands, searchKeys);
+
+        // Limit the result for dbId to check different attribute type
+        // Expect to limit to a smaller number of the above result
+        logger.info("Added a new property check...");
+        attributes.add("dbId");
+        operands.add(ListOperand.CONTAIN.toString());
+        searchKeys.add("7"); // Expect 2 instances
+        _testSearchInstances(className, attributes, operands, searchKeys);
+        
+        // Further limit by adding another relationship condition
+        logger.info("Added another relationship check...");
+        attributes.add("input");
+        operands.add(ListOperand.CONTAIN.toString());
+        searchKeys.add("H2O"); // Expect 1 instance
+        _testSearchInstances(className, attributes, operands, searchKeys);
+        
+        logger.info("Add a not null check for name. Same results...");
+        attributes.add("name");
+        operands.add(ListOperand.IS_NOT_NULL.toString());
+        searchKeys.add(null); // Expect 1 instance
+        _testSearchInstances(className, attributes, operands, searchKeys);
+        
+        logger.info("Add a null check for regulatedBy. Same results...");
+        attributes.add("regulatedBy");
+        operands.add(ListOperand.IS_NULL.toString());
+        searchKeys.add(null); // Still same result
+        _testSearchInstances(className, attributes, operands, searchKeys);
+        
+        // Further limit by adding another relationship condition using is not null
+        logger.info("Added another relationship check...");
+        attributes.add("output");
+        operands.add(ListOperand.IS_NOT_NULL.toString());
+        searchKeys.add(null); // Expect 1 instance
+        _testSearchInstances(className, attributes, operands, searchKeys);
+    }
+
+    private void _testSearchInstances(String className,
+                                      List<String> attributes,
+                                      List<String> operands,
+                                      List<String> searchKeys)
+            throws UnsupportedEncodingException, Exception {
+        String query = "attributes=" + String.join(",", attributes) + 
+          "&operands=" + String.join(",", operands) + 
+          "&searchKeys=" + String.join(",", searchKeys);
+        String url = BASE_URL + "searchInstances/" + className + "/0/5?" + query;
+        System.out.println("URL: " + url);
+        String json = mockMvc.perform(get(url))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        outputInstanceList(json);
     }
     
     @Test

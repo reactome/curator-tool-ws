@@ -1,22 +1,21 @@
 package org.reactome.curation;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.assertj.core.util.Arrays;
 import org.gk.model.ReactomeJavaConstants;
 import org.junit.jupiter.api.Test;
 import org.neo4j.cypherdsl.core.Condition;
 import org.neo4j.cypherdsl.core.Cypher;
 import org.neo4j.cypherdsl.core.Relationship;
-import org.neo4j.cypherdsl.core.StatementBuilder;
 import org.neo4j.cypherdsl.core.renderer.Renderer;
+import org.reactome.curation.model.InstanceList;
+import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.repository.CurationFileRepository;
 import org.reactome.curation.repository.CurationRepository;
@@ -33,9 +32,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 //Note: To test the newly saved or stored objects in the neo4j database using the content service API, try to 
 // start a content service at an external terminal by following README at https://github.com/reactome/content-service
 // Make sure a correct maven profile is passed into the running env. Eclipse may need some configuration to make it work.
@@ -47,6 +43,7 @@ class CurationRepositoryTests {
     private CurationRepository repository;
     @Autowired
     private AdvancedDatabaseObjectRepository queryRepo;
+    
 
     //TODO: To test store, we need the following use cases
     //1). Summation having more than one LiteratureReferences to check order
@@ -88,12 +85,23 @@ class CurationRepositoryTests {
         logger.info("Test listInstance...");
         String className = "ProteinDrug";
         System.out.println("List some protein drugs:");
-        List<SimpleInstance> instances = repository.listInstances(className, 10, 10, null);
-        instances.forEach(instance -> System.out.println(instance));
+        InstanceList instances = repository.listInstances(className, 10, 10, null);
+        System.out.println("Total counts: " + instances.getTotalCount());
+        instances.getInstances().forEach(instance -> System.out.println(instance));
+        
         className = "Pathway";
         System.out.println("\nList some pathways having TP53:");
         instances = repository.listInstances(className, 0, 10, "TP53");
-        instances.forEach(instance -> System.out.println(instance));
+        System.out.println("Total counts: " + instances.getTotalCount());
+        instances.getInstances().forEach(instance -> System.out.println(instance));
+        
+        // With some space
+        className = "Reaction";
+        System.out.println("\nList some reaction having a text with space:");
+        // https://curator.reactome.org/cgi-bin/instancebrowser?DB=gk_central&ID=6792863
+        instances = repository.listInstances(className, 0, 10, "R5C deph");
+        System.out.println("Total counts: " + instances.getTotalCount());
+        instances.getInstances().forEach(instance -> System.out.println(instance));
     }
 
     @Test
@@ -206,48 +214,69 @@ class CurationRepositoryTests {
     }
 
     @Test
-    public void testListInstancesFilter() throws Exception {
+    public void testListInstancesForSearch() throws Exception {
+        
+        logger.info("Test reactions for display name and compartment...");
+        
         var className = "Reaction";
-        String attributes[] = new String[]{"displayName", "compartment"};
-        String attributeTypes[] = new String[]{"primitive", "instance"};
-        String operands[] = new String[]{"contains", "contains"};
-        String searchKeys[] = new String[]{"phosphorylates MDM2", "nucleoplasm"};
+        List<String> attributes = new ArrayList<>(List.of("displayName", "compartment"));
+        List<String> attributeTypes = new ArrayList<>(List.of("string", "instance"));
+        List<ListOperand> operands = new ArrayList<>(List.of(ListOperand.CONTAIN, ListOperand.EQUAL));
+        List<String> searchKeys = new ArrayList<>(List.of("phosphorylates MDM2", "nucleoplasm"));
+        listInstances(className, attributes, attributeTypes, operands, searchKeys);
 
-        var instance = Cypher.node(className).named("inst");
-        var query = Cypher.match(instance);
-
-        List<Condition> attributeConditions = new ArrayList<>();
-        List<Relationship> relationships = new ArrayList<>();
-        List<Condition> relationshipConditions = new ArrayList<>();
-
-        for (int i = 0; i < attributes.length; i++) {
-            if (attributeTypes[i].equals("primitive")) {
-                var attributeName = instance.property(attributes[i]);
-                attributeConditions.add(attributeName.contains(Cypher.literalOf(searchKeys[i])));
-            } else {
-                var attributeNode = Cypher.node("DatabaseObject").named(attributes[i]);
-                relationships.add(instance.relationshipBetween(attributeNode, attributes[i]));
-                var displayName = attributeNode.property("displayName");
-                relationshipConditions.add(displayName.matches(".*(?i)" + searchKeys[i] + ".*"));
-            }
-        }
-        for (Condition attCondition : attributeConditions) {
-            if (attCondition != null)
-                query.where(attCondition);
-        }
-        for(Relationship relationship : relationships){
-            if(relationship != null)
-                query.match(relationship);
-                query.where(relationshipConditions.get(0));
-        }
-        var queryBuild = query.returning(instance.property("dbId"),
-                        instance.property("displayName"),
-                        instance.property("schemaClass"))
-                .orderBy(instance.property("displayName"))
-                .build();
-
-        System.out.println(Renderer.getDefaultRenderer().render(queryBuild));
-
+        
+        // Limit the result for dbId to check different attribute type
+        // Expect to limit to a smaller number of the above result
+        logger.info("Added a new property check...");
+        attributes.add("dbId");
+        attributeTypes.add("long");
+        operands.add(ListOperand.CONTAIN);
+        searchKeys.add("7"); // Expect 2 instances
+        listInstances(className, attributes, attributeTypes, operands, searchKeys);
+        
+        // Further limit by adding another relationship condition
+        logger.info("Added another relationship check...");
+        attributes.add("input");
+        attributeTypes.add("instance");
+        operands.add(ListOperand.CONTAIN);
+        searchKeys.add("H2O"); // Expect 1 instance
+        listInstances(className, attributes, attributeTypes, operands, searchKeys);
+        
+        logger.info("Add a not null check for name. Same results...");
+        attributes.add("name");
+        attributeTypes.add("string");
+        operands.add(ListOperand.IS_NOT_NULL);
+        searchKeys.add(null); // Expect 1 instance
+        listInstances(className, attributes, attributeTypes, operands, searchKeys);
+        
+        logger.info("Add a null check for regulatedBy. Same results...");
+        attributes.add("regulatedBy");
+        attributeTypes.add("instance");
+        operands.add(ListOperand.IS_NULL);
+        searchKeys.add(null); // Still same result
+        listInstances(className, attributes, attributeTypes, operands, searchKeys);
+        
+        // Further limit by adding another relationship condition using is not null
+        logger.info("Added another relationship check...");
+        attributes.add("output");
+        attributeTypes.add("instance");
+        operands.add(ListOperand.IS_NOT_NULL);
+        searchKeys.add(null); // Expect 1 instance
+        listInstances(className, attributes, attributeTypes, operands, searchKeys);
+        
     }
+
+    private void listInstances(String className,
+                               List<String> attributes,
+                               List<String> attributeTypes,
+                               List<ListOperand> operands,
+                               List<String> searchKeys) {
+        InstanceList instances;
+        instances = repository.listInstances(className, 0, 10, attributes, attributeTypes, operands, searchKeys);
+        System.out.println("Total counts: " + instances.getTotalCount());
+        instances.getInstances().forEach(instance -> System.out.println(instance));
+    }
+   
 
 }

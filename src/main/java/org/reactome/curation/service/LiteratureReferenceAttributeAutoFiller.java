@@ -12,6 +12,7 @@ import java.util.regex.Pattern;
 import org.gk.model.Person;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.model.Reference;
+import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.repository.CurationRepository;
 import org.reactome.server.graph.repository.AdvancedDatabaseObjectRepository;
@@ -93,13 +94,13 @@ public class LiteratureReferenceAttributeAutoFiller {
         else if (person.getInitial() != null)
             displayName += ", " + person.getInitial();
         if (displayName != null && displayName.trim().length() > 0) {
-            List<SimpleInstance> personInsts = curationRepository.listInstances(ReactomeJavaConstants.Person,
+            InstanceList personInsts = curationRepository.listInstances(ReactomeJavaConstants.Person,
                     0, 
                     100, // TODO: This is arbitrary and needs to be updated. 
                     displayName);
-            if (personInsts != null && personInsts.size() > 0) {
+            if (personInsts != null && personInsts.getTotalCount() > 0) {
                 // Make sure all three matched
-                for (SimpleInstance inst : personInsts) {
+                for (SimpleInstance inst : personInsts.getInstances()) {
                     org.reactome.server.graph.domain.model.Person dbInst = (org.reactome.server.graph.domain.model.Person) objectRepository.findById(inst.getDbId(), 1);
                     if (dbInst != null) {
                         String dbFirstName = dbInst.getFirstname() == null ? "" : dbInst.getFirstname();
