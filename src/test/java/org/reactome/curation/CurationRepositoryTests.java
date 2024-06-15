@@ -7,13 +7,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.assertj.core.util.Arrays;
 import org.gk.model.ReactomeJavaConstants;
 import org.junit.jupiter.api.Test;
-import org.neo4j.cypherdsl.core.Condition;
-import org.neo4j.cypherdsl.core.Cypher;
-import org.neo4j.cypherdsl.core.Relationship;
-import org.neo4j.cypherdsl.core.renderer.Renderer;
 import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.SimpleInstance;
@@ -221,7 +216,7 @@ class CurationRepositoryTests {
         var className = "Reaction";
         List<String> attributes = new ArrayList<>(List.of("displayName", "compartment"));
         List<String> attributeTypes = new ArrayList<>(List.of("string", "instance"));
-        List<ListOperand> operands = new ArrayList<>(List.of(ListOperand.CONTAIN, ListOperand.EQUAL));
+        List<ListOperand> operands = new ArrayList<>(List.of(ListOperand.CONTAINS, ListOperand.EQUAL));
         List<String> searchKeys = new ArrayList<>(List.of("phosphorylates MDM2", "nucleoplasm"));
         listInstances(className, attributes, attributeTypes, operands, searchKeys);
 
@@ -231,7 +226,7 @@ class CurationRepositoryTests {
         logger.info("Added a new property check...");
         attributes.add("dbId");
         attributeTypes.add("long");
-        operands.add(ListOperand.CONTAIN);
+        operands.add(ListOperand.CONTAINS);
         searchKeys.add("7"); // Expect 2 instances
         listInstances(className, attributes, attributeTypes, operands, searchKeys);
         
@@ -239,7 +234,7 @@ class CurationRepositoryTests {
         logger.info("Added another relationship check...");
         attributes.add("input");
         attributeTypes.add("instance");
-        operands.add(ListOperand.CONTAIN);
+        operands.add(ListOperand.CONTAINS);
         searchKeys.add("H2O"); // Expect 1 instance
         listInstances(className, attributes, attributeTypes, operands, searchKeys);
         

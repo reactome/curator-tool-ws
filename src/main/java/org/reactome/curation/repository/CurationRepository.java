@@ -459,7 +459,7 @@ public class CurationRepository {
         else {
             List<String> attributes = Collections.singletonList("displayName");
             List<String> attributeTypes = Collections.singletonList("string");
-            List<ListOperand> operands = Collections.singletonList(ListOperand.CONTAIN);
+            List<ListOperand> operands = Collections.singletonList(ListOperand.CONTAINS);
             List<String> searchKeys = Collections.singletonList(text);
             return listInstances(className, skip, limit, attributes, attributeTypes, operands, searchKeys);
         }
@@ -1280,7 +1280,7 @@ public class CurationRepository {
             case NOT_EQUAL:
                 condition = attributeProp.isNotEqualTo(Cypher.literalOf(searchKey));
                 break;
-            case CONTAIN:
+            case CONTAINS:
                 // Regardless if the attribute value is string or other type
                 // we will use this regex
                 // Need to convert the value as string to be used in regex for any type of property

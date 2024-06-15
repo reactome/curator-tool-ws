@@ -169,7 +169,7 @@ class RESTfulAPITests {
         assertNotNull(mockMvc);
         var className = "Reaction";
         List<String> attributes = new ArrayList<>(List.of("displayName", "compartment"));
-        List<String> operands = new ArrayList<>(List.of("Contain", "Equal"));
+        List<String> operands = new ArrayList<>(List.of("Contains", "Equal"));
         List<String> searchKeys = new ArrayList<>(List.of("phosphorylates MDM2", "nucleoplasm"));
         _testSearchInstances(className, attributes, operands, searchKeys);
 
@@ -177,14 +177,14 @@ class RESTfulAPITests {
         // Expect to limit to a smaller number of the above result
         logger.info("Added a new property check...");
         attributes.add("dbId");
-        operands.add(ListOperand.CONTAIN.toString());
+        operands.add(ListOperand.CONTAINS.toString());
         searchKeys.add("7"); // Expect 2 instances
         _testSearchInstances(className, attributes, operands, searchKeys);
         
         // Further limit by adding another relationship condition
         logger.info("Added another relationship check...");
         attributes.add("input");
-        operands.add(ListOperand.CONTAIN.toString());
+        operands.add(ListOperand.CONTAINS.toString());
         searchKeys.add("H2O"); // Expect 1 instance
         _testSearchInstances(className, attributes, operands, searchKeys);
         
