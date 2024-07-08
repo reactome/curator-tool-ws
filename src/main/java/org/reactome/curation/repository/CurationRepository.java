@@ -15,12 +15,14 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang.WordUtils;
+import org.gk.model.ReactomeJavaConstants;
 import org.neo4j.cypherdsl.core.Condition;
 import org.neo4j.cypherdsl.core.Cypher;
 import org.neo4j.cypherdsl.core.Functions;
 import org.neo4j.cypherdsl.core.Node;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReading;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingUpdate;
+import org.neo4j.cypherdsl.core.renderer.Renderer;
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
 import org.reactome.curation.model.CuratorToolWSUtils;
 import org.reactome.curation.model.InstanceList;
@@ -34,6 +36,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.data.neo4j.core.Neo4jTemplate;
 import org.springframework.data.neo4j.core.schema.Relationship;
+import org.springframework.data.querydsl.binding.QuerydslPredicateBuilder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -1011,6 +1014,71 @@ public class CurationRepository {
         ret.put("nodes", nodes);
         ret.put("edges", edges);
         return ret;
+    }
+    
+    /**
+     * Use this method to fetch a ReactionLikeEvent with all participants filled, e.g.,
+     * regulators and physicalEntity in CAS should be loaded too. This is a convenient way
+     * to query a reaction for adding to a pathway diagram view to avoid multiple calling.
+     * @param dbId
+     * @return
+     */
+    public SimpleInstance fetchReactionWithParticipants(Long dbId) {
+        // Start with the reaction
+        var node = Cypher.node("ReactionLikeEvent").named("node").withProperties("dbId", Cypher.literalOf(dbId));
+        var query = Cypher.match(node);
+        // Input
+        var inputNode = Cypher.node(ReactomeJavaConstants.PhysicalEntity).named("input");
+        query = query.optionalMatch(node.relationshipTo(inputNode, "input").named("rel_input"));
+        // Output
+        var outputNode = Cypher.node(ReactomeJavaConstants.PhysicalEntity).named("output");
+        query = query.optionalMatch(node.relationshipTo(outputNode, "output").named("rel_output"));
+        // Catalyst
+        var casNode = Cypher.node(ReactomeJavaConstants.CatalystActivity).named("cas");
+        var catalystNode = Cypher.node(ReactomeJavaConstants.PhysicalEntity).named("catalyst");
+        query = query.optionalMatch(node.relationshipTo(casNode, "catalystActivity").named("rel_catalystActivity"))
+                     .optionalMatch(casNode.relationshipTo(catalystNode, "physicalEntity").named("rel_catalyst"));
+        // Activator
+        var regulationNode = Cypher.node(ReactomeJavaConstants.PositiveRegulation).named("posRegulatedBy");
+        var activatorNode = Cypher.node(ReactomeJavaConstants.PhysicalEntity).named("activator");
+        query = query.optionalMatch(node.relationshipTo(regulationNode, "regulatedBy").named("rel_pos_regulation"))
+                     .optionalMatch(regulationNode.relationshipTo(activatorNode, "regulator").named("rel_pos_regulator"));
+        // inhibitor
+        regulationNode = Cypher.node(ReactomeJavaConstants.NegativeRegulation).named("negRegulatedBy");
+        var inhibitorNode = Cypher.node(ReactomeJavaConstants.PhysicalEntity).named("inhibitor");
+        query = query.optionalMatch(node.relationshipTo(regulationNode, "regulatedBy").named("rel_neg_regulation"))
+                     .optionalMatch(regulationNode.relationshipTo(inhibitorNode, "regulator").named("rel_neg_regulator"));
+        
+        // Combine all returned objects together for easy parsing
+        var queryBuild = query.with(Cypher.name("node"), Cypher.name("input"), Cypher.name("output"), Cypher.name("catalyst"),
+                   Cypher.name("activator"), Cypher.name("inhibitor"), Cypher.name("rel_input"), Cypher.name("rel_output"))
+              .unwind(Cypher.raw("[{node: node, role: 'reaction'}, {node: input, rel: rel_input, role: 'input'}, {node: output, rel: rel_output, role: 'output'}, "
+                      + "{node: catalyst, role: 'catalyst'}, "
+                      + "{node: activator, role: 'activator'}, {node: inhibitor, role: 'inhibitor'}]")) // Use raw to avoid any modification!!!
+              .as(Cypher.name("data"))
+              .returning(Cypher.name("data").property("node").property("dbId").as("dbId"), 
+                         Cypher.name("data").property("node").property("displayName").as("displayName"),
+                         Cypher.name("data").property("node").property("schemaClass").as("schemaClass"),
+                         Cypher.name("data").property("role").as("role"),
+                         Cypher.name("data").property("rel").property("stoichiometry").as("stoichiometry")).build();
+      
+        System.out.println(Renderer.getDefaultRenderer().render(queryBuild));
+        // Process the query result and model it into a SimpleInstance to return
+        Collection<Map<String, Object>> all = neo4jClient.query(queryBuild.getCypher()).fetch().all();
+        SimpleInstance reaction = new SimpleInstance();
+//        for (Map<String, Object> map : all) {
+//            if (totalCount == null)
+//                totalCount = Integer.parseInt(map.get("totalCount").toString());
+//            // This should not occur. However, just in case
+//            if (map.get("inst.dbId") == null) {
+//                logger.error("Return result with dbId = null: " + className + ", " + skip + ", " + limit);
+//                continue;
+//            }
+//            SimpleInstance inst = constructInstance(map, className);
+//            instances.add(inst);
+//        }
+        
+        return reaction;
     }
 
     /**

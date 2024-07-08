@@ -272,6 +272,12 @@ class CurationRepositoryTests {
         System.out.println("Total counts: " + instances.getTotalCount());
         instances.getInstances().forEach(instance -> System.out.println(instance));
     }
+    
+    @Test
+    public void testFetchReactionWithParticipants() {
+        Long dbId = 5679205L;
+        SimpleInstance inst = repository.fetchReactionWithParticipants(dbId);
+    }
    
 
 }
