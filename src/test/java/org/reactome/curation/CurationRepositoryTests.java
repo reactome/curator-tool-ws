@@ -27,6 +27,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 //Note: To test the newly saved or stored objects in the neo4j database using the content service API, try to 
 // start a content service at an external terminal by following README at https://github.com/reactome/content-service
 // Make sure a correct maven profile is passed into the running env. Eclipse may need some configuration to make it work.
@@ -274,9 +276,19 @@ class CurationRepositoryTests {
     }
     
     @Test
-    public void testFetchReactionWithParticipants() {
+    public void testFetchReactionWithParticipants() throws Exception {
+        // This reaction has a catalyst
         Long dbId = 5679205L;
         SimpleInstance inst = repository.fetchReactionWithParticipants(dbId);
+        ObjectMapper mapper = CurationWSTestHelper.createObjectMapper();
+        String json = mapper.writeValueAsString(inst);
+        System.out.println("Reaction with dbId: " + dbId + "\n" + json);
+        
+        // This reaction has two activators
+        dbId = 9631065L;
+        inst = repository.fetchReactionWithParticipants(dbId);
+        json = mapper.writeValueAsString(inst);
+        System.out.println("Reaction with dbId: " + dbId + "\n" + json);
     }
    
 

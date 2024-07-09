@@ -323,6 +323,10 @@ public class CurationService {
     public Map<String, List<Map<String, Object>>> getReactionPlotData(Long dbId) {
         return curationRepository.getReactionPlotData(dbId);
     }
+    
+    public SimpleInstance fetchReactionWithParticipants(Long dbId) {
+        return curationRepository.fetchReactionWithParticipants(dbId);
+    }
 
     /**
      * A placeholder for a QA check in order to prototype the interaction with the front-end

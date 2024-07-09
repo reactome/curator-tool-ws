@@ -327,7 +327,17 @@ public class CurationController {
         else
             return null;
     }
-
+    
+    /**
+     * Fetch all reaction participants so that the reaction can be laid out fully in 
+     * a pathway diagram.
+     * @param dbId
+     * @return
+     */
+    @GetMapping("fetchReactionWithParticipants/{dbId}")
+    public SimpleInstance fetchReactionWithParticipants(@PathVariable("dbId") Long dbId) {
+        return service.fetchReactionWithParticipants(dbId);
+    }
 
     @GetMapping("getTestQACheckReport/{dbId}")
     public List<List<String>> getTestQACheckReport(

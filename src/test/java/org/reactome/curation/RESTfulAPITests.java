@@ -6,7 +6,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -490,6 +489,30 @@ class RESTfulAPITests {
                 .getResponse()
                 .getContentAsString();
         logger.info("Done filling a reference: " + rtn);
+    }
+    
+    @Test
+    public void testFetchReactionWithParticipants() throws Exception {
+        assertNotNull(mockMvc);
+        // This reaction has a catalyst
+        Long dbId = 5679205L;
+        String url = BASE_URL + "fetchReactionWithParticipants/" + dbId;
+        String json = mockMvc.perform(get(url))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        System.out.println("Reaction with dbId: " + dbId + "\n" + json);
+        
+        // This reaction has two activators
+        dbId = 9631065L;
+        url = BASE_URL + "fetchReactionWithParticipants/" + dbId;
+        json = mockMvc.perform(get(url))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        System.out.println("Reaction with dbId: " + dbId + "\n" + json);
     }
 
 }

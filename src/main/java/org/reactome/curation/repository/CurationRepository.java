@@ -1038,7 +1038,9 @@ public class CurationRepository {
         var catalystNode = Cypher.node(ReactomeJavaConstants.PhysicalEntity).named("catalyst");
         query = query.optionalMatch(node.relationshipTo(casNode, "catalystActivity").named("rel_catalystActivity"))
                      .optionalMatch(casNode.relationshipTo(catalystNode, "physicalEntity").named("rel_catalyst"));
-        // Activator
+        // activator
+        // Note: Follow the implementation in the Java desktop version, Requirement is treated
+        // as a type of activator, not processed explicitly.
         var regulationNode = Cypher.node(ReactomeJavaConstants.PositiveRegulation).named("posRegulatedBy");
         var activatorNode = Cypher.node(ReactomeJavaConstants.PhysicalEntity).named("activator");
         query = query.optionalMatch(node.relationshipTo(regulationNode, "regulatedBy").named("rel_pos_regulation"))
@@ -1056,28 +1058,93 @@ public class CurationRepository {
                       + "{node: catalyst, role: 'catalyst'}, "
                       + "{node: activator, role: 'activator'}, {node: inhibitor, role: 'inhibitor'}]")) // Use raw to avoid any modification!!!
               .as(Cypher.name("data"))
-              .returning(Cypher.name("data").property("node").property("dbId").as("dbId"), 
-                         Cypher.name("data").property("node").property("displayName").as("displayName"),
-                         Cypher.name("data").property("node").property("schemaClass").as("schemaClass"),
-                         Cypher.name("data").property("role").as("role"),
-                         Cypher.name("data").property("rel").property("stoichiometry").as("stoichiometry")).build();
+              .returningDistinct(Cypher.name("data").property("node").property("dbId").as("inst.dbId"), // Prefix inst. so that we can use existed method.
+                                 Cypher.name("data").property("node").property("displayName").as("inst.displayName"),
+                                 Cypher.name("data").property("node").property("schemaClass").as("inst.schemaClass"),
+                                 Cypher.name("data").property("role").as("role"),
+                                 Cypher.name("data").property("rel").property("stoichiometry").as("stoichiometry")).build();
       
-        System.out.println(Renderer.getDefaultRenderer().render(queryBuild));
+//        System.out.println(Renderer.getDefaultRenderer().render(queryBuild));
         // Process the query result and model it into a SimpleInstance to return
         Collection<Map<String, Object>> all = neo4jClient.query(queryBuild.getCypher()).fetch().all();
-        SimpleInstance reaction = new SimpleInstance();
-//        for (Map<String, Object> map : all) {
-//            if (totalCount == null)
-//                totalCount = Integer.parseInt(map.get("totalCount").toString());
-//            // This should not occur. However, just in case
-//            if (map.get("inst.dbId") == null) {
-//                logger.error("Return result with dbId = null: " + className + ", " + skip + ", " + limit);
-//                continue;
-//            }
-//            SimpleInstance inst = constructInstance(map, className);
-//            instances.add(inst);
-//        }
-        
+        SimpleInstance reaction = null;
+        // Do two iterations: the first to initialize the reaction
+        for (Map<String, Object> map : all) {
+            // Escape it if nothing there
+            if (map.get("inst.dbId") == null || map.get("role") == null)
+                continue;
+            String role = map.get("role").toString();
+            if (role.equals("reaction")) {
+                reaction = constructInstance(map, null);
+            }
+        }
+        if (reaction == null) {
+            logger.error("Cannot find a ReactionLikeEvent with dbId = " + dbId);
+            return null;
+        }
+        // Do others
+        List<SimpleInstance> catalysts = null;
+        List<SimpleInstance> activators = null;
+        List<SimpleInstance> inhibitors = null;
+        List<SimpleInstance> inputs = null;
+        List<SimpleInstance> outputs = null;
+        for (Map<String, Object> map : all) {
+            // Escape it if nothing there
+            if (map.get("inst.dbId") == null || map.get("role") == null)
+                continue;
+            String role = map.get("role").toString();
+            // Need to check stoichiometry for input and output
+            if (role.equals("input") || role.equals("output")) {
+                Integer stoi = Integer.parseInt(map.get("stoichiometry").toString());
+                SimpleInstance inst = constructInstance(map, null);
+                List<SimpleInstance> targetList = null;
+                if (role.equals("input")) {
+                    if (inputs == null)
+                        inputs = new ArrayList<>();
+                    targetList = inputs;
+                }
+                else if (role.equals("output")) {
+                    if (outputs == null)
+                        outputs = new ArrayList<>();
+                    targetList = outputs;
+                }
+                for (int i = 0; i < stoi; i++) {
+                    targetList.add(inst); // inst may be repeated multiple times
+                }
+            }
+            else { // catalyst, activator and inhibitor
+                List<SimpleInstance> targetList = null;
+                if (role.equals("catalyst")) {
+                    if (catalysts == null)
+                        catalysts = new ArrayList<>();
+                    targetList = catalysts;
+                }
+                else if (role.equals("activator")) {
+                    if (activators == null)
+                        activators = new ArrayList<>();
+                    targetList = activators;
+                }
+                else if (role.equals("inhibitor")) {
+                    if (inhibitors == null)
+                        inhibitors = new ArrayList<>();
+                    targetList = inhibitors;
+                }
+                if (targetList == null)
+                    targetList = new ArrayList<>();
+                SimpleInstance inst = constructInstance(map, null);
+                targetList.add(inst);
+            }
+        }
+        if (inputs != null)
+            reaction.setAttribute("input", inputs);
+        if (outputs != null)
+            reaction.setAttribute("output", outputs);
+        if (catalysts != null)
+            reaction.setAttribute("catalyst", catalysts);
+        if (activators != null)
+            reaction.setAttribute("activator", activators);
+        if (inhibitors != null)
+            reaction.setAttribute("inhibitor", inhibitors);
         return reaction;
     }
 
