@@ -601,6 +601,9 @@ public class CurationRepository {
             inst.setSchemaClassName(className); // Just in case! This should not happen!
             logger.warn("No schemaClass name in the database for instance with dbId = " + inst.getDbId());
         }
+        Object refSchemaClass = map.get("inst.ref.schemaClass");
+        if (refSchemaClass != null)
+            inst.setAttribute("refSchemaClass", refSchemaClass.toString());
         return inst;
     }
 
@@ -1020,6 +1023,9 @@ public class CurationRepository {
      * Use this method to fetch a ReactionLikeEvent with all participants filled, e.g.,
      * regulators and physicalEntity in CAS should be loaded too. This is a convenient way
      * to query a reaction for adding to a pathway diagram view to avoid multiple calling.
+     * TODO: Most likely it would be better to let this method to figure out the renderabe type
+     * of an entity should be. For the time being, let the front-end code do this.
+     * TODO: Need to determine complex or entityset drug by doing a new layer query!!!
      * @param dbId
      * @return
      */
@@ -1030,14 +1036,24 @@ public class CurationRepository {
         // Input
         var inputNode = Cypher.node(ReactomeJavaConstants.PhysicalEntity).named("input");
         query = query.optionalMatch(node.relationshipTo(inputNode, "input").named("rel_input"));
+        // Reference to get the type of node
+        var inputRefNode = Cypher.node(ReactomeJavaConstants.ReferenceEntity).named("inputRef");
+        query = query.optionalMatch(inputNode.relationshipTo(inputRefNode, ReactomeJavaConstants.referenceEntity).named("rel_inputRef"));
+        
         // Output
         var outputNode = Cypher.node(ReactomeJavaConstants.PhysicalEntity).named("output");
         query = query.optionalMatch(node.relationshipTo(outputNode, "output").named("rel_output"));
+        var outputRefNode = Cypher.node(ReactomeJavaConstants.ReferenceEntity).named("outputRef");
+        query = query.optionalMatch(outputNode.relationshipTo(outputRefNode, ReactomeJavaConstants.referenceEntity).named("rel_outputRef"));
+        
         // Catalyst
         var casNode = Cypher.node(ReactomeJavaConstants.CatalystActivity).named("cas");
         var catalystNode = Cypher.node(ReactomeJavaConstants.PhysicalEntity).named("catalyst");
         query = query.optionalMatch(node.relationshipTo(casNode, "catalystActivity").named("rel_catalystActivity"))
                      .optionalMatch(casNode.relationshipTo(catalystNode, "physicalEntity").named("rel_catalyst"));
+        var caRefNode = Cypher.node(ReactomeJavaConstants.ReferenceEntity).named("catalystRef");
+        query = query.optionalMatch(catalystNode.relationshipTo(caRefNode, ReactomeJavaConstants.referenceEntity).named("rel_caRef"));
+        
         // activator
         // Note: Follow the implementation in the Java desktop version, Requirement is treated
         // as a type of activator, not processed explicitly.
@@ -1045,24 +1061,37 @@ public class CurationRepository {
         var activatorNode = Cypher.node(ReactomeJavaConstants.PhysicalEntity).named("activator");
         query = query.optionalMatch(node.relationshipTo(regulationNode, "regulatedBy").named("rel_pos_regulation"))
                      .optionalMatch(regulationNode.relationshipTo(activatorNode, "regulator").named("rel_pos_regulator"));
+        var activatorRefNode = Cypher.node(ReactomeJavaConstants.ReferenceEntity).named("activatorRef");
+        query = query.optionalMatch(activatorNode.relationshipTo(activatorRefNode, ReactomeJavaConstants.referenceEntity).named("rel_cativatorRef"));
+        
         // inhibitor
         regulationNode = Cypher.node(ReactomeJavaConstants.NegativeRegulation).named("negRegulatedBy");
         var inhibitorNode = Cypher.node(ReactomeJavaConstants.PhysicalEntity).named("inhibitor");
         query = query.optionalMatch(node.relationshipTo(regulationNode, "regulatedBy").named("rel_neg_regulation"))
                      .optionalMatch(regulationNode.relationshipTo(inhibitorNode, "regulator").named("rel_neg_regulator"));
-        
+        var inhibitorRefNode = Cypher.node(ReactomeJavaConstants.ReferenceEntity).named("inhibitorRef");
+        query = query.optionalMatch(inhibitorNode.relationshipTo(inhibitorRefNode, ReactomeJavaConstants.referenceEntity).named("rel_inhibitorRef"));
+
         // Combine all returned objects together for easy parsing
-        var queryBuild = query.with(Cypher.name("node"), Cypher.name("input"), Cypher.name("output"), Cypher.name("catalyst"),
-                   Cypher.name("activator"), Cypher.name("inhibitor"), Cypher.name("rel_input"), Cypher.name("rel_output"))
-              .unwind(Cypher.raw("[{node: node, role: 'reaction'}, {node: input, rel: rel_input, role: 'input'}, {node: output, rel: rel_output, role: 'output'}, "
-                      + "{node: catalyst, role: 'catalyst'}, "
-                      + "{node: activator, role: 'activator'}, {node: inhibitor, role: 'inhibitor'}]")) // Use raw to avoid any modification!!!
+        var queryBuild = query.with(Cypher.name("node"), Cypher.name("input"), Cypher.name("inputRef"),
+                Cypher.name("output"), Cypher.name("outputRef"),
+                Cypher.name("catalyst"), Cypher.name("catalystRef"),
+                   Cypher.name("activator"), Cypher.name("activatorRef"),
+                   Cypher.name("inhibitor"), Cypher.name("inhibitorRef"),
+                   Cypher.name("rel_input"), Cypher.name("rel_output"))
+              .unwind(Cypher.raw("[{node: node, role: 'reaction'}, "
+                      + "{node: input, rel: rel_input, role: 'input', ref: inputRef}, "
+                      + "{node: output, rel: rel_output, role: 'output', ref: outputRef}, "
+                      + "{node: catalyst, role: 'catalyst', ref: catalystRef}, "
+                      + "{node: activator, role: 'activator', ref: activatorRef}, "
+                      + "{node: inhibitor, role: 'inhibitor', ref: inhibitorRef}]")) // Use raw to avoid any modification!!!
               .as(Cypher.name("data"))
               .returningDistinct(Cypher.name("data").property("node").property("dbId").as("inst.dbId"), // Prefix inst. so that we can use existed method.
                                  Cypher.name("data").property("node").property("displayName").as("inst.displayName"),
                                  Cypher.name("data").property("node").property("schemaClass").as("inst.schemaClass"),
                                  Cypher.name("data").property("role").as("role"),
-                                 Cypher.name("data").property("rel").property("stoichiometry").as("stoichiometry")).build();
+                                 Cypher.name("data").property("rel").property("stoichiometry").as("stoichiometry"),
+                                 Cypher.name("data").property("ref").property("schemaClass").as("inst.ref.schemaClass")).build();
       
 //        System.out.println(Renderer.getDefaultRenderer().render(queryBuild));
         // Process the query result and model it into a SimpleInstance to return
