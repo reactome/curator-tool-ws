@@ -3,16 +3,8 @@ package org.reactome.curation.repository;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.*;
 
 import org.apache.commons.lang.WordUtils;
 import org.gk.model.ReactomeJavaConstants;
@@ -23,12 +15,15 @@ import org.neo4j.cypherdsl.core.Node;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReading;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingUpdate;
 import org.neo4j.cypherdsl.core.renderer.Renderer;
+import org.reactome.curation.controller.DatabaseObjectInstanceConverter;
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
 import org.reactome.curation.model.CuratorToolWSUtils;
 import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.server.graph.domain.model.DatabaseObject;
+import org.reactome.server.graph.domain.result.Referrals;
+import org.reactome.server.graph.domain.result.SimpleDatabaseObject;
 import org.reactome.server.graph.service.helper.StoichiometryObject;
 import org.reactome.server.graph.service.util.DatabaseObjectUtils;
 import org.slf4j.Logger;
@@ -36,7 +31,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.data.neo4j.core.Neo4jTemplate;
 import org.springframework.data.neo4j.core.schema.Relationship;
-import org.springframework.data.querydsl.binding.QuerydslPredicateBuilder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -80,7 +74,8 @@ public class CurationRepository {
     // Cache this for performance
     private Map<String, Map<String, Relationship>> cls2field2rel = new HashMap<>();
 
-    public CurationRepository(Neo4jClient neo4jClient, Neo4jTemplate neo4jTemplate) {
+    public CurationRepository(Neo4jClient neo4jClient,
+                              Neo4jTemplate neo4jTemplate) {
         this.neo4jClient = neo4jClient;
         this.neo4jTemplate = neo4jTemplate;
         // Some house keeping when the repository starts
@@ -1015,7 +1010,7 @@ public class CurationRepository {
         ret.put("edges", edges);
         return ret;
     }
-    
+
     /**
      * Use this method to fetch a ReactionLikeEvent with all participants filled, e.g.,
      * regulators and physicalEntity in CAS should be loaded too. This is a convenient way
@@ -1048,7 +1043,7 @@ public class CurationRepository {
         var inhibitorNode = Cypher.node(ReactomeJavaConstants.PhysicalEntity).named("inhibitor");
         query = query.optionalMatch(node.relationshipTo(regulationNode, "regulatedBy").named("rel_neg_regulation"))
                      .optionalMatch(regulationNode.relationshipTo(inhibitorNode, "regulator").named("rel_neg_regulator"));
-        
+
         // Combine all returned objects together for easy parsing
         var queryBuild = query.with(Cypher.name("node"), Cypher.name("input"), Cypher.name("output"), Cypher.name("catalyst"),
                    Cypher.name("activator"), Cypher.name("inhibitor"), Cypher.name("rel_input"), Cypher.name("rel_output"))
@@ -1056,12 +1051,12 @@ public class CurationRepository {
                       + "{node: catalyst, role: 'catalyst'}, "
                       + "{node: activator, role: 'activator'}, {node: inhibitor, role: 'inhibitor'}]")) // Use raw to avoid any modification!!!
               .as(Cypher.name("data"))
-              .returning(Cypher.name("data").property("node").property("dbId").as("dbId"), 
+              .returning(Cypher.name("data").property("node").property("dbId").as("dbId"),
                          Cypher.name("data").property("node").property("displayName").as("displayName"),
                          Cypher.name("data").property("node").property("schemaClass").as("schemaClass"),
                          Cypher.name("data").property("role").as("role"),
                          Cypher.name("data").property("rel").property("stoichiometry").as("stoichiometry")).build();
-      
+
         System.out.println(Renderer.getDefaultRenderer().render(queryBuild));
         // Process the query result and model it into a SimpleInstance to return
         Collection<Map<String, Object>> all = neo4jClient.query(queryBuild.getCypher()).fetch().all();
@@ -1077,7 +1072,7 @@ public class CurationRepository {
 //            SimpleInstance inst = constructInstance(map, className);
 //            instances.add(inst);
 //        }
-        
+
         return reaction;
     }
 
@@ -1492,4 +1487,66 @@ public class CurationRepository {
         return ret;
     }
 
+    public Collection<Referrals> getReferralsTo(Long dbId) {
+//        String query = "  MATCH (d:DatabaseObject{dbId:$dbId})<-[rel]-(ref) WHERE NOT ref:InstanceEdit       AND NOT (d)<-[:species|compartment|includedLocation|referenceDatabase|evidenceType|reviewStatus|previousReviewStatus]-(ref) RETURN DISTINCT TYPE(rel) AS referral,        COLLECT(ref) AS objects LIMIT 1000";
+//        StringBuilder queryConditions = new StringBuilder();
+//        for(int i=0; i<schemaClasses.size(); i++){
+//            String condition = " ref:" + schemaClasses.toArray()[i];
+//            if(i != (schemaClasses.size() - 1))
+//            {
+//                condition += " or ";
+//            }
+//            queryConditions.append(condition);
+//        }
+        String query = "MATCH (d:DatabaseObject{dbId:$dbId})-[rel]-(ref) RETURN DISTINCT TYPE(rel) AS referral,        COLLECT(ref) AS objects LIMIT 1000";
+        return ((Neo4jClient.RunnableSpec)this.neo4jClient.query(query).bindAll(Collections.singletonMap("dbId", dbId))).fetchAs(Referrals.class).mappedBy((t, record) -> {
+            return Referrals.build(record);
+        }).all();
+    }
+
+    public Collection<Referrals> referrers(DatabaseObject instance) throws Exception {
+//        Class<?> _class = instance.getClass();
+//        Set<Field> relationships = new HashSet<>();
+//        while (!_class.equals(Object.class)) {
+//            for (Field field : _class.getDeclaredFields()) {
+//                if (field.getAnnotation(Relationship.class) != null) {
+//                    int index = field.getGenericType().getTypeName().split("\\.").length - 1;
+//                    //relationships.add(field.getGenericType().getTypeName().split("\\.")[index].split(">")[0]);
+//                    relationships.add(field);
+//                }
+//            }
+//            // Didn't find the field in the given class. Check the Superclass.
+//            _class = _class.getSuperclass();
+//        }
+//        System.out.println(relationships);
+
+        var refs = this.getReferralsTo(instance.getDbId());
+        Collection<Referrals> finalRefferals = new ArrayList<>();
+        for (Referrals referral : refs) {
+            if (referral.getReferral() == null) {
+                logger.error("Return result with dbId = null: ");
+                continue;
+            }
+            List<SimpleDatabaseObject> outgoingRelationships = new ArrayList<>();
+            for (int i = 0; i < referral.getObjects().size(); i++) {
+                SimpleDatabaseObject referralObj = referral.getObjects().get(i);
+                var objClass = Class.forName("org.reactome.server.graph.domain.model." + referralObj.getSchemaClass());
+                Map<String, Relationship> field2rel = this.getField2rel(objClass);
+                Relationship relationship = field2rel.get(referral.getReferral());
+                Map<String, Relationship> field2relInst = this.getField2rel(instance.getClass());
+                Relationship relationship1 = field2relInst.get(referral.getReferral());
+                if(relationship != null && relationship1 != null) {
+//                    if (relationship.direction() == relationship1.direction()) {
+                        outgoingRelationships.add(referralObj);
+
+                    //}
+                }
+            }
+            if(!outgoingRelationships.isEmpty()) {
+                referral.setObjects(outgoingRelationships);
+                finalRefferals.add(referral);
+            }
+        }
+        return finalRefferals;
+    }
 }

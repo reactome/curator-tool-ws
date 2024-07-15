@@ -3,6 +3,7 @@ package org.reactome.curation;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -14,13 +15,9 @@ import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.repository.CurationFileRepository;
 import org.reactome.curation.repository.CurationRepository;
-import org.reactome.server.graph.domain.model.Complex;
-import org.reactome.server.graph.domain.model.LiteratureReference;
-import org.reactome.server.graph.domain.model.PhysicalEntity;
-import org.reactome.server.graph.domain.model.Publication;
-import org.reactome.server.graph.domain.model.Reaction;
-import org.reactome.server.graph.domain.model.SimpleEntity;
-import org.reactome.server.graph.domain.model.Summation;
+import org.reactome.server.graph.domain.model.*;
+import org.reactome.server.graph.domain.result.Referrals;
+import org.reactome.server.graph.domain.result.SimpleDatabaseObject;
 import org.reactome.server.graph.repository.AdvancedDatabaseObjectRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -277,6 +274,25 @@ class CurationRepositoryTests {
     public void testFetchReactionWithParticipants() {
         Long dbId = 5679205L;
         SimpleInstance inst = repository.fetchReactionWithParticipants(dbId);
+    }
+
+    @Test
+    public void testReferrers() throws Exception {
+        //Long dbId = 9815367L;
+        Long dbId = 9815366L;
+        //Long dbId = 1169272L;
+        String stId = "R-HSA-1630316";
+        DatabaseObject databaseObject = queryRepo.findById(dbId, 1);
+        SimpleInstance simpleInstance = new SimpleInstance();
+        simpleInstance.setDbId(databaseObject.getDbId());
+        simpleInstance.setSchemaClassName(databaseObject.getClassName());
+        Collection<Referrals> instances;
+        instances = repository.referrers(databaseObject);
+        for(Referrals ref : instances){
+            for(SimpleDatabaseObject obj : ref.getObjects()) {
+                System.out.println("refferers " + ref.getReferral() + ": " + obj.getDisplayName());
+            }
+        }
     }
    
 
