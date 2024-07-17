@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.gk.model.ReactomeJavaConstants;
+import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Test;
 import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
@@ -299,12 +300,12 @@ class CurationRepositoryTests {
         SimpleInstance simpleInstance = new SimpleInstance();
         simpleInstance.setDbId(databaseObject.getDbId());
         simpleInstance.setSchemaClassName(databaseObject.getClassName());
-        Map<String, ArrayList<SimpleInstance>> instances;
+        Collection<Referrals> instances;
         instances = repository.getReferrers(databaseObject);
-        for(String key : instances.keySet()){
-            System.out.println("refferers " + key  + ": " );
-            for(SimpleInstance inst : instances.get(key)) {
-                System.out.println(inst);
+        for(Referrals ref : instances){
+            System.out.println("refferers " + ref.getReferral()  + ": " );
+            for(SimpleDatabaseObject obj : ref.getObjects()) {
+                System.out.println(obj.getDisplayName());
             }
         }
     }
