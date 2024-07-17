@@ -1584,16 +1584,16 @@ public class CurationRepository {
     public Collection<Referrals> getReferralsTo(Node instanceNode, org.neo4j.cypherdsl.core.Relationship rel) {
         var query = Cypher.match(instanceNode);
 
-        var queryBuildOutgoing = query.optionalMatch(rel)
+        var queryBuilder = query.optionalMatch(rel)
                 .returning(Cypher.name("inst").property("dbId"),
                         Cypher.name("inst").property("displayName"), Cypher.name("inst").property("schemaClass"),
                         Functions.type(rel).as("rel"))
                 .orderBy(Cypher.name("inst").property("displayName")).build();
-        Collection<Map<String, Object>> allOutgoing = neo4jClient.query(queryBuildOutgoing.getCypher()).fetch().all();
-        List<SimpleDatabaseObject> outgoingInstances = new ArrayList<>();
+        Collection<Map<String, Object>> allOutgoing = neo4jClient.query(queryBuilder.getCypher()).fetch().all();
+        List<SimpleDatabaseObject> instances = new ArrayList<>();
 
         ArrayList<Referrals> referrals = new ArrayList<>();
-        Set<String> classNames = new HashSet<>();
+        ArrayList<String> classNames = new ArrayList<>();
         for (Map<String, Object> map : allOutgoing) {
             // This should not occur. However, just in case
             if (map.get("inst.dbId") == null) {
@@ -1601,30 +1601,35 @@ public class CurationRepository {
                 continue;
             }
             SimpleInstance inst = constructInstance(map, map.get("inst.schemaClass").toString());
+            // Need to build SimpleDatabaseObject from SimpleInstance
             SimpleDatabaseObject dbObj = new SimpleDatabaseObject();
             dbObj.setDbId(inst.getDbId());
             dbObj.setDisplayName(inst.getDisplayName());
             ArrayList<String> schemaClass = new ArrayList();
             schemaClass.add(inst.getSchemaClassName());
             dbObj.setLabels(schemaClass);
-            outgoingInstances.add(dbObj);
-            Referrals ref = new Referrals();
-            ref.setReferral(map.get("rel") + "");
-            if(!classNames.contains(map.get("rel") + "")){
-                classNames.add(map.get("rel") + "");
-                ref.setObjects(outgoingInstances);
-                referrals.add(ref);
+
+            if(classNames.contains(map.get("rel") + "")){
+                int index = classNames.indexOf(map.get("rel").toString());
+                instances = referrals.get(index).getObjects();
+                instances.add(dbObj);
+                referrals.get(index).setObjects(instances);
             }
             else {
-               int index = Math.abs(referrals.indexOf(ref));
-               referrals.get(index).setObjects(outgoingInstances);
+                instances.add(dbObj);
+                Referrals ref = new Referrals();
+                classNames.add(map.get("rel").toString());
+                ref.setReferral(map.get("rel") + "");
+                ref.setObjects(instances);
+                referrals.add(ref);
+                instances = new ArrayList<>();
             }
         }
         return referrals;
     }
 
-    public Collection<Referrals> getReferrers(DatabaseObject instance) throws Exception {
-        var instanceNode = Cypher.node(instance.getSchemaClass()).named("ref").withProperties("dbId", Cypher.literalOf(instance.getDbId()));
+    public Collection<Referrals> getReferrers(Long dbId) throws Exception {
+        var instanceNode = Cypher.node(ReactomeJavaConstants.DatabaseObject).named("ref").withProperties("dbId", Cypher.literalOf(dbId));
         var attributeNode = Cypher.node("DatabaseObject").named("inst");
 
         var rel = instanceNode.relationshipTo(attributeNode).named("r_");
@@ -1634,17 +1639,17 @@ public class CurationRepository {
         Collection<Referrals> incomingReferences = this.getReferralsTo(instanceNode, rel1);
 
         Collection<Referrals> finalReferrals = new ArrayList<>();
-        finalReferrals = this.checkReferrers(outgoingReferences, Relationship.Direction.INCOMING, finalReferrals);
-        finalReferrals = this.checkReferrers(incomingReferences, Relationship.Direction.OUTGOING, finalReferrals);
+        finalReferrals.addAll(this.checkReferrers(outgoingReferences, Relationship.Direction.INCOMING));
+        finalReferrals.addAll(this.checkReferrers(incomingReferences, Relationship.Direction.OUTGOING));
 
         return finalReferrals;
     }
 
     public Collection<Referrals> checkReferrers(Collection<Referrals> references,
-                                                Relationship.Direction direction,
-                                                Collection<Referrals> finalReferrals) throws ClassNotFoundException {
-        ArrayList<SimpleDatabaseObject> instances = new ArrayList<>();
+                                                Relationship.Direction direction) throws ClassNotFoundException {
+        Collection<Referrals> finalReferrals = new ArrayList<>();
         for (Referrals ref : references) {
+            ArrayList<SimpleDatabaseObject> instances = new ArrayList<>();
             for(SimpleDatabaseObject simpleDatabaseObject : ref.getObjects()){
                 String clsName = DatabaseObject.class.getPackageName() + '.' + simpleDatabaseObject.getSchemaClass();
                 Class<?> cls = Class.forName(clsName);

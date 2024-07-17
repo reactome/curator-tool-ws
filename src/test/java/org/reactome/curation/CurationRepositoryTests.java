@@ -292,18 +292,14 @@ class CurationRepositoryTests {
 
     @Test
     public void testReferrers() throws Exception {
-        //Long dbId = 9815367L; // Pathway
+        Long dbId = 9815367L; // Pathway
         //Long dbId = 9815366L; // Instance Edit
-        Long dbId = 179837L; // Physical Entity (EGFR)
-        String stId = "R-HSA-1630316";
-        DatabaseObject databaseObject = queryRepo.findById(dbId, 1);
-        SimpleInstance simpleInstance = new SimpleInstance();
-        simpleInstance.setDbId(databaseObject.getDbId());
-        simpleInstance.setSchemaClassName(databaseObject.getClassName());
+        //Long dbId = 179837L; // Physical Entity (EGFR)
+        //Long dbId = 5672709L;
         Collection<Referrals> instances;
-        instances = repository.getReferrers(databaseObject);
+        instances = repository.getReferrers(dbId);
         for(Referrals ref : instances){
-            System.out.println("refferers " + ref.getReferral()  + ": " );
+            System.out.println("referrers " + ref.getReferral()  + ": " );
             for(SimpleDatabaseObject obj : ref.getObjects()) {
                 System.out.println(obj.getDisplayName());
             }

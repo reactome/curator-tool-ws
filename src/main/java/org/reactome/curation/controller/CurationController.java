@@ -1,11 +1,6 @@
 package org.reactome.curation.controller;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -16,6 +11,7 @@ import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.model.SimpleSchemaClass;
 import org.reactome.curation.service.CurationService;
 import org.reactome.server.graph.domain.model.DatabaseObject;
+import org.reactome.server.graph.domain.result.Referrals;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -350,5 +346,16 @@ public class CurationController {
                 checkType,
                 Arrays.asList(editedAttributeNames.split(",")),
                 Arrays.asList(editedAttributeValues.split(",")));
+    }
+
+    /**
+     * Fetch all reaction participants so that the reaction can be laid out fully in
+     * a pathway diagram.
+     * @param dbId
+     * @return
+     */
+    @GetMapping("getReferrers/{dbId}")
+    public Collection<Referrals> getReferrers(@PathVariable("dbId") Long dbId) throws Exception {
+        return service.getReferrers(dbId);
     }
 }
