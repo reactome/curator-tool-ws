@@ -465,6 +465,24 @@ class RESTfulAPITests {
     }
     
     @Test
+    public void testGetReferrers() throws Exception {
+        assertNotNull(mockMvc);
+        
+        Long dbId = 9684445L; // ModifiedNucleotide
+        dbId = 9686417L; // InstanceEdit used to modify the above instance
+        String url = BASE_URL + "getReferrers/" + dbId;
+        logger.info("URL: " + url);
+        
+        // Store
+        String rtn = mockMvc.perform(get(url).contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        System.out.println(rtn);
+    }
+    
+    @Test
     public void testFillReference() throws Exception {
         assertNotNull(mockMvc);
         
