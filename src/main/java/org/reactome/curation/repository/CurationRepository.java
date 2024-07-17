@@ -1581,64 +1581,136 @@ public class CurationRepository {
         return ret;
     }
 
-    public Collection<Referrals> getReferralsTo(Long dbId) {
-//        String query = "  MATCH (d:DatabaseObject{dbId:$dbId})<-[rel]-(ref) WHERE NOT ref:InstanceEdit       AND NOT (d)<-[:species|compartment|includedLocation|referenceDatabase|evidenceType|reviewStatus|previousReviewStatus]-(ref) RETURN DISTINCT TYPE(rel) AS referral,        COLLECT(ref) AS objects LIMIT 1000";
-//        StringBuilder queryConditions = new StringBuilder();
-//        for(int i=0; i<schemaClasses.size(); i++){
-//            String condition = " ref:" + schemaClasses.toArray()[i];
-//            if(i != (schemaClasses.size() - 1))
-//            {
-//                condition += " or ";
-//            }
-//            queryConditions.append(condition);
-//        }
-        String query = "MATCH (d:DatabaseObject{dbId:$dbId})-[rel]-(ref) RETURN DISTINCT TYPE(rel) AS referral,        COLLECT(ref) AS objects LIMIT 1000";
-        return ((Neo4jClient.RunnableSpec)this.neo4jClient.query(query).bindAll(Collections.singletonMap("dbId", dbId))).fetchAs(Referrals.class).mappedBy((t, record) -> {
-            return Referrals.build(record);
-        }).all();
-    }
+    public Collection<Referrals> getReferralsTo(Node instanceNode, org.neo4j.cypherdsl.core.Relationship rel) {
+        var query = Cypher.match(instanceNode);
 
-    public Collection<Referrals> referrers(DatabaseObject instance) throws Exception {
-//        Class<?> _class = instance.getClass();
-//        Set<Field> relationships = new HashSet<>();
-//        while (!_class.equals(Object.class)) {
-//            for (Field field : _class.getDeclaredFields()) {
-//                if (field.getAnnotation(Relationship.class) != null) {
-//                    int index = field.getGenericType().getTypeName().split("\\.").length - 1;
-//                    //relationships.add(field.getGenericType().getTypeName().split("\\.")[index].split(">")[0]);
-//                    relationships.add(field);
-//                }
-//            }
-//            // Didn't find the field in the given class. Check the Superclass.
-//            _class = _class.getSuperclass();
-//        }
-//        System.out.println(relationships);
+        var queryBuildOutgoing = query.optionalMatch(rel)
+                .returning(Cypher.name("inst").property("dbId"),
+                        Cypher.name("inst").property("displayName"), Cypher.name("inst").property("schemaClass"),
+                        Functions.type(rel).as("rel"))
+                .orderBy(Cypher.name("inst").property("displayName")).build();
+        Collection<Map<String, Object>> allOutgoing = neo4jClient.query(queryBuildOutgoing.getCypher()).fetch().all();
+        List<SimpleDatabaseObject> outgoingInstances = new ArrayList<>();
 
-        var refs = this.getReferralsTo(instance.getDbId());
-        Collection<Referrals> finalRefferals = new ArrayList<>();
-        for (Referrals referral : refs) {
-            if (referral.getReferral() == null) {
+        ArrayList<Referrals> referrals = new ArrayList<>();
+        Set<String> classNames = new HashSet<>();
+        for (Map<String, Object> map : allOutgoing) {
+            // This should not occur. However, just in case
+            if (map.get("inst.dbId") == null) {
                 logger.error("Return result with dbId = null: ");
                 continue;
             }
-            List<SimpleDatabaseObject> outgoingRelationships = new ArrayList<>();
-            for (int i = 0; i < referral.getObjects().size(); i++) {
-                SimpleDatabaseObject referralObj = referral.getObjects().get(i);
-                var objClass = Class.forName("org.reactome.server.graph.domain.model." + referralObj.getSchemaClass());
-                Map<String, Relationship> field2rel = this.getField2rel(objClass);
-                Relationship relationship = field2rel.get(referral.getReferral());
-                Map<String, Relationship> field2relInst = this.getField2rel(instance.getClass());
-                Relationship relationship1 = field2relInst.get(referral.getReferral());
-                if(relationship != null && relationship1 != null) {
-//                    if (relationship.direction() == relationship1.direction()) {
-                        outgoingRelationships.add(referralObj);
+            SimpleInstance inst = constructInstance(map, map.get("inst.schemaClass").toString());
+            SimpleDatabaseObject dbObj = new SimpleDatabaseObject();
+            dbObj.setDbId(inst.getDbId());
+            dbObj.setDisplayName(inst.getDisplayName());
+            outgoingInstances.add(dbObj);
+            Referrals ref = new Referrals();
+            ref.setReferral(map.get("rel") + "");
+            if(!classNames.contains(map.get("rel") + "")){
+                classNames.add(map.get("rel") + "");
+                ref.setObjects(outgoingInstances);
+                referrals.add(ref);
+            }
+            else {
+               int index = Math.abs(referrals.indexOf(ref));
+               referrals.get(index).setObjects(outgoingInstances);
+            }
+        }
+        return referrals;
+    }
 
-                    //}
+    public Map<String, ArrayList<SimpleInstance>> getReferrers(DatabaseObject instance) throws Exception {
+//        var instanceNode = Cypher.node(instance.getSchemaClass()).named("ref").withProperties("dbId", Cypher.literalOf(instance.getDbId()));
+//        var query = Cypher.match(instanceNode);
+//        var attributeNode = Cypher.node("DatabaseObject").named("inst");
+//        var rel = instanceNode.relationshipTo(attributeNode).named("r_");
+//        var queryBuildOutgoing = query.optionalMatch(rel)
+//                .returning(Cypher.name("inst").property("dbId"),
+//                        Cypher.name("inst").property("displayName"), Cypher.name("inst").property("schemaClass"),
+//                        Functions.type(rel).as("rel"))
+//                .orderBy(Cypher.name("inst").property("displayName")).build();
+//        Collection<Map<String, Object>> allOutgoing = neo4jClient.query(queryBuildOutgoing.getCypher()).fetch().all();
+//        List<SimpleInstance> outgoingInstances = new ArrayList<>();
+//        List<String> outgoingRelTypes= new ArrayList<>();
+//        System.out.println(Renderer.getDefaultRenderer().render(queryBuildOutgoing));
+//        for (Map<String, Object> map : allOutgoing) {
+//            // This should not occur. However, just in case
+//            if (map.get("inst.dbId") == null) {
+//                logger.error("Return result with dbId = null: ");
+//                continue;
+//            }
+//            SimpleInstance inst = constructInstance(map, map.get("inst.schemaClass").toString());
+//            Object relType = map.get("rel");
+//            outgoingRelTypes.add(relType + "");
+//            outgoingInstances.add(inst);
+//        }
+//
+//        query = Cypher.match(instanceNode);
+//        rel = instanceNode.relationshipFrom(attributeNode).named("r_");
+//        var queryBuildIncoming = query.optionalMatch(rel)
+//                .returning(Cypher.name("inst").property("dbId"),
+//                        Cypher.name("inst").property("displayName"), Cypher.name("inst").property("schemaClass"),
+//                        Functions.type(rel).as("rel"))
+//                .orderBy(Cypher.name("inst").property("displayName")).build();
+//        Collection<Map<String, Object>> allIncoming = neo4jClient.query(queryBuildIncoming.getCypher()).fetch().all();
+//
+//        List<SimpleInstance> incomingInstances = new ArrayList<>();
+//        List<String> incomingRelTypes= new ArrayList<>();
+//        for (Map<String, Object> map : allIncoming) {
+//            // This should not occur. However, just in case
+//            if (map.get("inst.dbId") == null) {
+//                logger.error("Return result with dbId = null: ");
+//                continue;
+//            }
+//            SimpleInstance inst = constructInstance(map, map.get("inst.schemaClass").toString());
+//            Object relType = map.get("rel");
+//            incomingRelTypes.add(relType + "");
+//            incomingInstances.add(inst);
+//        }
+
+        var instanceNode = Cypher.node(instance.getSchemaClass()).named("ref").withProperties("dbId", Cypher.literalOf(instance.getDbId()));
+        var attributeNode = Cypher.node("DatabaseObject").named("inst");
+
+        var rel = instanceNode.relationshipTo(attributeNode).named("r_");
+        Collection<Referrals> outgoingReferences = this.getReferralsTo(instanceNode, rel);
+
+        var rel1 = instanceNode.relationshipFrom(attributeNode).named("r_");
+        Collection<Referrals> incomingReferences = this.getReferralsTo(instanceNode, rel1);
+
+
+
+        ArrayList<Referrals> finalRefferals = new ArrayList<>();
+        ArrayList<SimpleDatabaseObject> outgoingInsts = new ArrayList<>();
+        for (Referrals ref : outgoingReferences) {
+            for(SimpleDatabaseObject simpleDatabaseObject : ref.getObjects()){
+                String clsName = DatabaseObject.class.getPackageName() + '.' + simpleDatabaseObject.getSchemaClass();
+                Class<?> cls = Class.forName(clsName);
+                Map<String, Relationship> field2relRefObj = this.getField2rel(cls);
+                Relationship relationshipFromRef = field2relRefObj.get(ref.getReferral());
+                if(relationshipFromRef != null) {
+                    if (relationshipFromRef.direction().equals(Relationship.Direction.INCOMING)) {
+                        outgoingInsts.add(simpleDatabaseObject);
+                    }
                 }
             }
-            if(!outgoingRelationships.isEmpty()) {
-                referral.setObjects(outgoingRelationships);
-                finalRefferals.add(referral);
+            if(!outgoingInsts.isEmpty()) {
+                finalRefferals.add(ref);
+            }
+        }
+
+        ArrayList<SimpleInstance> incomingInsts = new ArrayList<>();
+        for (int i = 0; i < incomingInstances.size(); i++) {
+            SimpleInstance simpleInstance = incomingInstances.get(i);
+            String clsName = DatabaseObject.class.getPackageName() + '.' + simpleInstance.getSchemaClassName();
+            Class<?> cls = Class.forName(clsName);
+            Map<String, Relationship> field2relRefObj = this.getField2rel(cls);
+            Relationship relationshipFromRef = field2relRefObj.get(incomingRelTypes.get(i));
+            if(relationshipFromRef != null) {
+                if (relationshipFromRef.direction().equals(Relationship.Direction.OUTGOING)) {
+                    incomingInsts.add(incomingInstances.get(i));
+                    finalRefferals.put(incomingRelTypes.get(i), incomingInsts);
+                }
             }
         }
         return finalRefferals;

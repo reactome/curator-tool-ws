@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -290,22 +291,21 @@ class CurationRepositoryTests {
 
     @Test
     public void testReferrers() throws Exception {
-        //Long dbId = 9815367L;
-        Long dbId = 9815366L;
-        //Long dbId = 1169272L;
+        //Long dbId = 9815367L; // Pathway
+        //Long dbId = 9815366L; // Instance Edit
+        Long dbId = 179837L; // Physical Entity (EGFR)
         String stId = "R-HSA-1630316";
         DatabaseObject databaseObject = queryRepo.findById(dbId, 1);
         SimpleInstance simpleInstance = new SimpleInstance();
         simpleInstance.setDbId(databaseObject.getDbId());
         simpleInstance.setSchemaClassName(databaseObject.getClassName());
-        Collection<Referrals> instances;
-        instances = repository.referrers(databaseObject);
-        for(Referrals ref : instances){
-            for(SimpleDatabaseObject obj : ref.getObjects()) {
-                System.out.println("refferers " + ref.getReferral() + ": " + obj.getDisplayName());
+        Map<String, ArrayList<SimpleInstance>> instances;
+        instances = repository.getReferrers(databaseObject);
+        for(String key : instances.keySet()){
+            System.out.println("refferers " + key  + ": " );
+            for(SimpleInstance inst : instances.get(key)) {
+                System.out.println(inst);
             }
         }
     }
-   
-
 }
