@@ -531,6 +531,16 @@ class RESTfulAPITests {
                 .getResponse()
                 .getContentAsString();
         System.out.println("Reaction with dbId: " + dbId + "\n" + json);
+        
+        // Something is not ordinary here
+        dbId = 9834070L;
+        url = BASE_URL + "fetchReactionWithParticipants/" + dbId;
+        json = mockMvc.perform(get(url))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        System.out.println("Reaction with dbId: " + dbId + "\n" + json);
     }
 
 }

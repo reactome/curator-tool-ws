@@ -1131,7 +1131,16 @@ public class CurationRepository {
                     targetList = outputs;
                 }
                 for (int i = 0; i < stoi; i++) {
-                    targetList.add(inst); // inst may be repeated multiple times
+                    if (i == 0)
+                        targetList.add(inst);
+                    else {
+                        // To make the front-end parsing easy, we will clone inst so that
+                        // the generated json will not use dbId as output!
+                        SimpleInstance clone = inst.shallowClone();
+                        if (inst.getAttributes() != null)
+                            clone.setAttributes(new HashMap<>(inst.getAttributes()));
+                        targetList.add(clone); 
+                    }
                 }
             }
             else { // catalyst, activator and inhibitor
