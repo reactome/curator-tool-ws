@@ -321,9 +321,6 @@ public class CurationService {
         return curationRepository.getHierarchicalPlotData(dbId);
     }
 
-    public Map<String, List<Map<String, Object>>> getReactionPlotData(Long dbId) {
-        return curationRepository.getReactionPlotData(dbId);
-    }
     
     public SimpleInstance fetchReactionWithParticipants(Long dbId) {
         return curationRepository.fetchReactionWithParticipants(dbId);
