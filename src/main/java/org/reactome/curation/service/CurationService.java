@@ -16,16 +16,11 @@ import java.util.stream.Collectors;
 
 import org.gk.model.ReactomeJavaConstants;
 import org.reactome.curation.config.CuratorToolEnv;
-import org.reactome.curation.model.CurationAttribute;
-import org.reactome.curation.model.InstanceList;
-import org.reactome.curation.model.ListOperand;
-import org.reactome.curation.model.SimpleInstance;
-import org.reactome.curation.model.SimpleSchemaClass;
+import org.reactome.curation.model.*;
 import org.reactome.curation.repository.CurationFileRepository;
 import org.reactome.curation.repository.CurationRepository;
 //import org.reactome.server.graph.aop.LazyFetchAspect;
 import org.reactome.server.graph.domain.model.DatabaseObject;
-import org.reactome.server.graph.domain.result.Referrals;
 import org.reactome.server.graph.repository.AdvancedDatabaseObjectRepository;
 import org.reactome.server.graph.service.helper.AttributeClass;
 import org.reactome.server.graph.service.helper.AttributeProperties;
@@ -376,7 +371,7 @@ public class CurationService {
         return curationRepository.delete(obj);
     }
 
-    public Collection<Referrals> getReferrers(Long dbId) throws Exception {
+    public Collection<CuratorToolReferrer> getReferrers(Long dbId) throws Exception {
         return curationRepository.getReferrers(dbId);
     }
 }

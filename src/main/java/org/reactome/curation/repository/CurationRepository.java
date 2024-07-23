@@ -16,13 +16,8 @@ import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReading;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingUpdate;
 import org.neo4j.cypherdsl.core.renderer.Renderer;
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
-import org.reactome.curation.model.CuratorToolWSUtils;
-import org.reactome.curation.model.InstanceList;
-import org.reactome.curation.model.ListOperand;
-import org.reactome.curation.model.SimpleInstance;
+import org.reactome.curation.model.*;
 import org.reactome.server.graph.domain.model.DatabaseObject;
-import org.reactome.server.graph.domain.result.Referrals;
-import org.reactome.server.graph.domain.result.SimpleDatabaseObject;
 import org.reactome.server.graph.service.helper.StoichiometryObject;
 import org.reactome.server.graph.service.util.DatabaseObjectUtils;
 import org.slf4j.Logger;
@@ -1581,7 +1576,7 @@ public class CurationRepository {
         return ret;
     }
 
-    public Collection<Referrals> getReferralsTo(Node instanceNode, org.neo4j.cypherdsl.core.Relationship rel) {
+    public Collection<CuratorToolReferrer> getReferralsTo(Node instanceNode, org.neo4j.cypherdsl.core.Relationship rel) {
         var query = Cypher.match(instanceNode);
 
         var queryBuilder = query.optionalMatch(rel)
@@ -1590,9 +1585,9 @@ public class CurationRepository {
                         Functions.type(rel).as("rel"))
                 .orderBy(Cypher.name("inst").property("displayName")).build();
         Collection<Map<String, Object>> allOutgoing = neo4jClient.query(queryBuilder.getCypher()).fetch().all();
-        List<SimpleDatabaseObject> instances = new ArrayList<>();
+        List<SimpleInstance> instances = new ArrayList<>();
 
-        ArrayList<Referrals> referrals = new ArrayList<>();
+        ArrayList<CuratorToolReferrer> referrals = new ArrayList<>();
         ArrayList<String> classNames = new ArrayList<>();
         for (Map<String, Object> map : allOutgoing) {
             // This should not occur. However, just in case
@@ -1601,26 +1596,19 @@ public class CurationRepository {
                 continue;
             }
             SimpleInstance inst = constructInstance(map, map.get("inst.schemaClass").toString());
-            // Need to build SimpleDatabaseObject from SimpleInstance
-            SimpleDatabaseObject dbObj = new SimpleDatabaseObject();
-            dbObj.setDbId(inst.getDbId());
-            dbObj.setDisplayName(inst.getDisplayName());
-            ArrayList<String> schemaClass = new ArrayList();
-            schemaClass.add(inst.getSchemaClassName());
-            dbObj.setLabels(schemaClass);
 
             if(classNames.contains(map.get("rel") + "")){
                 int index = classNames.indexOf(map.get("rel").toString());
-                instances = referrals.get(index).getObjects();
-                instances.add(dbObj);
-                referrals.get(index).setObjects(instances);
+                instances = referrals.get(index).getReferrers();
+                instances.add(inst);
+                referrals.get(index).setReferrers(instances);
             }
             else {
-                instances.add(dbObj);
-                Referrals ref = new Referrals();
+                instances.add(inst);
+                CuratorToolReferrer ref = new CuratorToolReferrer();
                 classNames.add(map.get("rel").toString());
-                ref.setReferral(map.get("rel") + "");
-                ref.setObjects(instances);
+                ref.setAttributeName(map.get("rel") + "");
+                ref.setReferrers(instances);
                 referrals.add(ref);
                 instances = new ArrayList<>();
             }
@@ -1628,40 +1616,41 @@ public class CurationRepository {
         return referrals;
     }
 
-    public Collection<Referrals> getReferrers(Long dbId) throws Exception {
+    public Collection<CuratorToolReferrer> getReferrers(Long dbId) throws Exception {
         var instanceNode = Cypher.node(ReactomeJavaConstants.DatabaseObject).named("ref").withProperties("dbId", Cypher.literalOf(dbId));
         var attributeNode = Cypher.node("DatabaseObject").named("inst");
 
         var rel = instanceNode.relationshipTo(attributeNode).named("r_");
-        Collection<Referrals> outgoingReferences = this.getReferralsTo(instanceNode, rel);
+        Collection<CuratorToolReferrer> outgoingReferences = this.getReferralsTo(instanceNode, rel);
 
         var rel1 = instanceNode.relationshipFrom(attributeNode).named("r_");
-        Collection<Referrals> incomingReferences = this.getReferralsTo(instanceNode, rel1);
+        Collection<CuratorToolReferrer> incomingReferences = this.getReferralsTo(instanceNode, rel1);
 
-        Collection<Referrals> finalReferrals = new ArrayList<>();
+        Collection<CuratorToolReferrer> finalReferrals = new ArrayList<>();
         finalReferrals.addAll(this.checkReferrers(outgoingReferences, Relationship.Direction.INCOMING));
         finalReferrals.addAll(this.checkReferrers(incomingReferences, Relationship.Direction.OUTGOING));
 
         return finalReferrals;
     }
 
-    public Collection<Referrals> checkReferrers(Collection<Referrals> references,
+    public Collection<CuratorToolReferrer> checkReferrers(Collection<CuratorToolReferrer> references,
                                                 Relationship.Direction direction) throws ClassNotFoundException {
-        Collection<Referrals> finalReferrals = new ArrayList<>();
-        for (Referrals ref : references) {
-            ArrayList<SimpleDatabaseObject> instances = new ArrayList<>();
-            for(SimpleDatabaseObject simpleDatabaseObject : ref.getObjects()){
-                String clsName = DatabaseObject.class.getPackageName() + '.' + simpleDatabaseObject.getSchemaClass();
+        Collection<CuratorToolReferrer> finalReferrals = new ArrayList<>();
+        for (CuratorToolReferrer ref : references) {
+            ArrayList<SimpleInstance> instances = new ArrayList<>();
+            for(SimpleInstance simpleInstance : ref.getReferrers()){
+                String clsName = DatabaseObject.class.getPackageName() + '.' + simpleInstance.getSchemaClassName();
                 Class<?> cls = Class.forName(clsName);
                 Map<String, Relationship> field2relRefObj = this.getField2rel(cls);
-                Relationship relationshipFromRef = field2relRefObj.get(ref.getReferral());
+                Relationship relationshipFromRef = field2relRefObj.get(ref.getAttributeName());
                 if(relationshipFromRef != null) {
                     if (relationshipFromRef.direction().equals(direction)) {
-                        instances.add(simpleDatabaseObject);
+                        instances.add(simpleInstance);
                     }
                 }
             }
             if(!instances.isEmpty()) {
+                ref.setReferrers(instances);
                 finalReferrals.add(ref);
             }
         }

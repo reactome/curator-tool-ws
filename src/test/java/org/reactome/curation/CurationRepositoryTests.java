@@ -12,14 +12,13 @@ import java.util.stream.Stream;
 import org.gk.model.ReactomeJavaConstants;
 import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Test;
+import org.reactome.curation.model.CuratorToolReferrer;
 import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.repository.CurationFileRepository;
 import org.reactome.curation.repository.CurationRepository;
 import org.reactome.server.graph.domain.model.*;
-import org.reactome.server.graph.domain.result.Referrals;
-import org.reactome.server.graph.domain.result.SimpleDatabaseObject;
 import org.reactome.server.graph.repository.AdvancedDatabaseObjectRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -292,15 +291,15 @@ class CurationRepositoryTests {
 
     @Test
     public void testReferrers() throws Exception {
-        Long dbId = 9815367L; // Pathway
+        //Long dbId = 9815367L; // Pathway
         //Long dbId = 9815366L; // Instance Edit
-        //Long dbId = 179837L; // Physical Entity (EGFR)
-        //Long dbId = 5672709L;
-        Collection<Referrals> instances;
+        Long dbId = 179837L; // Physical Entity (EGFR)
+        //Long dbId = 179837L;
+        Collection<CuratorToolReferrer> instances;
         instances = repository.getReferrers(dbId);
-        for(Referrals ref : instances){
-            System.out.println("referrers " + ref.getReferral()  + ": " );
-            for(SimpleDatabaseObject obj : ref.getObjects()) {
+        for(CuratorToolReferrer ref : instances){
+            System.out.println("referrers " + ref.getAttributeName()  + ": " );
+            for(SimpleInstance obj : ref.getReferrers()) {
                 System.out.println(obj.getDisplayName());
             }
         }
