@@ -313,8 +313,8 @@ public class CurationController {
     ) {
         if (type.equals("hierarchical"))
             return service.getHierarchicalPlotData(dbId);
-        else if (type.equals("reaction"))
-            return service.getReactionPlotData(dbId);
+//        else if (type.equals("reaction"))
+//            return service.getReactionPlotData(dbId);
         else
             return null;
     }

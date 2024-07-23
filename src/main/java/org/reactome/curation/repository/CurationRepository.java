@@ -720,7 +720,7 @@ public class CurationRepository {
                                                               String attributeTypesCsv,
                                                               String operandsCsv,
                                                               String searchKeysCsv) {
-        Map<Long, Map<Long, SimpleInstance>> parentDbId2DbId2SimpleInstance = new HashMap();
+        Map<Long, Map<Long, SimpleInstance>> parentDbId2DbId2SimpleInstance = new HashMap<>();
         List<String> attributes = attributesCsv != null ? Arrays.asList(attributesCsv.split(","))
                 : Collections.emptyList();
         List<String> attributeTypes = attributeTypesCsv != null ? Arrays.asList(attributeTypesCsv.split(","))
@@ -865,7 +865,7 @@ public class CurationRepository {
         boolean expandNodeFlag = false;
         Long dbId = inst.getDbId();
         if (parentDbId2DbId2SimpleInstance.keySet().contains(dbId)) {
-            List<SimpleInstance> childEvents = new ArrayList(parentDbId2DbId2SimpleInstance.get(dbId).values());
+            List<SimpleInstance> childEvents = new ArrayList<>(parentDbId2DbId2SimpleInstance.get(dbId).values());
             if (recursive) {
                 for (SimpleInstance childInst : childEvents) {
                     if (!expandNodeFlag && childInst.getAttributes().containsKey("match")
@@ -880,8 +880,10 @@ public class CurationRepository {
             }
             List<SimpleInstance> clonedChildEvents = new ArrayList<>();
             for (SimpleInstance simpleInstance : childEvents) {
-                clonedChildEvents.add(cloneSimpleInstance(simpleInstance));
+                clonedChildEvents.add(simpleInstance.cloneInstance());
             }
+            // Need to sort hasEvent list based on order
+            clonedChildEvents.sort((i1, i2) -> Integer.parseInt(i1.getAttribute("order") + "") - (Integer.parseInt(i2.getAttribute("order") + "")));
             inst.setAttribute("hasEvent", clonedChildEvents);
             if (expandNodeFlag) {
                 // If any of inst's children (recursively) have match attribute set to true,
@@ -1126,7 +1128,14 @@ public class CurationRepository {
                     targetList = outputs;
                 }
                 for (int i = 0; i < stoi; i++) {
-                    targetList.add(inst); // inst may be repeated multiple times
+                    if (i == 0)
+                        targetList.add(inst);
+                    else {
+                        // To make the front-end parsing easy, we will clone inst so that
+                        // the generated json will not use dbId as output!
+                        SimpleInstance clone = inst.cloneInstance();
+                        targetList.add(clone);
+                    }
                 }
             }
             else { // catalyst, activator and inhibitor
@@ -1165,246 +1174,6 @@ public class CurationRepository {
         return reaction;
     }
 
-    /**
-     * @param dbId
-     * @return For a given Reaction event identified by dbId, a list of "nodes" and
-     *         "edges", that themselves are maps of node/edge * attribute->value
-     *         respectively
-     */
-    public Map<String, List<Map<String, Object>>> getReactionPlotData(Long dbId) {
-        // Lists of nodes and edges that will be accumulated from the result of the
-        // cypher query below
-        List<Map<String, Object>> nodes = new ArrayList();
-        List<Map<String, Object>> edges = new ArrayList();
-        // A map of node displayName to the id that is unique within the plot that will
-        // be generated in the front end
-        // This map is needed to prevent node duplicates (different id but the same
-        // displayName)
-        Map<String, String> node2Id = new HashMap();
-        // Data structure that will be returned by this function
-        Map<String, List<Map<String, Object>>> ret = new HashMap();
-        // A cypher query to retrieve all the relevant data for the Reaction plot in the
-        // front end
-        String query = String.format("MATCH(n:Reaction{dbId:%d}) " + "OPTIONAL MATCH (n)-[ri:input]->(i) "
-                + "OPTIONAL MATCH (i)-[:crossReference]->(icr) " + "OPTIONAL MATCH (i)-[:referenceEntity]->(ire) "
-                + "OPTIONAL MATCH (n)-[ro:output]->(o) " + "OPTIONAL MATCH (o)-[:crossReference]->(ocr) "
-                + "OPTIONAL MATCH (o)-[:referenceEntity]->(ore) " + "OPTIONAL MATCH (n)-[:regulatedBy]->(reg) "
-                + "OPTIONAL MATCH (reg)-[:regulator]->(r) " + "OPTIONAL MATCH (r)-[:crossReference]->(rcr) "
-                + "OPTIONAL MATCH (r)-[:referenceEntity]->(rre) " + "OPTIONAL MATCH (n)-[:catalystActivity]->(cat) "
-                + "OPTIONAL MATCH (cat)-[:physicalEntity]->(c) " + "OPTIONAL MATCH (c)-[:crossReference]->(ccr) "
-                + "OPTIONAL MATCH (c)-[:referenceEntity]->(cre) " + "RETURN n.displayName, n.schemaClass, "
-                + "ri.stoichiometry, i.dbId, i.displayName, i.schemaClass, icr.displayName, ire.displayName, "
-                + "ro.stoichiometry, o.dbId, o.displayName, o.schemaClass, ocr.displayName, ore.displayName ,"
-                + "reg.schemaClass, r.dbId, r.displayName, r.schemaClass, rcr.displayName, rre.displayName, "
-                + "cat.schemaClass, c.dbId, c.displayName, c.schemaClass, ccr.displayName, cre.displayName", dbId);
-
-        // Execute the query
-        Collection<Map<String, Object>> all = neo4jClient.query(query).fetch().all();
-
-        // Add 3 dummy nodes: central Reaction one (populated when the cypher query
-        // results are processed below),
-        // plus two nodes for inputs to go into/outputs to come out from respectively
-        Map<String, Object> node = new HashMap();
-        node.put("class", "DummyIO");
-        node.put("id", "1");
-        nodes.add(node);
-        node2Id.put("inputsTarget", "1");
-        // outputsSource node
-        node = new HashMap();
-        node.put("class", "DummyIO");
-        node.put("id", "2");
-        nodes.add(node);
-        node2Id.put("outputsSource", "2");
-
-        Integer id = 3;
-        // Now connect via edges DummyCentral to DummyInputsTarget and
-        // DummyOutputsSource
-        Map<String, Object> edge = new HashMap();
-        String sourceId = node2Id.get("inputsTarget");
-        String targetId = "0";
-        edge.put("edgeEndShape", "");
-        edge.put("source", sourceId);
-        edge.put("target", targetId);
-        edge.put("width", 1.0);
-        edge.put("targetAnchor", "0");
-        edges.add(edge);
-        edge = new HashMap();
-        sourceId = "0";
-        targetId = node2Id.get("outputsSource");
-        edge.put("edgeEndShape", "");
-        edge.put("source", sourceId);
-        edge.put("target", targetId);
-        edge.put("width", 1.0);
-        edge.put("sourceAnchor", "4");
-        edges.add(edge);
-
-        // Get edges and nodes
-        for (Map<String, Object> map : all) {
-            // label2DbId is needed to store dbId for each node label - used to construct a
-            // schema_view/instance/dbId
-            // link below
-            Map<String, String> label2DbId = new HashMap();
-            // prefixes from the cypher query above, in the order in which they should be
-            // processed
-            String[] prefixes = { "n", "ri", "icr", "ire", "i", "ro", "ocr", "ore", "o", "reg", "r", "rcr", "rre",
-                    "cat", "c", "ccr", "cre" };
-            // Used to store schemaClass of either regulatedBy or catalystActivity instance
-            String regCatSchemaClass = "";
-            // Used to store stoichiometry of either input or output relationship
-            String ioStoichiometry = "";
-            String schemaClass = null;
-            String displayName;
-            for (String prefix : prefixes) {
-                if (prefix.equals("n")) {
-                    // Populate description of the central dummy node
-                    schemaClass = map.get(String.format("%s.schemaClass", prefix)) != null
-                            ? map.get(String.format("%s.schemaClass", prefix)).toString()
-                            : null;
-                    displayName = map.get(String.format("%s.displayName", prefix)).toString();
-                    if (!node2Id.keySet().contains("central")) {
-                        node2Id.put("central", "0");
-                        node = new HashMap();
-                        node.put("class", "DummyCentral");
-                        node.put("id", "0");
-                        node.put("description", schemaClass + ": " + displayName);
-                        nodes.add(node);
-                    }
-                    schemaClass = null;
-                } else if (prefix.endsWith("cr") || prefix.endsWith("re")) {
-                    // process crossReference and referenceEntity - their class will affect the node
-                    // shape
-                    // in the Reaction plot in the front-end
-                    if (map.get(String.format("%s.displayName", prefix)) != null) {
-                        String dispName = map.get(String.format("%s.displayName", prefix)).toString();
-                        if (dispName.startsWith("COMPOUND")) {
-                            schemaClass = "Compound";
-                        } else if (dispName.startsWith("UniProt")) {
-                            schemaClass = "Protein";
-                        } else if (dispName.startsWith("ENSEMBL")) {
-                            if (dispName.contains("ENSG")) {
-                                schemaClass = "Gene";
-                            } else if (dispName.contains("ENST")) {
-                                schemaClass = "RNA";
-                            }
-                        } else if (dispName.contains("RNA")) {
-                            schemaClass = "RNA";
-                        }
-                    }
-                } else if (prefix.equals("ri") || prefix.equals("ro")) {
-                    // Retrieve stoichiometry from input/output relationships
-                    Object stoichiometry = map.get(String.format("%s.stoichiometry", prefix));
-                    ioStoichiometry = stoichiometry != null && Integer.parseInt(stoichiometry.toString()) > 1
-                            ? map.get(String.format("%s.stoichiometry", prefix)).toString()
-                            : "";
-                } else if (map.get(String.format("%s.schemaClass", prefix)) != null) {
-                    if (prefix.equals("reg") || prefix.equals("cat")) {
-                        // Retrieve schemaClass from either regulatedBy or catalystActivity instance -
-                        // it will affect
-                        // the edge-end shape between it and the central node - in the Reaction plot in
-                        // the front end
-                        regCatSchemaClass = map.get(String.format("%s.schemaClass", prefix)).toString();
-                    } else {
-                        // Deal with all the remaining prefixes for which schemaClass, displayName and
-                        // dbId are returned
-                        // by the cypher query above
-                        if (schemaClass == null) {
-                            // Note that schemaClass may have been populated from crossReference and
-                            // referenceEntity above
-                            // as that's more specific, it trumps the schema class retrieved here - hence
-                            // the null check above.
-                            schemaClass = map.get(String.format("%s.schemaClass", prefix)) != null
-                                    ? map.get(String.format("%s.schemaClass", prefix)).toString()
-                                    : null;
-                        }
-                        displayName = map.get(String.format("%s.displayName", prefix)) != null
-                                ? wordWrap(map.get(String.format("%s.displayName", prefix)).toString())
-                                : null;
-
-                        String nodeDbId = map.get(String.format("%s.dbId", prefix)) != null
-                                ? map.get(String.format("%s.dbId", prefix)).toString()
-                                : null;
-                        String displayNamePlusStoichiometry = displayName;
-                        if (ioStoichiometry != "" && (prefix.equals("i") || prefix.equals("o"))) {
-                            displayNamePlusStoichiometry = ioStoichiometry + " " + displayName;
-                        }
-                        String prefixPlusDisplayName = prefix + displayName;
-                        label2DbId.put(prefixPlusDisplayName, nodeDbId);
-                        // Create the node
-                        if (!node2Id.keySet().contains(prefixPlusDisplayName)) {
-                            // NB. Sometimes the same displayName can be shared between e.g. input and
-                            // catalystActivity,
-                            // but within a give input/output/catalystActivity/regulatedBy group of nodes,
-                            // each displayName
-                            // must be unique.
-                            node2Id.put(prefixPlusDisplayName, id.toString());
-                            node = new HashMap();
-                            node.put("class", schemaClass);
-                            node.put("id", id.toString());
-                            // In input/output node names in the plot we want to display stoichiometry, if
-                            // that's > 1
-                            node.put("label", displayNamePlusStoichiometry);
-                            node.put("description", String.format("%s: %s", schemaClass, displayName));
-                            node.put("url", String.format("http://localhost:4200/schema_view/instance/%s",
-                                    label2DbId.get(prefixPlusDisplayName)));
-                            nodes.add(node);
-                            id++;
-
-                            // Create the edge
-                            edge = new HashMap();
-                            if (prefix.equals("o")) {
-                                sourceId = "2";
-                                targetId = node2Id.get(prefixPlusDisplayName);
-                            } else if (prefix.equals("i")) {
-                                sourceId = node2Id.get(prefixPlusDisplayName);
-                                targetId = "1";
-                            } else {
-                                sourceId = node2Id.get(prefixPlusDisplayName);
-                                targetId = "0";
-                            }
-                            // N.B. edge-end shape is dictated by the value of regCatSchemaClass, unless it
-                            // is the output edge -
-                            // in which case it gets a black arrow end
-                            edge.put("edgeEndShape",
-                                    prefix.equals("c") && regCatSchemaClass.equals("CatalystActivity") ? "circle"
-                                            : regCatSchemaClass.equals("PositiveRegulation") ? "white_arrow"
-                                                    : regCatSchemaClass.equals("NegativeRegulation") ? "pipe"
-                                                            : sourceId.equals("2") ? "black_arrow" : "");
-                            edge.put("source", sourceId);
-                            edge.put("target", targetId);
-                            if (prefix.equals("i") || prefix.equals("o")) {
-                                // For input/output nodes, if label the edge with stoichimetry, if that's > 1
-                                edge.put("stoichiometry", ioStoichiometry);
-                            } else {
-                                // This below is to spread the entry points of different types of edges across
-                                // the
-                                // central node (so that edge-end shapes - e.g. white circle, white arrow or a
-                                // line)
-                                // don't end up onscuring each other
-                                if (regCatSchemaClass.equals("CatalystActivity")) {
-                                    edge.put("targetAnchor", "1");
-                                } else if (regCatSchemaClass.equals("NegativeRegulation")) {
-                                    edge.put("targetAnchor", "2");
-                                } else if (regCatSchemaClass.equals("PositiveRegulation")) {
-                                    edge.put("targetAnchor", "3");
-                                } else {
-                                    edge.put("targetAnchor", "0");
-                                }
-                            }
-
-                            edge.put("width", 1.0);
-                            edges.add(edge);
-                            ioStoichiometry = "";
-                            regCatSchemaClass = "";
-                            schemaClass = null;
-                        }
-                    }
-                }
-            }
-        }
-        ret.put("nodes", nodes);
-        ret.put("edges", edges);
-        return ret;
-    }
 
     private Condition createDisplayNameQueryCondition(String text, Node instance) {
         Condition condition = null;
@@ -1557,6 +1326,7 @@ public class CurationRepository {
         return ret;
     }
 
+    private Collection<Referrals> getReferralsTo(Node instanceNode, org.neo4j.cypherdsl.core.Relationship rel) {
     /**
      * This method is needed to prevent Jackson returning (from API end points)
      * Object id instead of the full object - in the case when that Object occurs in
@@ -1576,7 +1346,7 @@ public class CurationRepository {
         return ret;
     }
 
-    public Collection<CuratorToolReferrer> getReferralsTo(Node instanceNode, org.neo4j.cypherdsl.core.Relationship rel) {
+    public Collection<Referrals> getReferralsTo(Node instanceNode, org.neo4j.cypherdsl.core.Relationship rel) {
         var query = Cypher.match(instanceNode);
 
         var queryBuilder = query.optionalMatch(rel)

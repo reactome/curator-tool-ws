@@ -77,6 +77,21 @@ public class SimpleInstance extends DatabaseObject {
     public void setAttributes(Map<String, Object> attributes) {
         this.attributes = attributes;
     }
+    
+    /**
+     * Clone this SimpleInstance with dbId, displayName, and schemaClassName. 
+     * @return
+     */
+    public SimpleInstance cloneInstance() {
+        SimpleInstance rtn = new SimpleInstance();
+        rtn.setDbId(this.getDbId());
+        rtn.setDisplayName(this.getDisplayName());
+        rtn.setSchemaClassName(this.getSchemaClassName());
+        rtn.setStId(this.getStId());
+        if (getAttributes() != null)
+            rtn.setAttributes(new HashMap<>(getAttributes()));
+        return rtn;
+    }
 
 }
 
