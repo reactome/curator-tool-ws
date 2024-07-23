@@ -1326,7 +1326,6 @@ public class CurationRepository {
         return ret;
     }
 
-    private Collection<Referrals> getReferralsTo(Node instanceNode, org.neo4j.cypherdsl.core.Relationship rel) {
     /**
      * This method is needed to prevent Jackson returning (from API end points)
      * Object id instead of the full object - in the case when that Object occurs in
@@ -1346,7 +1345,7 @@ public class CurationRepository {
         return ret;
     }
 
-    public Collection<Referrals> getReferralsTo(Node instanceNode, org.neo4j.cypherdsl.core.Relationship rel) {
+    public Collection<CuratorToolReferrer> getReferralsTo(Node instanceNode, org.neo4j.cypherdsl.core.Relationship rel) {
         var query = Cypher.match(instanceNode);
 
         var queryBuilder = query.optionalMatch(rel)
