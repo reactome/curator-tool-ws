@@ -350,6 +350,8 @@ public class CurationController {
      */
     @GetMapping("getReferrers/{dbId}")
     public Collection<CuratorToolReferrer> getReferrers(@PathVariable("dbId") Long dbId) throws Exception {
-        return service.getReferrers(dbId);
+        Collection<CuratorToolReferrer> test =  service.getReferrers(dbId);
+        System.out.println(test);
+        return test;
     }
 }

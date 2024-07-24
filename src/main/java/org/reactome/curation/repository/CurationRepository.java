@@ -1375,7 +1375,7 @@ public class CurationRepository {
             else {
                 instances.add(inst);
                 CuratorToolReferrer ref = new CuratorToolReferrer();
-                classNames.add(map.get("rel").toString());
+//                classNames.add(map.get("rel").toString());
                 ref.setAttributeName(map.get("rel") + "");
                 ref.setReferrers(instances);
                 referrals.add(ref);
