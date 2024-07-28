@@ -43,6 +43,32 @@ class RESTfulAPITests {
     void contextLoads() {
     }
     
+    
+    @Test
+    public void testPathwayDiagram() throws Exception {
+        assertNotNull(mockMvc);
+        // Load diagram json
+        Long dbId = 9615710L; // Late endosomal microautophage
+        String diagramUrl = BASE_URL + "diagram/" + dbId + ".json";
+        String diagramJson = mockMvc.perform(get(diagramUrl))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        System.out.println(diagramJson);
+        
+        // load diagram graph json
+        String graphUrl = BASE_URL + "diagram/" + dbId + ".graph.json";
+        String graphJson = mockMvc.perform(get(graphUrl))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        System.out.println(graphJson);
+        
+        
+    }
+    
     @Test
     public void testPersistAndLoadInstances() throws Exception {
         assertNotNull(mockMvc);

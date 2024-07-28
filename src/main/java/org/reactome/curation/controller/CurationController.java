@@ -1,6 +1,13 @@
 package org.reactome.curation.controller;
 
-import java.util.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -25,6 +32,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.Data;
@@ -45,6 +53,44 @@ public class CurationController {
     private ObjectMapper objectMapper;
     @Autowired
     private DatabaseObjectInstanceConverter converter;
+    
+    /**
+     * This method basically provides as a delegate to load the pathway JSON files.
+     * @param fileName
+     * @return
+     */
+    @GetMapping("diagram/{fileName}")
+    public JsonNode loadDiagram(@PathVariable("fileName") String fileName) {
+        try {
+            String jsonContent = service.loadDiagramJson(fileName);
+            // To ensure the returned text is well formated JSON text for the front-end,
+            // we will use JsonNode as a proxy for the JSON text.
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode jsonNode = objectMapper.readTree(jsonContent); 
+            return jsonNode;
+        }
+        catch(IOException e) {
+            logger.error("CurationController.loadDiagram: " + e.getMessage(), e);
+            throw new IllegalStateException(e.getMessage());
+        }
+    }
+    
+    @GetMapping("cytoscape/{pathwayId}")
+    public JsonNode loadCytoscapeNetwork(@PathVariable("pathwayId") Long pathwayId) {
+        try {
+            String text = service.loadCytosapeNetwork(pathwayId);
+            // To ensure the returned text is well formated JSON text for the front-end,
+            // we will use JsonNode as a proxy for the JSON text.
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode jsonNode = objectMapper.readTree(text); 
+            return jsonNode;
+        }
+        catch(IOException e) {
+            logger.error("CurationController.loadCytoscapeNetwork: " + e.getMessage(), e);
+            throw new IllegalStateException(e.getMessage());
+        }
+    }
+    
     
     @GetMapping("findDatabaseObjectByDbId/{dbId}")
     public DatabaseObject findByDdId(@PathVariable("dbId") Long dbId) {

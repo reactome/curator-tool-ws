@@ -1,6 +1,7 @@
 package org.reactome.curation.service;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -23,6 +24,7 @@ import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.model.SimpleSchemaClass;
 import org.reactome.curation.repository.CurationFileRepository;
 import org.reactome.curation.repository.CurationRepository;
+import org.reactome.curation.repository.PathwayDiagramRepository;
 //import org.reactome.server.graph.aop.LazyFetchAspect;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.domain.result.Referrals;
@@ -68,6 +70,9 @@ public class CurationService {
     // For file-based repository
     @Autowired
     private CurationFileRepository fileRepository;
+    // To handle pathway daigrams
+    @Autowired
+    private PathwayDiagramRepository diagramRepository;
     
     @Autowired
     private CuratorToolEnv toolEnv;
@@ -102,6 +107,14 @@ public class CurationService {
             clsName2attName2Att.put(clsName, attName2Att);
         }
         return clsName2attName2Att;
+    }
+    
+    public String loadDiagramJson(String fileName) throws IOException {
+        return this.diagramRepository.loadDiagramJson(fileName);
+    }
+    
+    public String loadCytosapeNetwork(Long pathwayId) throws IOException {
+        return diagramRepository.loadCytoscapeNetwork(pathwayId);
     }
     
     public DatabaseObject findById(Long dbId) {

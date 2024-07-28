@@ -32,5 +32,13 @@ public class CuratorToolEnv {
     public String getFileRepoDir() {
         return env.getProperty("file_repo_dir");
     }
+    
+    public String getDiagramGraphDir() {
+        return env.getProperty("diagram_graph_dir");
+    }
+    
+    public String getDiagramCytoscapeDir() {
+        return env.getProperty("diagram_cytoscape_dir");
+    }
 
 }
