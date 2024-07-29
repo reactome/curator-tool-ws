@@ -1,6 +1,8 @@
 package org.reactome.curation.repository;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 
@@ -41,6 +43,21 @@ public class PathwayDiagramRepository {
             return null;
         String text = new String(Files.readAllBytes(file.toPath()));
         return text;
+    }
+    
+    public Boolean hasCytoscapeNetwork(Long pathwayId) throws IOException {
+        File file = new File(toolEnv.getDiagramCytoscapeDir(), pathwayId + ".json");
+        return file.exists();
+    }
+    
+    public void saveCytoscapeNewtork(Long pathwayId, String networkJson) throws IOException {
+        logger.debug("Saving cytoscape network for " + pathwayId + "...");
+        File file = new File(toolEnv.getDiagramCytoscapeDir(), pathwayId + ".json");
+        FileWriter fileWriter = new FileWriter(file);
+        BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+        bufferedWriter.write(networkJson);
+        bufferedWriter.close();
+        fileWriter.close();
     }
     
 

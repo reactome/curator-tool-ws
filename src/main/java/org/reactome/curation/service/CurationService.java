@@ -112,6 +112,14 @@ public class CurationService {
         return diagramRepository.loadCytoscapeNetwork(pathwayId);
     }
     
+    public Boolean hasCytoscapeNetwork(Long pathwayId) throws IOException {
+        return diagramRepository.hasCytoscapeNetwork(pathwayId);
+    }
+    
+    public void saveCytoscapeNetwork(Long pathwayId, String json) throws IOException {
+        this.diagramRepository.saveCytoscapeNewtork(pathwayId, json);
+    }
+    
     public DatabaseObject findById(Long dbId) {
        return objectRepository.findById(dbId, 1);
     }

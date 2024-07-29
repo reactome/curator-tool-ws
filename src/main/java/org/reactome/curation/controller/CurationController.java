@@ -11,7 +11,12 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.reactome.curation.model.*;
+import org.reactome.curation.model.CurationAttribute;
+import org.reactome.curation.model.CuratorToolReferrer;
+import org.reactome.curation.model.InstanceList;
+import org.reactome.curation.model.ListOperand;
+import org.reactome.curation.model.SimpleInstance;
+import org.reactome.curation.model.SimpleSchemaClass;
 import org.reactome.curation.service.CurationService;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.slf4j.Logger;
@@ -60,7 +65,7 @@ public class CurationController {
             String jsonContent = service.loadDiagramJson(fileName);
             // To ensure the returned text is well formated JSON text for the front-end,
             // we will use JsonNode as a proxy for the JSON text.
-            ObjectMapper objectMapper = new ObjectMapper();
+            ObjectMapper objectMapper = getObjectMapper();
             JsonNode jsonNode = objectMapper.readTree(jsonContent); 
             return jsonNode;
         }
@@ -70,19 +75,42 @@ public class CurationController {
         }
     }
     
-    @GetMapping("cytoscape/{pathwayId}")
+    @GetMapping("getCyNetwork/{pathwayId}")
     public JsonNode loadCytoscapeNetwork(@PathVariable("pathwayId") Long pathwayId) {
         try {
             String text = service.loadCytosapeNetwork(pathwayId);
             // To ensure the returned text is well formated JSON text for the front-end,
             // we will use JsonNode as a proxy for the JSON text.
-            ObjectMapper objectMapper = new ObjectMapper();
+            ObjectMapper objectMapper = getObjectMapper();
             JsonNode jsonNode = objectMapper.readTree(text); 
             return jsonNode;
         }
         catch(IOException e) {
             logger.error("CurationController.loadCytoscapeNetwork: " + e.getMessage(), e);
             throw new IllegalStateException(e.getMessage());
+        }
+    }
+    
+    @GetMapping("hasCyNetwork/{pathwayId}")
+    public Boolean hasCytoscapeNetwork(@PathVariable("pathwayId") Long pathwayId) throws IOException {
+        return service.hasCytoscapeNetwork(pathwayId);
+    }
+    
+    //NB: This method has not been listed in the test!
+    @PostMapping("uploadCyNetwork/{pathwayId}")
+    public Boolean saveCytoscapeNetwork(@PathVariable("pathwayId") Long pathwayId,
+                                     @RequestBody JsonNode networkJson) {
+        try {
+            // Convert JsonNode to a String first
+            ObjectMapper mapper = getObjectMapper();
+            String jsonText = mapper.writeValueAsString(networkJson);
+            service.saveCytoscapeNetwork(pathwayId, jsonText);
+            return Boolean.TRUE;
+        }
+        catch(IOException e) {
+            logger.error("CurationController.saveCytoscapeNetwork: " + e.getMessage(), e);
+//            throw new IllegalStateException(e.getMessage());
+            return Boolean.FALSE;
         }
     }
     
@@ -324,6 +352,7 @@ public class CurationController {
     }
     
     //TODO: Need to change the account into a more secure way!!!
+    //TODO: Should return true or false instead void for the front end to determine the status
     @PostMapping("persistInstances/{account}")
     public void persistInstances(@RequestBody List<SimpleInstance> instances,
                                  @PathVariable("account") String account) {
