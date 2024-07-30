@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.reactome.curation.model.CurationAttribute;
-import org.reactome.curation.model.CuratorToolReferrer;
+import org.reactome.curation.model.CuratorToolReferrerList;
 import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.SimpleInstance;
@@ -424,8 +424,8 @@ public class CurationController {
      * @return
      */
     @GetMapping("getReferrers/{dbId}")
-    public Collection<CuratorToolReferrer> getReferrers(@PathVariable("dbId") Long dbId) throws Exception {
-        Collection<CuratorToolReferrer> test =  service.getReferrers(dbId);
+    public Collection<CuratorToolReferrerList> getReferrers(@PathVariable("dbId") Long dbId) throws Exception {
+        Collection<CuratorToolReferrerList> test =  service.getReferrers(dbId);
         System.out.println(test);
         return test;
     }

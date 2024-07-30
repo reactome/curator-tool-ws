@@ -389,7 +389,7 @@ public class CurationService {
         return curationRepository.delete(obj);
     }
 
-    public Collection<CuratorToolReferrer> getReferrers(Long dbId) throws Exception {
+    public Collection<CuratorToolReferrerList> getReferrers(Long dbId) throws Exception {
         return curationRepository.getReferrers(dbId);
     }
 }

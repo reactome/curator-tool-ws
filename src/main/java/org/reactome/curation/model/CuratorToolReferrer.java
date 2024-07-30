@@ -1,22 +1,30 @@
 package org.reactome.curation.model;
 
-import java.util.List;
-
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
+public class CuratorToolReferrer {
+
 @Setter
 @Getter
-public class CuratorToolReferrer {
-    private String attributeName;
-    private List<SimpleInstance> referrers;
+    private String className;
+    private SimpleInstance simpleInstance;
 
     public CuratorToolReferrer() {
     }
 
-    public CuratorToolReferrer(String attributeName, List<SimpleInstance> referrers) {
-        this.attributeName = attributeName;
-        this.referrers = referrers;
+    public CuratorToolReferrer(String className, SimpleInstance simpleInstance) {
+        this.className = className;
+        this.simpleInstance = simpleInstance;
     }
 
+    public SimpleInstance getSimpleInstance() {
+        return simpleInstance;
+    }
+
+    public void setSimpleInstance(SimpleInstance simpleInstance) {
+        this.simpleInstance = simpleInstance;
+    }
 }

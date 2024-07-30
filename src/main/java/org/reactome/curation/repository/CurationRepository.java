@@ -3,15 +3,7 @@ package org.reactome.curation.repository;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang.WordUtils;
@@ -23,11 +15,7 @@ import org.neo4j.cypherdsl.core.Node;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReading;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingUpdate;
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
-import org.reactome.curation.model.CuratorToolReferrer;
-import org.reactome.curation.model.CuratorToolWSUtils;
-import org.reactome.curation.model.InstanceList;
-import org.reactome.curation.model.ListOperand;
-import org.reactome.curation.model.SimpleInstance;
+import org.reactome.curation.model.*;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.service.helper.StoichiometryObject;
 import org.reactome.server.graph.service.util.DatabaseObjectUtils;
@@ -1365,10 +1353,8 @@ public class CurationRepository {
                         Functions.type(rel).as("rel"))
                 .orderBy(Cypher.name("inst").property("displayName")).build();
         Collection<Map<String, Object>> allOutgoing = neo4jClient.query(queryBuilder.getCypher()).fetch().all();
-        List<SimpleInstance> instances = new ArrayList<>();
 
         ArrayList<CuratorToolReferrer> referrals = new ArrayList<>();
-        ArrayList<String> classNames = new ArrayList<>();
         for (Map<String, Object> map : allOutgoing) {
             // This should not occur. However, just in case
             if (map.get("inst.dbId") == null) {
@@ -1376,27 +1362,15 @@ public class CurationRepository {
                 continue;
             }
             SimpleInstance inst = constructInstance(map, map.get("inst.schemaClass").toString());
+            String className = map.get("rel") + "";
 
-            if(classNames.contains(map.get("rel") + "")){
-                int index = classNames.indexOf(map.get("rel").toString());
-                instances = referrals.get(index).getReferrers();
-                instances.add(inst);
-                referrals.get(index).setReferrers(instances);
-            }
-            else {
-                instances.add(inst);
-                CuratorToolReferrer ref = new CuratorToolReferrer();
-//                classNames.add(map.get("rel").toString());
-                ref.setAttributeName(map.get("rel") + "");
-                ref.setReferrers(instances);
-                referrals.add(ref);
-                instances = new ArrayList<>();
-            }
+            CuratorToolReferrer ref = new CuratorToolReferrer(className, inst);
+            referrals.add(ref);
         }
         return referrals;
     }
 
-    public Collection<CuratorToolReferrer> getReferrers(Long dbId) throws Exception {
+    public Collection<CuratorToolReferrerList> getReferrers(Long dbId) throws Exception {
         var instanceNode = Cypher.node(ReactomeJavaConstants.DatabaseObject).named("ref").withProperties("dbId", Cypher.literalOf(dbId));
         var attributeNode = Cypher.node("DatabaseObject").named("inst");
 
@@ -1406,34 +1380,45 @@ public class CurationRepository {
         var rel1 = instanceNode.relationshipFrom(attributeNode).named("r_");
         Collection<CuratorToolReferrer> incomingReferences = this.getReferralsTo(instanceNode, rel1);
 
-        Collection<CuratorToolReferrer> finalReferrals = new ArrayList<>();
+        Collection<CuratorToolReferrerList> finalReferrals = new ArrayList<>();
         finalReferrals.addAll(this.checkReferrers(outgoingReferences, Relationship.Direction.INCOMING));
         finalReferrals.addAll(this.checkReferrers(incomingReferences, Relationship.Direction.OUTGOING));
 
         return finalReferrals;
     }
 
-    public Collection<CuratorToolReferrer> checkReferrers(Collection<CuratorToolReferrer> references,
-                                                Relationship.Direction direction) throws ClassNotFoundException {
-        Collection<CuratorToolReferrer> finalReferrals = new ArrayList<>();
+    public Collection<CuratorToolReferrerList> checkReferrers(Collection<CuratorToolReferrer> references,
+                                                              Relationship.Direction direction) throws ClassNotFoundException {
+        Map<String, ArrayList<SimpleInstance>> finalReferrals = new HashMap<>();
+        Collection<CuratorToolReferrerList> listRefs = new ArrayList<>();
         for (CuratorToolReferrer ref : references) {
-            ArrayList<SimpleInstance> instances = new ArrayList<>();
-            for(SimpleInstance simpleInstance : ref.getReferrers()){
-                String clsName = DatabaseObject.class.getPackageName() + '.' + simpleInstance.getSchemaClassName();
+                String clsName = DatabaseObject.class.getPackageName() + '.' + ref.getSimpleInstance().getSchemaClassName();
                 Class<?> cls = Class.forName(clsName);
                 Map<String, Relationship> field2relRefObj = this.getField2rel(cls);
-                Relationship relationshipFromRef = field2relRefObj.get(ref.getAttributeName());
+                Relationship relationshipFromRef = field2relRefObj.get(ref.getClassName());
                 if(relationshipFromRef != null) {
                     if (relationshipFromRef.direction().equals(direction)) {
-                        instances.add(simpleInstance);
+                        if(finalReferrals.containsKey(ref.getClassName()))
+                        {
+                           finalReferrals.get(ref.getClassName()).add(ref.getSimpleInstance());
+                        }
+                        else {
+                            ArrayList<SimpleInstance> insts = new ArrayList();
+                            insts.add(ref.getSimpleInstance());
+                            finalReferrals.put(ref.getClassName(), insts);
+                        }
                     }
                 }
-            }
-            if(!instances.isEmpty()) {
-                ref.setReferrers(instances);
-                finalReferrals.add(ref);
-            }
+
         }
-        return finalReferrals;
+        for(String key : finalReferrals.keySet()){
+            ArrayList<SimpleInstance> insts = new ArrayList();
+            insts = finalReferrals.get(key);
+            CuratorToolReferrerList curatorToolReferrerList = new CuratorToolReferrerList();
+            curatorToolReferrerList.setAttributeName(key);
+            curatorToolReferrerList.setReferrers(insts);
+            listRefs.add(curatorToolReferrerList);
+        }
+        return listRefs;
     }
 }
