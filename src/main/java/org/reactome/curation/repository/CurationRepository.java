@@ -1351,7 +1351,7 @@ public class CurationRepository {
                 .returning(Cypher.name("inst").property("dbId"),
                         Cypher.name("inst").property("displayName"), Cypher.name("inst").property("schemaClass"),
                         Functions.type(rel).as("rel"))
-                .orderBy(Cypher.name("inst").property("displayName")).build();
+                .orderBy(Cypher.name("inst").property("displayName")).limit(1000).build();
         Collection<Map<String, Object>> allOutgoing = neo4jClient.query(queryBuilder.getCypher()).fetch().all();
 
         ArrayList<CuratorToolReferrer> referrals = new ArrayList<>();
