@@ -13,6 +13,7 @@ import org.gk.model.ReactomeJavaConstants;
 import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Test;
 import org.reactome.curation.model.CuratorToolReferrer;
+import org.reactome.curation.model.CuratorToolReferrerList;
 import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.SimpleInstance;
@@ -295,9 +296,8 @@ class CurationRepositoryTests {
         //Long dbId = 9815366L; // Instance Edit
         Long dbId = 179837L; // Physical Entity (EGFR)
         //Long dbId = 179837L;
-        Collection<CuratorToolReferrer> instances;
-        instances = repository.getReferrers(dbId);
-        for(CuratorToolReferrer ref : instances){
+        Collection<CuratorToolReferrerList> instances = repository.getReferrers(dbId);
+        for(CuratorToolReferrerList ref : instances){
             System.out.println("referrers " + ref.getAttributeName()  + ": " );
             for(SimpleInstance obj : ref.getReferrers()) {
                 System.out.println(obj.getDisplayName());

@@ -658,7 +658,7 @@ public class CurationRepository {
     private List<SimpleInstance> getTopEvents(String speciesName) {
         String query = String.format(
                 "MATCH (n:TopLevelPathway) %s "
-                        + "RETURN n.dbId, n.displayName, n.schemaClass, n.speciesName, n._doRelease",
+                        + "RETURN n.dbId, n.displayName, n.schemaClass, n.speciesName, n._doRelease, n.hasDiagram",
                 !speciesName.equalsIgnoreCase("All") ? String.format("WHERE n.speciesName = '%s'", speciesName) : "");
 
         Collection<Map<String, Object>> all = neo4jClient.query(query).fetch().all();
@@ -730,7 +730,7 @@ public class CurationRepository {
 
         String queryRoot = "MATCH (p:Event)-[r:hasEvent]->(n:Event)";
         String queryReturnClause = " RETURN DISTINCT p.dbId, "
-                + "n.dbId, n.displayName, n.schemaClass, n.speciesName, n._doRelease, r.order, r.stoichiometry";
+                + "n.dbId, n.displayName, n.schemaClass, n.speciesName, n._doRelease, n.hasDiagram, r.order, r.stoichiometry";
         String matchClausePrefix;
         if (className != null && className != "") {
             matchClausePrefix = String.format(", CASE WHEN n.schemaClass = '%s' ", className);

@@ -26,6 +26,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -41,6 +42,26 @@ class RESTfulAPITests {
 
     @Test
     void contextLoads() {
+    }
+    
+    @Test
+    public void testGetEventTree() throws Exception {
+        assertNotNull(mockMvc);
+        String speciesName = "Homo sapiens";
+        String url = BASE_URL + "getEventTree/" + speciesName;
+        String json = mockMvc.perform(get(url))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        System.out.println(formatJSON(json));
+    }
+    
+    private String formatJSON(String json) throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        Object jsonObj = mapper.readValue(json, Object.class);
+        ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
+        return writer.writeValueAsString(jsonObj);
     }
     
     
