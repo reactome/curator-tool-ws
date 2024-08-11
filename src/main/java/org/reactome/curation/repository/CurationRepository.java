@@ -638,7 +638,7 @@ public class CurationRepository {
                     } else {
                         attrName = key.split("\\.")[1];
                         if (obj != null) {
-                            inst.setAttribute(attrName, obj.toString());
+                            inst.setAttribute(attrName, obj);
                         }
                     }
                 }
