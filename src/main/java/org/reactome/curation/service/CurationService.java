@@ -324,13 +324,8 @@ public class CurationService {
         fileRepository.deleteFile(getFileForPersistedInstances(accountName));
     }
 
-    public List<SimpleInstance> getEventTree(String speciesName,
-                                             String className,
-                                             String attributes,
-                                             String attributeTypes,
-                                             String operands,
-                                             String searchKeys) {
-        return curationRepository.getEventTree(speciesName, className, attributes, attributeTypes, operands, searchKeys);
+    public List<SimpleInstance> getEventTree(String speciesName) {
+        return curationRepository.getEventTree(speciesName);
     }
 
     public Map<String, List<Map<String, Object>>> getHierarchicalPlotData(Long dbId) {

@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang.WordUtils;
 import org.gk.model.ReactomeJavaConstants;
+import org.hamcrest.collection.IsEmptyCollection;
 import org.neo4j.cypherdsl.core.Condition;
 import org.neo4j.cypherdsl.core.Cypher;
 import org.neo4j.cypherdsl.core.Functions;
@@ -17,6 +18,7 @@ import org.neo4j.cypherdsl.core.StatementBuilder.OngoingUpdate;
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
 import org.reactome.curation.model.*;
 import org.reactome.server.graph.domain.model.DatabaseObject;
+import org.reactome.server.graph.domain.model.TopLevelPathway;
 import org.reactome.server.graph.service.helper.StoichiometryObject;
 import org.reactome.server.graph.service.util.DatabaseObjectUtils;
 import org.slf4j.Logger;
@@ -487,7 +489,7 @@ public class CurationRepository {
 
         for (int i = 0; i < attributes.size(); i++) {
             if (attributeTypes.get(i).equals("instance")) {
-                // Use DatabaseObject as a the generic class to avoid type checking
+                // Use DatabaseObject as the generic class to avoid type checking
                 // attributes should be unique
                 var attributeNode = Cypher.node("DatabaseObject").named(attributes.get(i));
                 // For the time being, we don't care about the direction
@@ -601,7 +603,7 @@ public class CurationRepository {
      * @param map
      * @return inst with attribute values populated
      */
-    private SimpleInstance populateAttrValues(SimpleInstance inst, Map<String, Object> map) {
+    private void populateAttrValues(SimpleInstance inst, Map<String, Object> map) {
         for (String key : map.keySet()) {
             switch (key) {
             case "n.dbId":
@@ -629,22 +631,13 @@ public class CurationRepository {
                 // n.speciesName, n._doRelease, r.order, r.stoichiometry, match
                 if (!key.equals("p.dbId")) {
                     Object obj = map.get(key);
-                    String attrName;
-                    if (key.equals("match")) {
-                        attrName = key;
-                        if (obj != null) {
-                            inst.setAttribute(attrName, obj);
-                        }
-                    } else {
-                        attrName = key.split("\\.")[1];
-                        if (obj != null) {
-                            inst.setAttribute(attrName, obj);
-                        }
+                    String attrName = key.split("\\.")[1];
+                    if (obj != null) {
+                        inst.setAttribute(attrName, obj);
                     }
                 }
             }
         }
-        return inst;
     }
 
     /**
@@ -656,6 +649,8 @@ public class CurationRepository {
      *         speciesName == "All").
      */
     private List<SimpleInstance> getTopEvents(String speciesName) {
+        // Need some specific information for event tree. Therefore,
+        // we have our own query
         String query = String.format(
                 "MATCH (n:TopLevelPathway) %s "
                         + "RETURN n.dbId, n.displayName, n.schemaClass, n.speciesName, n._doRelease, n.hasDiagram",
@@ -665,7 +660,7 @@ public class CurationRepository {
         List<SimpleInstance> rtn = new ArrayList<>();
         for (Map<String, Object> map : all) {
             SimpleInstance inst = new SimpleInstance();
-            inst = populateAttrValues(inst, map);
+            populateAttrValues(inst, map);
             rtn.add(inst);
         }
         sortByDisplayName(rtn);
@@ -677,7 +672,7 @@ public class CurationRepository {
      *
      * @param events
      */
-    public static void sortByDisplayName(List<SimpleInstance> events) {
+    private void sortByDisplayName(List<SimpleInstance> events) {
         Collections.sort(events, new Comparator() {
             public int compare(Object obj1, Object obj2) {
                 SimpleInstance instance1 = (SimpleInstance) obj1;
@@ -714,137 +709,24 @@ public class CurationRepository {
      *         corresponding event, related to that parent via a hasEvent
      *         relationship
      */
-    private Map<Long, Map<Long, SimpleInstance>> getAllEvents(String className,
-                                                              String attributesCsv,
-                                                              String attributeTypesCsv,
-                                                              String operandsCsv,
-                                                              String searchKeysCsv) {
+    private Map<Long, Map<Long, SimpleInstance>> getAllEvents() {
         Map<Long, Map<Long, SimpleInstance>> parentDbId2DbId2SimpleInstance = new HashMap<>();
-        List<String> attributes = attributesCsv != null ? Arrays.asList(attributesCsv.split(","))
-                : Collections.emptyList();
-        List<String> attributeTypes = attributeTypesCsv != null ? Arrays.asList(attributeTypesCsv.split(","))
-                : Collections.emptyList();
-        List<String> operands = operandsCsv != null ? Arrays.asList(operandsCsv.split(",")) : Collections.emptyList();
-        List<String> searchKeys = searchKeysCsv != null ? Arrays.asList(searchKeysCsv.split(","))
-                : Collections.emptyList();
-
-        String queryRoot = "MATCH (p:Event)-[r:hasEvent]->(n:Event)";
-        String queryReturnClause = " RETURN DISTINCT p.dbId, "
-                + "n.dbId, n.displayName, n.schemaClass, n.speciesName, n._doRelease, n.hasDiagram, r.order, r.stoichiometry";
-        String matchClausePrefix;
-        if (className != null && className != "") {
-            matchClausePrefix = String.format(", CASE WHEN n.schemaClass = '%s' ", className);
-        } else {
-            matchClausePrefix = String.format(", CASE WHEN n.schemaClass IS NOT NULL ");
-        }
-        String matchClause = "";
-        String matchClauseSuffix = "THEN true ELSE false END as match";
-        boolean foundInstanceAttribute = false;
-        for (int i = 0; i < operands.size(); i++) {
-            String attribute = attributes.get(i);
-            String attributeType = attributeTypes.get(i);
-            String operand = operands.get(i);
-            String searchKey = searchKeys.get(i);
-
-            if (attributeType.equals("instance")) {
-                if (!foundInstanceAttribute) {
-                    queryRoot += " OPTIONAL MATCH ";
-                } else {
-                    queryRoot += ", ";
-                }
-                queryRoot += String.format("(n:Event)-[rel%d:%s]->(q%d)", i, attribute, i);
-            }
-
-            if (!searchKey.equals("na") || operand.contains("NULL")) {
-                switch (operand) {
-                case "Equals":
-                    if (attributeType.equals("primitive")) {
-                        matchClause += String.format("AND toString(n.%s) = '%s' ", attribute, searchKey);
-                    } else {
-                        // attributeType.equals("instance")
-                        matchClause += String.format(
-                                "AND (toString(q%d.displayName) = '%s' OR toString(q%d.dbId) = '%s') ", i, searchKey, i,
-                                searchKey);
-                    }
-                    break;
-                case "!=":
-                    if (attributeType.equals("primitive")) {
-                        matchClause += String.format("AND toString(n.%s) <> '%s' ", attribute, searchKey);
-                    } else {
-                        // attributeType.equals("instance")
-                        matchClause += String.format(
-                                "AND (toString(q%d.displayName) <> '%s' AND toString(q%d.dbId) <> '%s') ", i, searchKey,
-                                i, searchKey);
-                    }
-                    break;
-                case "Contains":
-                    if (attributeType.equals("primitive")) {
-                        matchClause += String.format("AND toString(n.%s) =~ '(?i).*%s.*' ", attribute, searchKey);
-                    } else {
-                        // attributeType.equals("instance")
-                        matchClause += String.format(
-                                "AND (toString(q%d.displayName) =~ '(?i).*%s.*' OR toString(q%d.dbId) =~ '(?i).*%s.*') ",
-                                i, searchKey, i, searchKey);
-                    }
-                    break;
-                case "Does Not Contain":
-                    if (attributeType.equals("primitive")) {
-                        matchClause += String.format("AND toString(n.%s) !~ '(?i).*%s.*' ", attribute, searchKey);
-                    } else {
-                        // attributeType.equals("instance")
-                        matchClause += String.format(
-                                "AND (toString(q%d.displayName) !~ '(?i).*%s.*' AND toString(q%d.dbId) !~ '(?i).*%s.*') ",
-                                i, searchKey, i, searchKey);
-                    }
-                    break;
-                case "Use REGEXP":
-                    if (attributeType.equals("primitive")) {
-                        matchClause += String.format("AND toString(n.%s) =~ '%s' ", attribute, searchKey);
-                    } else {
-                        // attributeType.equals("instance")
-                        matchClause += String.format(
-                                "AND (toString(q%d.displayName) =~ '%s' OR toString(q%d.dbId) =~ '%s') ", i, searchKey,
-                                i, searchKey);
-                    }
-                    break;
-                case "IS NOT NULL":
-                case "IS NULL":
-                    matchClause += String.format("AND n.%s %s ", attribute, operand);
-                    break;
-                default:
-                }
-            }
-        }
-        // Assemble the full query
-        String query = queryRoot + queryReturnClause;
-        if (!matchClause.equals("")) {
-            query += matchClausePrefix + matchClause + matchClauseSuffix;
-        }
+        String query = "MATCH (p:Event)-[r:hasEvent]->(n:Event) "
+                + "RETURN DISTINCT p.dbId, n.dbId, n.displayName, n.schemaClass, n._doRelease, n.hasDiagram, r.order";
         // Execute the query
         Collection<Map<String, Object>> all = neo4jClient.query(query).fetch().all();
         // Populate parentDbId2DbId2SimpleInstance with query results
         for (Map<String, Object> map : all) {
             Long parentDbId = Long.parseLong(map.get("p.dbId").toString());
-            if (!parentDbId2DbId2SimpleInstance.keySet().contains(parentDbId)) {
-                parentDbId2DbId2SimpleInstance.put(parentDbId, new HashMap());
+            Map<Long, SimpleInstance> id2inst = parentDbId2DbId2SimpleInstance.get(parentDbId);
+            if (id2inst == null) {
+                id2inst = new HashMap<>();
+                parentDbId2DbId2SimpleInstance.put(parentDbId, id2inst);
             }
+            // This is the child instance
             SimpleInstance inst = new SimpleInstance();
-            inst = populateAttrValues(inst, map);
-            if (parentDbId2DbId2SimpleInstance.get(parentDbId).keySet().contains(inst.getDbId())) {
-                SimpleInstance previouslyFoundInstance = parentDbId2DbId2SimpleInstance.get(parentDbId)
-                        .get(inst.getDbId());
-                if (previouslyFoundInstance.getAttributes().containsKey("match")
-                        && previouslyFoundInstance.getAttribute("match").toString() == "false") {
-                    // Note that the query may return the same instance multiple times, each time
-                    // for a given value
-                    // of a multivalued Instance field - and in the case only one of those Instance
-                    // values matches
-                    // our query - we want to find the one that does match
-                    parentDbId2DbId2SimpleInstance.get(parentDbId).put(inst.getDbId(), inst);
-                }
-            } else {
-                parentDbId2DbId2SimpleInstance.get(parentDbId).put(inst.getDbId(), inst);
-            }
+            populateAttrValues(inst, map);
+            id2inst.put(inst.getDbId(), inst);
         }
         return parentDbId2DbId2SimpleInstance;
     }
@@ -858,77 +740,39 @@ public class CurationRepository {
      * @return flag to indicate that at least one child (recursively) matched
      *         searchKey (see: getTopEvents() and getAllEvents()
      */
-    private boolean populateChildren(SimpleInstance inst,
-                                     Map<Long, Map<Long, SimpleInstance>> parentDbId2DbId2SimpleInstance,
-                                     boolean recursive) {
-        boolean expandNodeFlag = false;
+    private void populateChildren(SimpleInstance inst,
+                                  Map<Long, Map<Long, SimpleInstance>> parentDbId2DbId2SimpleInstance) {
+        if (!parentDbId2DbId2SimpleInstance.containsKey(inst.getDbId()))
+            return;
         Long dbId = inst.getDbId();
-        if (parentDbId2DbId2SimpleInstance.keySet().contains(dbId)) {
-            List<SimpleInstance> childEvents = new ArrayList<>(parentDbId2DbId2SimpleInstance.get(dbId).values());
-            if (recursive) {
-                for (SimpleInstance childInst : childEvents) {
-                    if (!expandNodeFlag && childInst.getAttributes().containsKey("match")
-                            && childInst.getAttribute("match").toString() == "true") {
-                        expandNodeFlag = true;
-                    }
-                    boolean match = populateChildren(childInst, parentDbId2DbId2SimpleInstance, recursive);
-                    if (!expandNodeFlag && match) {
-                        expandNodeFlag = true;
-                    }
-                }
-            }
-            List<SimpleInstance> clonedChildEvents = new ArrayList<>();
-            for (SimpleInstance simpleInstance : childEvents) {
-                clonedChildEvents.add(simpleInstance.cloneInstance());
-            }
-            // Need to sort hasEvent list based on order
-            clonedChildEvents.sort((i1, i2) -> Integer.parseInt(i1.getAttribute("order") + "") - (Integer.parseInt(i2.getAttribute("order") + "")));
-            inst.setAttribute("hasEvent", clonedChildEvents);
-            if (expandNodeFlag) {
-                // If any of inst's children (recursively) have match attribute set to true,
-                // set inst's attribute expand to true also - this will be used by the front-end
-                // to check which tree nodes should be expanded
-                inst.getAttributes().put("expand", expandNodeFlag);
-            }
+        List<SimpleInstance> childEvents = new ArrayList<>(parentDbId2DbId2SimpleInstance.get(dbId).values());
+        // The same simple instance may be reused via hasEvent: e.g. Cell Cycle Checkpoints is listed
+        // in two branches. One of them may use dbIds only. Therefore, we need to clone this list
+        List<SimpleInstance> cloned = childEvents.stream().map(child -> child.cloneInstance()).collect(Collectors.toList());
+        // Need to sort hasEvent list based on order
+        cloned.sort((i1, i2) -> Integer.parseInt(i1.getAttribute("order") + "") - (Integer.parseInt(i2.getAttribute("order") + "")));
+        inst.setAttribute("hasEvent", cloned);
+        for (SimpleInstance childEvent : cloned) {
+            populateChildren(childEvent, parentDbId2DbId2SimpleInstance);
         }
-        return expandNodeFlag;
     }
 
     /**
-     * @param speciesName
-     * @param className
-     * @param attributes
-     * @param attributeTypes
-     * @param operands
-     * @param searchKeys
-     * @return List of top events with their respective children populated into
-     *         their hasEvent attribute, recursively, where the top event matches
-     *         speciesName (or any species if speciesName == "All"), and the nodes:
-     *         1. In the case attributeType == "primitive" - with attribute matching
-     *         searchKey, or 2. In the case of attributeType == "instance" - with
-     *         either dbId or displayName in any node related to the node of
-     *         className via relationship attribute - matching searchKey: have
-     *         attribute match set to true, and all parents of the those matching
-     *         nodes have attribute expand set to true.
+     * This method will return anything listed under TopLevelEvents regardless their species assignment.
+     * @return List of top events.
      */
-    public List<SimpleInstance> getEventTree(String speciesName,
-                                             String className,
-                                             String attributes,
-                                             String attributeTypes,
-                                             String operands,
-                                             String searchKeys) {
-        logger.info("Getting TopLevelPathway events..");
+    public List<SimpleInstance> getEventTree(String speciesName) {
+        logger.debug("Getting TopLevelPathway events..");
         List<SimpleInstance> topEvents = getTopEvents(speciesName);
         Integer topEventsCount = topEvents.size();
-        logger.info(String.format("Retrieved %d top events. Getting all events..", topEventsCount));
-        Map<Long, Map<Long, SimpleInstance>> parentDbId2DbId2SimpleInstance = getAllEvents(className, attributes,
-                attributeTypes, operands, searchKeys);
-        logger.info(String.format("Retrieved events for %d parents. Building events tree..",
+        logger.debug(String.format("Retrieved %d top events. Getting all events..", topEventsCount));
+        Map<Long, Map<Long, SimpleInstance>> parentDbId2DbId2SimpleInstance = getAllEvents();
+        logger.debug(String.format("Retrieved events for %d parents. Building events tree..",
                 parentDbId2DbId2SimpleInstance.keySet().size()));
         for (SimpleInstance inst : topEvents) {
-            populateChildren(inst, parentDbId2DbId2SimpleInstance, true);
+            populateChildren(inst, parentDbId2DbId2SimpleInstance);
         }
-        logger.info("Events tree is ready.");
+        logger.debug("Events tree is ready.");
         return topEvents;
     }
 
@@ -1190,9 +1034,6 @@ public class CurationRepository {
                                           Node instance) {
         Condition condition = null;
         var attributeProp = instance.property(attribute);
-        // Always use lower case to avoid any confusion
-        if (searchKey != null) // searchKey may be null for IS_NULL or IS_NOT_NULL
-            searchKey = searchKey.toLowerCase();
         switch (operand) {
             case EQUAL:
                 condition = attributeProp.isEqualTo(Cypher.literalOf(searchKey));
@@ -1204,6 +1045,9 @@ public class CurationRepository {
                 // Regardless if the attribute value is string or other type
                 // we will use this regex
                 // Need to convert the value as string to be used in regex for any type of property
+                // Always use lower case to avoid any confusion
+                if (searchKey != null) // searchKey may be null for IS_NULL or IS_NOT_NULL
+                    searchKey = searchKey.toLowerCase(); // Only here to avoid equal check
                 condition = attributeProp.isNotNull()
                                           .and(Functions.toString(attributeProp)
                                                         .matches(".*(?i)" + searchKey + ".*"));
