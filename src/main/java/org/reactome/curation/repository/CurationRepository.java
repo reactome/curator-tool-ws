@@ -712,7 +712,7 @@ public class CurationRepository {
     private Map<Long, Map<Long, SimpleInstance>> getAllEvents() {
         Map<Long, Map<Long, SimpleInstance>> parentDbId2DbId2SimpleInstance = new HashMap<>();
         String query = "MATCH (p:Event)-[r:hasEvent]->(n:Event) "
-                + "RETURN DISTINCT p.dbId, n.dbId, n.displayName, n.schemaClass, n._doRelease, n.hasDiagram, r.order";
+                + "RETURN DISTINCT p.dbId, n.dbId, n.displayName, n.speciesName, n.schemaClass, n._doRelease, n.hasDiagram, r.order";
         // Execute the query
         Collection<Map<String, Object>> all = neo4jClient.query(query).fetch().all();
         // Populate parentDbId2DbId2SimpleInstance with query results
@@ -1035,11 +1035,14 @@ public class CurationRepository {
         Condition condition = null;
         var attributeProp = instance.property(attribute);
         switch (operand) {
+            // We will convert everything to string to avoid type checking (e.g. dbId should be integer)
             case EQUAL:
-                condition = attributeProp.isEqualTo(Cypher.literalOf(searchKey));
+                condition = attributeProp.isNotNull()
+                                         .and(Functions.toString(attributeProp).isEqualTo(Cypher.literalOf(searchKey)));
                 break;
             case NOT_EQUAL:
-                condition = attributeProp.isNotEqualTo(Cypher.literalOf(searchKey));
+                condition = attributeProp.isNotNull()
+                        .and(Functions.toString(attributeProp).isNotEqualTo(Cypher.literalOf(searchKey)));
                 break;
             case CONTAINS:
                 // Regardless if the attribute value is string or other type
