@@ -449,11 +449,23 @@ public class CurationRepository {
             return listInstances(className, skip, limit, emptyList, emptyList, emptyList, emptyList);
         }
         else {
-            List<String> attributes = Collections.singletonList("displayName");
-            List<String> attributeTypes = Collections.singletonList("string");
-            List<ListOperand> operands = Collections.singletonList(ListOperand.CONTAINS);
-            List<String> searchKeys = Collections.singletonList(text);
-            return listInstances(className, skip, limit, attributes, attributeTypes, operands, searchKeys);
+            // if the query (text) is a number (passed as a string), to an equal map for dbId
+            if (text.matches("\\d+")) {
+                // Otherwise, for display name contains
+                List<String> attributes = Collections.singletonList("dbId");
+                List<String> attributeTypes = Collections.singletonList("integer");
+                List<ListOperand> operands = Collections.singletonList(ListOperand.EQUAL);
+                List<String> searchKeys = Collections.singletonList(text);
+                return listInstances(className, skip, limit, attributes, attributeTypes, operands, searchKeys);
+            }
+            else {
+                // Otherwise, for display name contains
+                List<String> attributes = Collections.singletonList("displayName");
+                List<String> attributeTypes = Collections.singletonList("string");
+                List<ListOperand> operands = Collections.singletonList(ListOperand.CONTAINS);
+                List<String> searchKeys = Collections.singletonList(text);
+                return listInstances(className, skip, limit, attributes, attributeTypes, operands, searchKeys);
+            }
         }
     }
 
