@@ -17,6 +17,7 @@ import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.model.SimpleSchemaClass;
+import org.reactome.curation.model.UserInstances;
 import org.reactome.curation.service.CurationService;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.slf4j.Logger;
@@ -330,13 +331,13 @@ public class CurationController {
     
     //TODO: Need to change the account into a more secure way. Currently just for prototyping!
     @GetMapping("loadInstances/{account}")
-    public List<SimpleInstance> loadInstances(@PathVariable("account") String account) {
+    public UserInstances loadInstances(@PathVariable("account") String account) {
         try {
-            return service.loadInstances(account);
+            return service.loadUserInstances(account);
         }
         catch(Exception e) {
             logger.error("CurationController.loadInstances: " + e.getMessage(), e);
-            return Collections.EMPTY_LIST;
+            return new UserInstances();
         }
     }
     
@@ -354,7 +355,7 @@ public class CurationController {
     //TODO: Need to change the account into a more secure way!!!
     //TODO: Should return true or false instead void for the front end to determine the status
     @PostMapping("persistInstances/{account}")
-    public void persistInstances(@RequestBody List<SimpleInstance> instances,
+    public void persistInstances(@RequestBody UserInstances instances,
                                  @PathVariable("account") String account) {
         try {
             service.persitInstances(instances, account);

@@ -17,6 +17,7 @@ import org.reactome.curation.model.CuratorToolReferrerList;
 import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.SimpleInstance;
+import org.reactome.curation.model.UserInstances;
 import org.reactome.curation.repository.CurationFileRepository;
 import org.reactome.curation.repository.CurationRepository;
 import org.reactome.server.graph.domain.model.*;
@@ -25,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.yaml.snakeyaml.scanner.ScannerImpl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -199,13 +201,26 @@ class CurationRepositoryTests {
 
         instances.add(inst1);
         instances.add(inst2);
+        
+        inst2 = new SimpleInstance();
+        inst2.setDisplayName("TestEWAS");
+        inst2.setDbId(1002L);
+        inst2.setSchemaClassName(ReactomeJavaConstants.EntityWithAccessionedSequence);
+        List<SimpleInstance> bookmarks = new ArrayList<>();
+        bookmarks.add(inst2); // Use the same dbId to test load
 
         String fileName = "test.json";
         // Save
         CurationFileRepository fileRepo = new CurationFileRepository();
-        fileRepo.persist(instances, fileName);
+        // Just a test to use the same list for all attributes
+        UserInstances userInstances = new UserInstances();
+        userInstances.setBookmarks(bookmarks);
+//        userInstances.setDeletedInstances(instances);
+        userInstances.setUpdatedInstances(instances);
+//        userInstances.setNewInstances(instances);
+        fileRepo.persist(userInstances, fileName);
         // Load back
-        List<SimpleInstance> loaded = fileRepo.load(fileName);
+        UserInstances loaded = fileRepo.load(fileName);
         System.out.println("Loaded instances: " + loaded);
     }
 

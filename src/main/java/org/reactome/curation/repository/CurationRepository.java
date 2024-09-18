@@ -1203,7 +1203,7 @@ public class CurationRepository {
         return ret;
     }
 
-    public Collection<CuratorToolReferrer> getReferralsTo(Node instanceNode, org.neo4j.cypherdsl.core.Relationship rel) {
+    private Collection<CuratorToolReferrer> getReferralsTo(Node instanceNode, org.neo4j.cypherdsl.core.Relationship rel) {
         var query = Cypher.match(instanceNode);
 
         var queryBuilder = query.optionalMatch(rel)
@@ -1246,7 +1246,7 @@ public class CurationRepository {
         return finalReferrals;
     }
 
-    public Collection<CuratorToolReferrerList> checkReferrers(Collection<CuratorToolReferrer> references,
+    private Collection<CuratorToolReferrerList> checkReferrers(Collection<CuratorToolReferrer> references,
                                                               Relationship.Direction direction) throws ClassNotFoundException {
         Map<String, ArrayList<SimpleInstance>> finalReferrals = new HashMap<>();
         Collection<CuratorToolReferrerList> listRefs = new ArrayList<>();

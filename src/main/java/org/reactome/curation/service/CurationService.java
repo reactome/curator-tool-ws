@@ -306,12 +306,12 @@ public class CurationService {
         return curationRepository.getSchemaClasses();
     }
     
-    public void persitInstances(List<SimpleInstance> instances,
+    public void persitInstances(UserInstances instances,
                                 String accountName) throws Exception {
         fileRepository.persist(instances, getFileForPersistedInstances(accountName));
     }
     
-    public List<SimpleInstance> loadInstances(String accountName) throws Exception {
+    public UserInstances loadUserInstances(String accountName) throws Exception {
         return fileRepository.load(getFileForPersistedInstances(accountName));
     }
     

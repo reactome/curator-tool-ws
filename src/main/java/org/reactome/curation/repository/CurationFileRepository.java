@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.reactome.curation.model.SimpleInstance;
+import org.reactome.curation.model.UserInstances;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
@@ -26,14 +27,12 @@ public class CurationFileRepository {
     }
 
     //TODO: Roll over the file name so that we can keep at least five backups!
-    // 1). Keep 5 days
-    // 2). Each day keep 5 backups
-    public void persist(List<SimpleInstance> instances,
+    public void persist(UserInstances userInstances,
                         String fileName) throws Exception {
         File file = new File(fileName);
         ObjectMapper mapper = getObjectMapper();
         // Give it some format
-        mapper.writerWithDefaultPrettyPrinter().writeValue(file, instances);
+        mapper.writerWithDefaultPrettyPrinter().writeValue(file, userInstances);
         logger.info("Saved instances to " + file.getAbsolutePath());
     }
     
@@ -48,15 +47,15 @@ public class CurationFileRepository {
             file.delete();
     }
   
-    public List<SimpleInstance> load(String fileName) throws Exception {
+    public UserInstances load(String fileName) throws Exception {
         File file = new File(fileName);
         // In case nothing there
         if (!file.exists())
-            return Collections.emptyList();
+            return new UserInstances();
         ObjectMapper mapper = getObjectMapper();
-        TypeReference<List<SimpleInstance>> typeRef = new TypeReference<>(){};
-        List<SimpleInstance> instances = mapper.readValue(file, typeRef);
-        return instances;
+        TypeReference<UserInstances> typeRef = new TypeReference<>(){};
+        UserInstances userInstances = mapper.readValue(file, typeRef);
+        return userInstances;
     }
     
     private ObjectMapper getObjectMapper() {
