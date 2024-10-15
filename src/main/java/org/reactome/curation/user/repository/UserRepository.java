@@ -6,6 +6,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Scanner;
 import java.util.UUID;
 
@@ -15,7 +16,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class UserRepository {
     public User findByEmail(String emailFromUser) {
-        ArrayList<String> lines = this.readFile("src/main/resources/users.txt");
+//        ArrayList<String> lines = this.readFile("src/main/resources/users.txt");
+        List<String> lines = new ArrayList<>();
+        lines.add("test@gmail.com,password");
         ArrayList<User> users = new ArrayList<>();
         int index = 0;
         for (String value : lines) {
