@@ -188,16 +188,6 @@
     "name" : "InstanceEdit",
     "abstract" : false
   }, {
-    "name" : "Interaction",
-    "children" : [ {
-      "name" : "DirectedInteraction",
-      "abstract" : false
-    }, {
-      "name" : "UndirectedInteraction",
-      "abstract" : false
-    } ],
-    "abstract" : true
-  }, {
     "name" : "NegativePrecedingEvent",
     "abstract" : false
   }, {
