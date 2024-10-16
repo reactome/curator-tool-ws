@@ -230,9 +230,15 @@ class CurationRepositoryTests {
         logger.info("Test reactions for display name and compartment...");
         
         var className = "Reaction";
+//        List<String> attributes = new ArrayList<>(List.of("compartment"));
+//        List<String> attributeTypes = new ArrayList<>(List.of("instance"));
+//        List<ListOperand> operands = new ArrayList<>(List.of(ListOperand.IS_NULL));
+//        List<String> searchKeys = new ArrayList<>(List.of("nucleoplasm"));
+//        listInstances(className, attributes, attributeTypes, operands, searchKeys);
+        
         List<String> attributes = new ArrayList<>(List.of("displayName", "compartment"));
         List<String> attributeTypes = new ArrayList<>(List.of("string", "instance"));
-        List<ListOperand> operands = new ArrayList<>(List.of(ListOperand.CONTAINS, ListOperand.EQUAL));
+        List<ListOperand> operands = new ArrayList<>(List.of(ListOperand.CONTAINS, ListOperand.IS_NULL));
         List<String> searchKeys = new ArrayList<>(List.of("phosphorylates MDM2", "nucleoplasm"));
         listInstances(className, attributes, attributeTypes, operands, searchKeys);
 

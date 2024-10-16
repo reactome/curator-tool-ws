@@ -59,6 +59,7 @@ public class CuratorToolExporter {
      * This may be changed in the future to use an external configuration file (e.g. A 
      * YAML or LinkML file).
      * To grep the graph model classes, the refelections package is used.
+     * Interaction is removed manually in the final json text.
      * @param fileName
      * @throws Exception
      */

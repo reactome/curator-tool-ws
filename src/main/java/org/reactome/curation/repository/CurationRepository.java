@@ -3,22 +3,35 @@ package org.reactome.curation.repository;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang.WordUtils;
+import org.gk.model.InstanceEdit;
 import org.gk.model.ReactomeJavaConstants;
-import org.hamcrest.collection.IsEmptyCollection;
 import org.neo4j.cypherdsl.core.Condition;
 import org.neo4j.cypherdsl.core.Cypher;
 import org.neo4j.cypherdsl.core.Functions;
 import org.neo4j.cypherdsl.core.Node;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReading;
+import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReadingWithoutWhere;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingUpdate;
+import org.neo4j.cypherdsl.core.StatementBuilder.OrderableOngoingReadingAndWithWithoutWhere;
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
-import org.reactome.curation.model.*;
+import org.reactome.curation.model.CuratorToolReferrer;
+import org.reactome.curation.model.CuratorToolReferrerList;
+import org.reactome.curation.model.CuratorToolWSUtils;
+import org.reactome.curation.model.InstanceList;
+import org.reactome.curation.model.ListOperand;
+import org.reactome.curation.model.SimpleInstance;
 import org.reactome.server.graph.domain.model.DatabaseObject;
-import org.reactome.server.graph.domain.model.TopLevelPathway;
 import org.reactome.server.graph.service.helper.StoichiometryObject;
 import org.reactome.server.graph.service.util.DatabaseObjectUtils;
 import org.slf4j.Logger;
@@ -145,6 +158,14 @@ public class CurationRepository {
     private void updateDisplayName(DatabaseObject obj) throws Exception {
         // To be updated
 //        String newDisplayName = InstanceDisplayNameGenerator
+    }
+    
+    //TODO: Need to get the user name from the API call or from the http session via logging
+    private void attachInstanceEdit(DatabaseObject obj) {
+        // This is just for test
+        // 
+        InstanceEdit ie = new InstanceEdit();
+        
     }
 
     /**
@@ -473,6 +494,7 @@ public class CurationRepository {
      * Get a list of objects in SimpleInstance.
      * TODO: The performance may be slow with multiple match. Need to 
      * pay attention to the speed.
+     * TODO: Better to use raw Cypher query directly. cypher dsl is just too complicated, unncessary!
      */
     public InstanceList listInstances(String className,
                                       int skip,
@@ -491,13 +513,14 @@ public class CurationRepository {
 
         // Start with instances for the query class
         var instance = Cypher.node(className).named("inst");
-        var query = Cypher.match(instance);
+        OngoingReading query = Cypher.match(instance);
 
         List<Condition> attributeConditions = new ArrayList<>();
         List<org.neo4j.cypherdsl.core.Relationship> relationships = new ArrayList<>();
         List<Condition> relationshipConditions = new ArrayList<>();
-        // Check if optional math should be used
+        // Check if optional match should be used
         List<Boolean> optionalRelationships = new ArrayList<>();
+        List<String> optionalWiths = new ArrayList<>();
 
         for (int i = 0; i < attributes.size(); i++) {
             if (attributeTypes.get(i).equals("instance")) {
@@ -510,21 +533,29 @@ public class CurationRepository {
                 // check attribute with stoichiometry: input/output/hasComponent.
                 // Need to give the relationship different name
                 var relName = "r_" + i;
-                relationships.add(instance.relationshipBetween(attributeNode, attributes.get(i)).named(relName));
+                var relationship = instance.relationshipBetween(attributeNode, attributes.get(i)).named(relName);
+                relationships.add(relationship);
                 if (operands.get(i) == ListOperand.IS_NULL || operands.get(i) == ListOperand.IS_NOT_NULL) {
                     // Special relationship condition
-                    var relationShipCondition = operands.get(i) == ListOperand.IS_NULL ? Cypher.name(relName).isNull() :
-                        Cypher.name(relName).isNotNull();
+                    var relationShipCondition = operands.get(i) == ListOperand.IS_NULL ? 
+                                                Cypher.name(relName).isNull() :
+                                                Cypher.name(relName).isNotNull();
                     relationshipConditions.add(relationShipCondition);
-                    if (operands.get(i) == ListOperand.IS_NULL)
-                        optionalRelationships.add(true);
-                    else
+                    
+                    if (operands.get(i) == ListOperand.IS_NULL) {
+                        optionalRelationships.add(true); 
+                        optionalWiths.add(relName);
+                    }
+                    else {
                         optionalRelationships.add(false);
+                        optionalWiths.add(null);
+                    }
                 }
                 else {
                     relationshipConditions
                         .add(createQueryCondition("displayName", operands.get(i), searchKeys.get(i), attributeNode));
                     optionalRelationships.add(false);
+                    optionalWiths.add(null);
                 }
             }
             else {
@@ -546,30 +577,37 @@ public class CurationRepository {
                 }
             }
         }
-        if (combinedAttributeConditions != null)
-            query.where(combinedAttributeConditions);
+        if (combinedAttributeConditions != null) // This is quite danger to cast like this. However, no better way to do that
+            ((OngoingReadingWithoutWhere)query).where(combinedAttributeConditions);
         
         for (int j = 0; j < relationships.size(); j++) {
-            if (optionalRelationships.get(j))
+            if (optionalRelationships.get(j)) {
                 query.optionalMatch(relationships.get(j));
+                var optionalWith = optionalWiths.get(j);
+                if (optionalWith != null) // Most likely we need to consider using raw cypher directly.
+                    query = query.with(instance, Cypher.name(optionalWith));
+            }
             else
                 query.match(relationships.get(j));
             var where = relationshipConditions.get(j);
             if (where != null) // Usually this should not be null. But just in case.
-                query.where(where);
+                // Quite danger to cast like this. 
+                ((OrderableOngoingReadingAndWithWithoutWhere)query).where(where);
         }
-
         // Count the total instances based on these conditions and relationships
         // Make sure distinct is used to avoid duplicated: e.g. for is not null, multiple relationships
         // will return the same instance multiple times.
         query.with(Functions.countDistinct(instance).as("totalCount"), 
                    Functions.collectDistinct(instance).as("instances"))
                 .unwind(Cypher.name("instances")).as(Cypher.name("inst"));
-
+        
         var queryBuild = query
                 .returning(Cypher.name("totalCount"), Cypher.name("inst").property("dbId"),
                         Cypher.name("inst").property("displayName"), Cypher.name("inst").property("schemaClass"))
                 .orderBy(Cypher.name("inst").property("displayName")).skip(skip).limit(limit).build();
+        
+//        System.out.println("query: " + Renderer.getDefaultRenderer().render(queryBuild));
+        
         Collection<Map<String, Object>> all = neo4jClient.query(queryBuild.getCypher()).fetch().all();
         List<SimpleInstance> instances = new ArrayList<>();
         Integer totalCount = null;
@@ -589,7 +627,7 @@ public class CurationRepository {
         instanceList.setInstances(instances);
         return instanceList;
     }
-    
+   
 
     private SimpleInstance constructInstance(Map<String, Object> map, String className) {
         SimpleInstance inst = new SimpleInstance();
