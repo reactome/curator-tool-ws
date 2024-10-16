@@ -592,7 +592,12 @@ public class CurationRepository {
             var where = relationshipConditions.get(j);
             if (where != null) // Usually this should not be null. But just in case.
                 // Quite danger to cast like this. 
-                ((OrderableOngoingReadingAndWithWithoutWhere)query).where(where);
+                if (query instanceof OngoingReadingWithoutWhere)
+                    ((OngoingReadingWithoutWhere)query).where(where);
+                else if (query instanceof OrderableOngoingReadingAndWithWithoutWhere)
+                    ((OrderableOngoingReadingAndWithWithoutWhere)query).where(where);
+                else 
+                    logger.error("Have not handled query type for where: " + query.getClass().getName());
         }
         // Count the total instances based on these conditions and relationships
         // Make sure distinct is used to avoid duplicated: e.g. for is not null, multiple relationships
