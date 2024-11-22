@@ -637,7 +637,8 @@ public class CurationRepository {
     private SimpleInstance constructInstance(Map<String, Object> map, String className) {
         SimpleInstance inst = new SimpleInstance();
         inst.setDbId(Long.parseLong(map.get("inst.dbId").toString()));
-        inst.setDisplayName(map.get("inst.displayName").toString());
+        // Use + in case displayName is null
+        inst.setDisplayName(map.get("inst.displayName") + "");
         Object schemaClassName = map.get("inst.schemaClass");
         if (schemaClassName != null)
             inst.setSchemaClassName(schemaClassName.toString());

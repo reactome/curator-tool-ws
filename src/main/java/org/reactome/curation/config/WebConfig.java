@@ -44,6 +44,19 @@ public class WebConfig extends WebMvcConfigurationSupport {
         asp.setEnableAOP(false);
         return asp;
     }
+    
+//    // Based on https://stackoverflow.com/questions/24661289/spring-boot-not-serving-static-content
+//    // To enable static content severing for SpringBoot standalone application. We may need to revisit
+//    // this issue when it is deployed inside tomcat.
+//    private static final String[] CLASSPATH_RESOURCE_LOCATIONS = {
+//            "classpath:/META-INF/resources/", "classpath:/resources/",
+//            "classpath:/static/", "classpath:/public/" };
+//    
+//    @Override
+//    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+//        registry.addResourceHandler("/**")
+//        .addResourceLocations(CLASSPATH_RESOURCE_LOCATIONS);
+//    }
 
     // The following configuration follows https://stackoverflow.com/questions/51261809/spring-boot-jackson-non-null-property-not-working
     // To make ObjectMapper doesn't export null. The application.properties configuration cannot work reliable.
