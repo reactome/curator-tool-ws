@@ -4021,11 +4021,11 @@
   } ],
   "InstanceEdit" : [ {
     "definingType" : "UNDEFINED",
-    "category" : "NOTDEFINED",
+    "category" : "MANDATORY",
     "name" : "dateTime"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "NOTDEFINED",
+    "category" : "OPTIONAL",
     "name" : "note"
   }, {
     "definingType" : "UNDEFINED",
@@ -4037,7 +4037,7 @@
     "name" : "dbId"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "NOTDEFINED",
+    "category" : "MANDATORY",
     "name" : "author"
   }, {
     "definingType" : "UNDEFINED",
