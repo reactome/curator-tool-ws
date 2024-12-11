@@ -1,39 +1,36 @@
 package org.reactome.curation.user.model;
 
-import lombok.AllArgsConstructor;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.UUID;
-
-@Data
-@AllArgsConstructor
 @NoArgsConstructor
+@Entity
+@Data
+@Table(name = "users") // User a non-reserved name. The default table name "User" cannot work since it is a reserved keyword in H2.
 public class User {
 
-    private UUID id;
-
-    private String email;
-
-    private String mobileNumber;
-    private String password;
-
-    private byte[] storedHash;
-    private byte[] storedSalt;
-
-    public User(String email, String mobileNumber) {
-        this.email = email;
-        this.mobileNumber = mobileNumber;
-    }
-
-    public User(String email, String password, byte[] hash, byte[] salt) {
-        this.email = email;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    
+    public User(String username, String password) {
+        this.username = username;
         this.password = password;
-        this.storedHash = hash;
-        this.storedSalt = salt;
     }
 
-//    public void setStoredHash(String storedHash) {
-//        this.storedHash = storedHash.getBytes();
-//    }
+    @Column(unique = true, nullable = false)
+    private String username;
+
+    @Column(nullable = false)
+    private String password;
+    
+    @Column(nullable = true)
+    private String role; 
 }

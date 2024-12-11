@@ -15,6 +15,7 @@ import org.reactome.curation.controller.DatabaseObjectInstanceConverter;
 import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.SimpleInstance;
+import org.reactome.curation.user.model.User;
 import org.reactome.server.graph.domain.model.Complex;
 import org.reactome.server.graph.domain.model.Reaction;
 import org.slf4j.Logger;
@@ -42,6 +43,36 @@ class RESTfulAPITests {
 
     @Test
     void contextLoads() {
+    }
+    
+    @Test
+    public void testAuthenticate() throws Exception {
+        User request = new User("test", "password");
+        ObjectMapper mapper = CurationWSTestHelper.createObjectMapper();
+        String jsonObj = mapper.writeValueAsString(request);
+        System.out.println(jsonObj);
+        
+        String url = "/api/authenticate";
+        String json = mockMvc.perform(post(url).contentType(MediaType.APPLICATION_JSON)
+                .content(jsonObj))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        System.out.println(formatJSON(json));
+        
+        // This user should not be validated
+        request = new User("test", "wrong_password");
+        jsonObj = mapper.writeValueAsString(request);
+        System.out.println(jsonObj);
+        
+        json = mockMvc.perform(post(url).contentType(MediaType.APPLICATION_JSON)
+                .content(jsonObj))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        System.out.println(formatJSON(json));
     }
     
     @Test
@@ -318,11 +349,11 @@ class RESTfulAPITests {
                 // MATCH (n:DatabaseObject{dbId:$dbId}) OPTIONAL MATCH (n)-[r]-(m) WITH n, r, m ORDER BY TYPE(r) ASC, r.order ASC RETURN n, COLLECT(r), COLLECT(m) LIMIT $limit
                 // This query is slow for homo sapiens because of the undirection relationship, which will pull out many results. 
                 // Need to consider to add the direction here to increase the performance.
-                48887L, // Homo sapiens. The query is quite slow!
+//                48887L, // Homo sapiens. The query is quite slow!
 //                109581L, // Pathway
 //                72810L, // NCBI Taxonomy
 //                9707103L, // A figure
-//                72811L, // InstanceEdit
+                72811L, // InstanceEdit
         };
         // The URL should start with "/" to make it true
         String url = BASE_URL + "findDatabaseObjectByDbId/";

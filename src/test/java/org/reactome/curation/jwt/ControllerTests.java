@@ -2,7 +2,7 @@ package org.reactome.curation.jwt;
 
 import org.junit.jupiter.api.Test;
 import org.reactome.curation.jwt.controller.AuthenticateController;
-import org.reactome.curation.jwt.model.AuthenticationRequest;
+import org.reactome.curation.user.model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,11 +23,15 @@ class ControllerTests {
 
     @Test
     public void testAuthenticate() throws Exception {
-        String email = "test@gmail.com";
+        String userName = "test";
         String password = "password";
+        
+        User request = new User(userName, password);
 
-        AuthenticationRequest auth = new AuthenticationRequest(email, password);
-        controller.authenticate(auth);
+        String token = controller.authenticate(request);
+        
+        logger.info("Token for authenticate: " + token);
     }
+    
 
 }

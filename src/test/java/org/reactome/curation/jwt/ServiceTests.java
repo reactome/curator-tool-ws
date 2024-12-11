@@ -12,6 +12,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
+//TODO: Need to create a command line application so that we can add/remove users locally without 
+// creating a register component at the front end. This is for security concern.
 @SpringBootTest
 class ServiceTests {
 
@@ -25,11 +27,19 @@ class ServiceTests {
     }
 
     @Test
-    void testCreateUser() throws NoSuchAlgorithmException, IOException {
-        String email = "test@gmail.com";
-        String mobilePhone = "123-456-7890";
-        String password = "password";
-        User user = new User(email, mobilePhone);
-        userService.createUser(user, password);
+    void testQueryUser() {
+        String username = "test";
+        User user = userService.findUserByUsername(username).get();
+        logger.info("Find user for username: " + user);
     }
+    
+    @Test
+    void createUser() {
+        String username = "test_1";
+        String password = "test_1_pwd";
+        String role = "curator";
+        User user = userService.saveUser(username, password, role);
+        logger.info("User saved: " + user);
+    }
+    
 }
