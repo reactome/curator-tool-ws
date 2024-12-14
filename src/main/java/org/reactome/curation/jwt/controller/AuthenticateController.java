@@ -19,7 +19,6 @@ public class AuthenticateController {
     @Autowired
     private UserService userService;
     
-    
     @PostMapping("/authenticate")
     public String authenticate(@RequestBody User user) {
         if (userService.authenticate(user.getUsername(), user.getPassword())) {
@@ -27,7 +26,8 @@ public class AuthenticateController {
         }
         throw new BadCredentialsException("Invalid username or password");
         // Somehow I cannot make the following work: circular reference. Therefore, use
-        // our own authentication above - GW
+        // our own authentication above. The SecurityContextHolder will be handled by the
+        // jwtfilter - GW
 //        Authentication authentication = authenticationManager.authenticate(
 //                new UsernamePasswordAuthenticationToken(request.getUsername(), 
 //                        request.getPassword())

@@ -8,9 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.reactome.curation.jwt.util.JwtUtil;
-import org.reactome.curation.user.model.User;
-import org.reactome.curation.user.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -20,31 +18,39 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 public class JwtRequestFilter extends OncePerRequestFilter {
 
-    @Autowired
-    private UserService userService;
-
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)  throws ServletException, IOException {
-        final String authorizationHeader = request.getHeader("Authorization");
+    protected void doFilterInternal(HttpServletRequest request, 
+                                    HttpServletResponse response, 
+                                    FilterChain chain)  throws ServletException, IOException {
+        // Check if the request is for authenticate or register
+        if (request.getRequestURI().equals("/api/authenticate") || request.getRequestURI().equals("/api/register")) {
+            chain.doFilter(request, response); // Skip JWT filter
+            return;
+        }
+        String authorizationHeader = request.getHeader("Authorization");
+        if (authorizationHeader == null || authorizationHeader.trim().length() == 0)
+            throw new BadCredentialsException("Cannot find jwt token.");
 
         String username = null;
-        String token = null;
-
-        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-            token = authorizationHeader.substring(7);
+        
+        if (authorizationHeader.startsWith("Bearer ")) {
+            String token = authorizationHeader.substring(7);
+            // Just assume the token is generated from us
             username = JwtUtil.extractUsername(token);
         }
-
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            User user = this.userService.findUserByUsername(username).get();
-
-            if (JwtUtil.extractUsername(token).equals(user.getUsername())) {
-                var usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(user.getUsername(),
-                        user.getPassword());
-                usernamePasswordAuthenticationToken
-                        .setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
-            }
+        if (username == null)
+            throw new BadCredentialsException("Wrong jwt token.");
+        // If username is valid, set the authentication in the security context
+        if (SecurityContextHolder.getContext().getAuthentication() == null) {
+            // Set the authentication in the security context
+            // Make sure to use this version of constructor even though null is passed
+            // to avoid circular calling. It is fine since we have validated jwt already.
+            // This constructor will set authentication to true. Therefore, no need to 
+            // authenticate via AOP in spring.
+            UsernamePasswordAuthenticationToken authentication = 
+                new UsernamePasswordAuthenticationToken(username, null, null);
+            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
         }
         chain.doFilter(request, response);
     }

@@ -12,11 +12,12 @@ public class JwtUtil {
    
 //    @Value("${jwt.secret}")
 //    private String SECRET_KEY;
+    // There should be only one key for the whole application when it starts.
     private static final SignatureAlgorithm signatureAlg = SignatureAlgorithm.HS512;
+    private static final SecretKey key = Keys.secretKeyFor(signatureAlg);
     private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 8; // 8 hours  
 
     public static String generateToken(String username) {
-        SecretKey key = getKey();
         return Jwts.builder()
                 .setSubject(username)
                 .setIssuedAt(new Date())
@@ -25,11 +26,6 @@ public class JwtUtil {
                 .compact();
     }
     
-    private static SecretKey getKey() {
-//        byte[] keyBytes = Base64.getDecoder().decode(SECRET_KEY);
-//        return Keys.hmacShaKeyFor(keyBytes);
-        return Keys.secretKeyFor(signatureAlg);
-    }
 
     /**
      * Perform validation and get the user name. 
@@ -37,7 +33,7 @@ public class JwtUtil {
      * @return
      */
     public static String extractUsername(String token) {
-        return Jwts.parserBuilder().setSigningKey(getKey()).build().parseClaimsJws(token).getBody().getSubject();
+        return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody().getSubject();
     }
 
     

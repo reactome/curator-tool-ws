@@ -46,6 +46,34 @@ class RESTfulAPITests {
     }
     
     @Test
+    public void testListInstancesWithAuthentication() throws Exception {
+        User request = new User("test", "password");
+        ObjectMapper mapper = CurationWSTestHelper.createObjectMapper();
+        String jsonObj = mapper.writeValueAsString(request);
+        System.out.println(jsonObj);
+        
+        String url = "/api/authenticate";
+        String jwt = mockMvc.perform(post(url).contentType(MediaType.APPLICATION_JSON)
+                .content(jsonObj))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        jwt = jwt.substring(1, jwt.length() - 1); // Get rid of quotation marker
+        System.out.println(jwt);
+        
+        String className = "ProteinDrug";
+        className = "ReactionType";
+        url = BASE_URL + "listInstances/" + className + "/0/10";
+        String json = mockMvc.perform(get(url).header("Authorization", "Bearer " + jwt))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        outputInstanceList(json);
+    }
+    
+    @Test
     public void testAuthenticate() throws Exception {
         User request = new User("test", "password");
         ObjectMapper mapper = CurationWSTestHelper.createObjectMapper();

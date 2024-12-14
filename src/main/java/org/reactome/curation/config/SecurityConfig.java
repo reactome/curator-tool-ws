@@ -1,6 +1,7 @@
 package org.reactome.curation.config;
 
 import org.reactome.curation.jwt.filters.JwtRequestFilter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -13,16 +14,20 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 public class SecurityConfig {
+    
+    @Autowired
+    private JwtRequestFilter jwtRequestFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-//        http.csrf().disable()
-//            .authorizeRequests()
-//            .antMatchers("/api/authenticate", "/api/register").permitAll()  // Allow unauthenticated access to login and register
-//            .anyRequest().authenticated() // All other requests require authentication
-//            .and()
-//            .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class); // Add custom JWT filter
-        http.csrf().disable().authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+        // Have to enable cors here. Otherwise it cannot work!
+        http.cors().and().csrf().disable() // We are build a stateless, jwt based app and it should be safe to disable csrf here.
+            .authorizeRequests()
+            .antMatchers("/api/authenticate", "/api/register").permitAll()  // Allow unauthenticated access to login and register
+            .anyRequest().authenticated();
+        http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class); // Add custom JWT filter
+        // Turn off the jwt security check for the time being
+//        http.csrf().disable().authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
         return http.build();
     }
 
@@ -33,10 +38,10 @@ public class SecurityConfig {
         return http.getSharedObject(AuthenticationManagerBuilder.class).build();
     }
 
-    @Bean
-    public JwtRequestFilter jwtAuthenticationFilter() {
-        return new JwtRequestFilter();
-    }
+//    @Bean
+//    public JwtRequestFilter jwtAuthenticationFilter() {
+//        return new JwtRequestFilter();
+//    }
     
     @Bean
     public PasswordEncoder passwordEncoder() {
