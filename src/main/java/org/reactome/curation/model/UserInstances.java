@@ -21,5 +21,6 @@ public class UserInstances {
     private List<SimpleInstance> updatedInstances;
     private List<SimpleInstance> deletedInstances;
     private List<SimpleInstance> bookmarks;
+    private SimpleInstance defaultPerson;
 
 }
