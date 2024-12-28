@@ -164,7 +164,8 @@ public class CurationController {
     @PostMapping("commit")
     public SimpleInstance commit(@RequestBody SimpleInstance instance) {
         try {
-            DatabaseObject databaseObject = converter.convert(instance);
+            System.out.println("Default person id: " + instance.getDefaultPersonId());
+            DatabaseObject databaseObject = converter.convert(instance, true);
             DatabaseObject stored = service.commit(databaseObject);
             // For the front end, we just need to return a SimpleInstance having attributes that may change
             SimpleInstance rtn = converter.convertInShell(stored);
@@ -175,6 +176,7 @@ public class CurationController {
             throw new IllegalStateException(e.getMessage());
         } 
     }
+
     
     /**
      * Delete a SimpleInstance object. 

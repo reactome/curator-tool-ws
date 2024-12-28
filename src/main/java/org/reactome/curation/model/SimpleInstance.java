@@ -41,6 +41,16 @@ public class SimpleInstance extends DatabaseObject {
     private String schemaClassName;
     private Map<String, Object> attributes;
     private List<String> modifiedAttributes; // Names of attributes that have been updated.
+    // Use this optional information to create InstanceEdit for the created or modified slot
+    private Long defaultPersonId;
+    
+    public void setDefaultPersonId(Long id) {
+        this.defaultPersonId = id;
+    }
+    
+    public Long getDefaultPersonId() {
+        return this.defaultPersonId;
+    }
 
     public void setAttribute(String attributeName, Object value) {
         if (attributes == null)
@@ -122,7 +132,11 @@ class SimpleInstanceDeserializer extends JsonDeserializer<SimpleInstance> {
                     instance.setDisplayName(fieldValue.asText());
                 } else if ("schemaClassName".equals(fieldName)) {
                     instance.setSchemaClassName(fieldValue.asText());
-                } else if ("modifiedAttributes".equals(fieldName)) {
+                } 
+                else if ("defaultPersonId".equals(fieldName)) {
+                    instance.setDefaultPersonId(fieldValue.asLong());
+                }
+                else if ("modifiedAttributes".equals(fieldName)) {
                     // This should be an array
                     List<String> names = new ArrayList<>();
                     for (JsonNode subNode : fieldValue) {
