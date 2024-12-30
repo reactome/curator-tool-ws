@@ -2,25 +2,24 @@ package org.reactome.curation.controller;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.text.SimpleDateFormat;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.TimeZone;
+import java.util.Set;
 
 import org.gk.model.InstanceNotFoundException;
 import org.gk.model.ReactomeJavaConstants;
 import org.reactome.curation.model.CurationAttribute;
-import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.model.CuratorToolWSUtils;
+import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.service.CurationService;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.domain.model.InstanceEdit;
@@ -119,17 +118,61 @@ public class DatabaseObjectInstanceConverter {
     }
     
     public DatabaseObject convert(SimpleInstance instance, Boolean createIE) throws Exception {
-        DatabaseObject databaseObj = this.convert(instance);
+        // To avoid an infinity loop
+        Map<Long, DatabaseObject> id2obj = new HashMap<>();
+        DatabaseObject databaseObj = this.convert(instance, id2obj);
         if (createIE) {
-            InstanceEdit ie = createInstanceEdit(instance.getDefaultPersonId());
+             InstanceEdit ie = createInstanceEdit(instance.getDefaultPersonId());
             if (instance.getDbId() < 0)
                 databaseObj.setCreated(ie);
             else {
                 //TODO: Need to change the modified to a list
                 databaseObj.setModified(ie);
             }
+            // Get the new instances so that we can add created
+            // There is no need for the modified slot
+            Set<Long> newDbIds = new HashSet<>();
+            grepNewInstanceDbIds(instance, newDbIds);
+            newDbIds.stream().forEach(dbId -> {
+                DatabaseObject valueObj = id2obj.get(dbId);
+                if (valueObj != null) // Just in case
+                    valueObj.setCreated(ie); 
+            });
         }
         return databaseObj;
+    }
+    
+    private void grepNewInstanceDbIds(SimpleInstance instance, Set<Long> dbIds) {
+        if (instance.getAttributes() != null) {
+            for (String attName : instance.getAttributes().keySet()) {
+                Object attValue = instance.getAttribute(attName); 
+                if (attValue == null)
+                    continue;
+                if (attValue instanceof SimpleInstance) {
+                    SimpleInstance valueInst = (SimpleInstance) attValue;
+                    if (valueInst.getDbId() < 0) {
+                        if (dbIds.contains(valueInst.getDbId()))
+                            continue; // Checked already
+                        grepNewInstanceDbIds(valueInst, dbIds);
+                        dbIds.add(valueInst.getDbId());
+                    }
+                }
+                else if (attValue instanceof List) {
+                    List valueList = (List) attValue;
+                    if (valueList.size() == 0 || !(valueList.get(0) instanceof SimpleInstance))
+                        continue;
+                    for (int i = 0; i < valueList.size(); i++) {
+                        SimpleInstance valueInst = (SimpleInstance) valueList.get(i);
+                        if (valueInst == null)
+                            continue; // Just in case
+                        if (dbIds.contains(valueInst.getDbId()))
+                            continue; // Checked already
+                        grepNewInstanceDbIds(valueInst, dbIds);
+                        dbIds.add(valueInst.getDbId());
+                    }
+                }
+            }
+        }
     }
     
     private InstanceEdit createInstanceEdit(Long personId) throws Exception {
