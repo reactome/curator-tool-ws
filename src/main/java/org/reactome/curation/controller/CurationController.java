@@ -5,10 +5,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.Set;
+import java.util.stream.Collectors; 
 import java.util.stream.Stream;
 
 import org.reactome.curation.model.CurationAttribute;
@@ -129,7 +131,7 @@ public class CurationController {
             return converter.convert(obj);
         }
         catch(Exception e) {
-            logger.error("CurationController.strore: " + e.getMessage(), e);
+            logger.error("CurationController.findByDdIdInInstance: " + e.getMessage(), e);
             throw new IllegalStateException(e.getMessage());
         }
     }
@@ -166,9 +168,24 @@ public class CurationController {
         try {
             System.out.println("Default person id: " + instance.getDefaultPersonId());
             DatabaseObject databaseObject = converter.convert(instance, true);
+            Set<DatabaseObject> newInstances = service.grepNewInstances(databaseObject);
+            // Keep the old dbIds
+            Map<DatabaseObject, Long> obj2id = null;
+            if (newInstances != null && newInstances.size() > 0) {
+                obj2id = new HashMap<>();
+                for (DatabaseObject obj : newInstances)
+                    obj2id.put(obj, obj.getDbId());
+            }
             DatabaseObject stored = service.commit(databaseObject);
             // For the front end, we just need to return a SimpleInstance having attributes that may change
             SimpleInstance rtn = converter.convertInShell(stored);
+            if (obj2id.size() > 0) {
+                Map<Long, Long> newInstOld2NewId = new HashMap<>();
+                obj2id.forEach((obj, id) -> newInstOld2NewId.put(id, obj.getDbId()));
+                if (newInstOld2NewId.containsKey(instance.getDbId()))
+                    newInstOld2NewId.remove(instance.getDbId()); // Don't include itself
+                rtn.setNewInstOld2NewId(newInstOld2NewId);
+            }
             return rtn;
         }
         catch(Exception e) {
@@ -371,19 +388,6 @@ public class CurationController {
     public List<SimpleInstance> getEventTree(@PathVariable("speciesName") String speciesName) {
         return service.getEventTree(speciesName);
     }
-
-    @GetMapping("getEventPlotData/{dbId}")
-    public Map<String, List<Map<String, Object>>> getHierarchicalPlotData (
-            @PathVariable("dbId") Long dbId,
-            @RequestParam("type") String type
-    ) {
-        if (type.equals("hierarchical"))
-            return service.getHierarchicalPlotData(dbId);
-//        else if (type.equals("reaction"))
-//            return service.getReactionPlotData(dbId);
-        else
-            return null;
-    }
     
     /**
      * Fetch all reaction participants so that the reaction can be laid out fully in 
@@ -416,8 +420,7 @@ public class CurationController {
      */
     @GetMapping("getReferrers/{dbId}")
     public Collection<CuratorToolReferrerList> getReferrers(@PathVariable("dbId") Long dbId) throws Exception {
-        Collection<CuratorToolReferrerList> test =  service.getReferrers(dbId);
-        System.out.println(test);
-        return test;
+        Collection<CuratorToolReferrerList> referrers =  service.getReferrers(dbId);
+        return referrers;
     }
 }

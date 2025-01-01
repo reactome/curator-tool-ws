@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -378,13 +379,57 @@ public class CurationService {
         return ret;
     }
 
-
-
     public Boolean delete(DatabaseObject obj) {
         return curationRepository.delete(obj);
     }
 
     public Collection<CuratorToolReferrerList> getReferrers(Long dbId) throws Exception {
         return curationRepository.getReferrers(dbId);
+    }
+    
+    /**
+     * A recursive way to get the new DatabaseObject in the passed object's reference graph.
+     * Note: If a reference is an updated instance using a new instance, this new instance
+     * is not included since its dbId will not get updated.
+     * @param obj
+     * @param newInsts
+     */
+    public Set<DatabaseObject> grepNewInstances(DatabaseObject obj) {
+        Set<DatabaseObject> newInstances = new HashSet<>();
+        if (obj.getDbId() < 0)
+            newInstances.add(obj);
+        grepNewInstances(obj, newInstances);
+        return newInstances;
+    }
+    
+    private void grepNewInstances(DatabaseObject obj, Set<DatabaseObject> newInstances) {
+        Map<String, Object> field2value = DatabaseObjectUtils.getAllFields(obj, false);
+        // Recursive calling to store all new instances
+        for (String field : field2value.keySet()) {
+            Object value = field2value.get(field);
+            if (value instanceof DatabaseObject) {
+                DatabaseObject valueObj = (DatabaseObject) value;
+                if (valueObj.getDbId() != null && valueObj.getDbId() < 0) {
+                    if (!newInstances.contains(valueObj)) {
+                        newInstances.add(valueObj);
+                        grepNewInstances(valueObj, newInstances);
+                    }
+                }
+            }
+            if (value instanceof List) {
+                List<?> list = (List<?>) value;
+                for (Object value1 : list) {
+                    if (!(value1 instanceof DatabaseObject))
+                        break; // Do nothing
+                    DatabaseObject valueObj = (DatabaseObject) value1;
+                    if (valueObj.getDbId() != null && valueObj.getDbId() < 0) {
+                        if (!newInstances.contains(valueObj)) {
+                            newInstances.add(valueObj);
+                            grepNewInstances(valueObj, newInstances);
+                        }
+                    }
+                }
+            } 
+        }
     }
 }

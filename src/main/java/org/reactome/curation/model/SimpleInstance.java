@@ -43,7 +43,17 @@ public class SimpleInstance extends DatabaseObject {
     private List<String> modifiedAttributes; // Names of attributes that have been updated.
     // Use this optional information to create InstanceEdit for the created or modified slot
     private Long defaultPersonId;
+    // Updated new instances after committed for the front-end
+    private Map<Long, Long> newInstOld2NewId;
     
+    public Map<Long, Long> getNewInstOld2NewId() {
+        return newInstOld2NewId;
+    }
+
+    public void setNewInstOld2NewId(Map<Long, Long> newInstOld2NewId) {
+        this.newInstOld2NewId = newInstOld2NewId;
+    }
+
     public void setDefaultPersonId(Long id) {
         this.defaultPersonId = id;
     }
