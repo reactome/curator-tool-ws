@@ -10,9 +10,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors; 
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.reactome.curation.exceptions.InstanceChangedException;
 import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.model.CuratorToolReferrerList;
 import org.reactome.curation.model.InstanceList;
@@ -165,8 +166,10 @@ public class CurationController {
      */
     @PostMapping("commit")
     public SimpleInstance commit(@RequestBody SimpleInstance instance) {
+        // Check if the passed instance can be committed
+        if (this.service.isConflictWithStored(instance))
+            throw new InstanceChangedException(instance);
         try {
-            System.out.println("Default person id: " + instance.getDefaultPersonId());
             DatabaseObject databaseObject = converter.convert(instance, true);
             Set<DatabaseObject> newInstances = service.grepNewInstances(databaseObject);
             // Keep the old dbIds
@@ -179,7 +182,7 @@ public class CurationController {
             DatabaseObject stored = service.commit(databaseObject);
             // For the front end, we just need to return a SimpleInstance having attributes that may change
             SimpleInstance rtn = converter.convertInShell(stored);
-            if (obj2id.size() > 0) {
+            if (obj2id != null && obj2id.size() > 0) {
                 Map<Long, Long> newInstOld2NewId = new HashMap<>();
                 obj2id.forEach((obj, id) -> newInstOld2NewId.put(id, obj.getDbId()));
                 if (newInstOld2NewId.containsKey(instance.getDbId()))

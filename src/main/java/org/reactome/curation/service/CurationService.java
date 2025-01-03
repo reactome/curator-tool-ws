@@ -12,13 +12,20 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.gk.model.ReactomeJavaConstants;
 import org.reactome.curation.config.CuratorToolEnv;
-import org.reactome.curation.model.*;
+import org.reactome.curation.model.CurationAttribute;
+import org.reactome.curation.model.CuratorToolReferrerList;
+import org.reactome.curation.model.InstanceList;
+import org.reactome.curation.model.ListOperand;
+import org.reactome.curation.model.SimpleInstance;
+import org.reactome.curation.model.SimpleSchemaClass;
+import org.reactome.curation.model.UserInstances;
 import org.reactome.curation.repository.CurationFileRepository;
 import org.reactome.curation.repository.CurationRepository;
 import org.reactome.curation.repository.PathwayDiagramRepository;
@@ -431,5 +438,26 @@ public class CurationService {
                 }
             } 
         }
+    }
+    
+    /**
+     * If the passed instance has less InstanceEdit than the saved one,
+     * return true. 
+     * @param instance
+     * @return
+     */
+    public boolean isConflictWithStored(SimpleInstance instance) {
+        if (instance.getDbId() == null || instance.getDbId() < 0)
+            return false; // This is new
+        DatabaseObject stored = findById(instance.getDbId());
+        if (stored == null)
+            return false; // This instance may be deleted. We can save it again.
+        // TODO: Updated for the list once the change is updated
+        SimpleInstance modified = instance.getAttributes() == null ? 
+                null :
+                (SimpleInstance) instance.getAttribute(ReactomeJavaConstants.modified);
+        Long ieDbId = modified == null ? null : modified.getDbId();
+        Long storedIeDbId = stored.getModified() == null ? null : stored.getModified().getDbId();
+        return !Objects.equals(ieDbId, storedIeDbId);
     }
 }

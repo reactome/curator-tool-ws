@@ -8,21 +8,12 @@ import org.reactome.server.graph.domain.model.DatabaseObject;
  *
  */
 @SuppressWarnings({"serial" })
-public class DatabaseObjectNotFoundException extends RuntimeException {
-    private Long dbId;
-    private String stId;
-    private String displayName;
+public class DatabaseObjectNotFoundException extends DatabaseObjectException {
     
     public DatabaseObjectNotFoundException(DatabaseObject obj) {
-        this.dbId = obj.getDbId();
-        this.stId = obj.getStId();
-        this.displayName = obj.getDisplayName();
+        super(obj);
     }
 
-    @Override
-    public String getMessage() {
-        return this.toString();
-    }
 
     @Override
     public String toString() {
