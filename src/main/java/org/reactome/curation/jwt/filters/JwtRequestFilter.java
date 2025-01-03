@@ -47,7 +47,12 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             }
         }
         if (username == null) {
-            throw new BadCredentialsException("Wrong jwt token.");
+            // Need to see if there is a better way.
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // Send 401 status
+            response.getWriter().write("Invalid or missing JWT token");
+            response.getWriter().flush();
+            return;
+//            throw new BadCredentialsException("Wrong jwt token.");
         }
         // If username is valid, set the authentication in the security context
         if (SecurityContextHolder.getContext().getAuthentication() == null) {
