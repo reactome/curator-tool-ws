@@ -5,6 +5,7 @@ import org.reactome.curation.exceptions.ErrorResponse;
 import org.reactome.curation.exceptions.InstanceChangedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -26,6 +27,16 @@ public class GlobalExceptionHandler {
                 System.currentTimeMillis());
         return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
     }
+    
+    // This cannot work for some reason!!!
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ErrorResponse> handleBadCredentialsException(BadCredentialsException ex) {
+        ErrorResponse response = new ErrorResponse(HttpStatus.UNAUTHORIZED.value(),
+                ex.getMessage(),
+                System.currentTimeMillis());
+        return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+    }
+    
     
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
