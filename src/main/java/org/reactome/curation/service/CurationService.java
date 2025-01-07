@@ -31,6 +31,7 @@ import org.reactome.curation.repository.CurationRepository;
 import org.reactome.curation.repository.PathwayDiagramRepository;
 //import org.reactome.server.graph.aop.LazyFetchAspect;
 import org.reactome.server.graph.domain.model.DatabaseObject;
+import org.reactome.server.graph.domain.model.InstanceEdit;
 import org.reactome.server.graph.repository.AdvancedDatabaseObjectRepository;
 import org.reactome.server.graph.service.helper.AttributeClass;
 import org.reactome.server.graph.service.helper.AttributeProperties;
@@ -386,8 +387,8 @@ public class CurationService {
         return ret;
     }
 
-    public Boolean delete(DatabaseObject obj) {
-        return curationRepository.delete(obj);
+    public Boolean delete(DatabaseObject obj, InstanceEdit ie) throws Exception {
+        return curationRepository.delete(obj, ie);
     }
 
     public Collection<CuratorToolReferrerList> getReferrers(Long dbId) throws Exception {

@@ -3,6 +3,7 @@ package org.reactome.curation.controller;
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
 import org.reactome.curation.exceptions.ErrorResponse;
 import org.reactome.curation.exceptions.InstanceChangedException;
+import org.reactome.curation.exceptions.InstanceDeletionException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -26,6 +27,14 @@ public class GlobalExceptionHandler {
                 ex.getMessage(),
                 System.currentTimeMillis());
         return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
+    }
+    
+    @ExceptionHandler(InstanceDeletionException.class)
+    public ResponseEntity<ErrorResponse> handleInstanceDeletionException(InstanceDeletionException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                ex.getMessage(),
+                System.currentTimeMillis());
+        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
     
     // This cannot work for some reason!!!

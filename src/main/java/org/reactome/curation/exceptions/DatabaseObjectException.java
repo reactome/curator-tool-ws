@@ -14,6 +14,10 @@ public class DatabaseObjectException extends RuntimeException {
         this.displayName = obj.getDisplayName();
     }
     
+    public DatabaseObjectException(Long dbId) {
+        this.dbId = dbId;
+    }
+    
     @Override
     public String getMessage() {
         return this.toString();

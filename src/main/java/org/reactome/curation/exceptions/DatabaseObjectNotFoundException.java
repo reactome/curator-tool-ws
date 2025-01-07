@@ -14,6 +14,10 @@ public class DatabaseObjectNotFoundException extends DatabaseObjectException {
         super(obj);
     }
 
+    public DatabaseObjectNotFoundException(Long dbId) {
+        super(dbId);
+    }
+    
 
     @Override
     public String toString() {

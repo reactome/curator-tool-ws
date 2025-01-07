@@ -14,7 +14,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang.WordUtils;
-import org.gk.model.InstanceEdit;
 import org.gk.model.ReactomeJavaConstants;
 import org.neo4j.cypherdsl.core.Condition;
 import org.neo4j.cypherdsl.core.Cypher;
@@ -32,6 +31,7 @@ import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.server.graph.domain.model.DatabaseObject;
+import org.reactome.server.graph.domain.model.InstanceEdit;
 import org.reactome.server.graph.service.helper.StoichiometryObject;
 import org.reactome.server.graph.service.util.DatabaseObjectUtils;
 import org.slf4j.Logger;
@@ -132,12 +132,48 @@ public class CurationRepository {
      * @throws Exception
      */
     @Transactional
-    public Boolean delete(DatabaseObject obj) {
+    public Boolean delete(DatabaseObject obj, InstanceEdit ie) throws Exception {
         // Make sure there is a node having this dbId
         if (!neo4jTemplate.existsById(obj.getDbId(), obj.getClass())) {
-            throw new IllegalArgumentException(
-                    "Cannot find an instance with dbId = " + obj.getDbId() + " and class = " + obj.getClassName());
+            throw new DatabaseObjectNotFoundException(obj);
         }
+        
+        Collection<CuratorToolReferrerList> referrers = null;
+        if (ie != null) {
+            referrers = getReferrers(obj.getDbId());
+            if (referrers != null && !referrers.isEmpty()) {
+                // Better to add first in case something is wrong during deletion
+                ie = (InstanceEdit) store(ie); // The cast should be safe
+                Node ieNode = Cypher.node(getNodeLabel(ie))
+                        .withProperties("dbId", Cypher.literalOf(ie.getDbId()))
+                        .named(getNodeName(ie));
+                for (CuratorToolReferrerList referList: referrers) {
+                    for (SimpleInstance referrer : referList.getReferrers()) {
+                        Node referrerNode = Cypher.node(getNodeLabel(referrer))
+                                .withProperties("dbId", Cypher.literalOf(referrer.getDbId()))
+                                .named(getNodeName(referrer));
+                        
+                        // TODO: This will be changed. For the time being, delete any existing modified rel
+                        // Since we'd like to use ie's class name, the following cypher query should 
+                        // work to remove any modified relationship.
+                        // Match the existing ie node by dbId and referrer node
+                        Node allIENodes = Cypher.node(getNodeLabel(ie));
+                        
+                        var query = Cypher.match(referrerNode.relationshipFrom(allIENodes, "modified").named("r"))
+                                .delete("r")
+                                .build();
+
+                        neo4jClient.query(query.getCypher()).run();
+
+                        var stat = Cypher.match(ieNode);
+                        stat = stat.match(referrerNode);
+                        var relationship = referrerNode.relationshipFrom(ieNode, "modified");
+                        neo4jClient.query(stat.create(relationship).build().getCypher()).run();
+                    }
+                }
+            }
+        }
+        
         // Build a dsl query to delete the node having this dbId
         Node objNode = Cypher.node(getNodeLabel(obj)).named(getNodeName(obj)).withProperties("dbId",
                 Cypher.literalOf(obj.getDbId()));
@@ -1144,7 +1180,7 @@ public class CurationRepository {
      */
     @Transactional
     public DatabaseObject update(DatabaseObject obj) throws Exception {
-        boolean deleted = delete(obj);
+        boolean deleted = delete(obj, null);
         if (!deleted)
             throw new IllegalStateException(
                     "Cannot delete the object first to update: " + obj.getDisplayName() + " [" + obj.getDbId() + "]");
@@ -1273,7 +1309,7 @@ public class CurationRepository {
         return referrals;
     }
 
-    public Collection<CuratorToolReferrerList> getReferrers(Long dbId) throws Exception {
+    public Collection<CuratorToolReferrerList> getReferrers(Long dbId) throws ClassNotFoundException {
         var instanceNode = Cypher.node(ReactomeJavaConstants.DatabaseObject).named("ref").withProperties("dbId", Cypher.literalOf(dbId));
         var attributeNode = Cypher.node("DatabaseObject").named("inst");
 

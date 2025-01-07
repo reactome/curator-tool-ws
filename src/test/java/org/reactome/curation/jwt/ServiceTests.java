@@ -35,6 +35,7 @@ class ServiceTests {
     
     @Test
     void createUser() {
+        // There is another test user: test and password
         String username = "test_1";
         String password = "test_1_pwd";
         String role = "curator";

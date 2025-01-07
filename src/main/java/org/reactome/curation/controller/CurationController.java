@@ -13,7 +13,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
 import org.reactome.curation.exceptions.InstanceChangedException;
+import org.reactome.curation.exceptions.InstanceDeletionException;
 import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.model.CuratorToolReferrerList;
 import org.reactome.curation.model.InstanceList;
@@ -23,6 +25,7 @@ import org.reactome.curation.model.SimpleSchemaClass;
 import org.reactome.curation.model.UserInstances;
 import org.reactome.curation.service.CurationService;
 import org.reactome.server.graph.domain.model.DatabaseObject;
+import org.reactome.server.graph.domain.model.InstanceEdit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -129,7 +132,13 @@ public class CurationController {
     public SimpleInstance findByDdIdInInstance(@PathVariable("dbId") Long dbId) {
         try {
             DatabaseObject obj = service.findById(dbId);
+            if (obj == null)
+                throw new DatabaseObjectNotFoundException(dbId);
             return converter.convert(obj);
+        }
+        catch(DatabaseObjectNotFoundException e1) {
+            logger.error("CurationController.findByDdIdInInstance: " + e1.getMessage(), e1);
+            throw e1;
         }
         catch(Exception e) {
             logger.error("CurationController.findByDdIdInInstance: " + e.getMessage(), e);
@@ -204,10 +213,17 @@ public class CurationController {
      * @return
      */
     @PostMapping("delete")
-    public Boolean delete(@RequestBody SimpleInstance instance) {
+    public SimpleInstance delete(@RequestBody SimpleInstance instance) {
         try {
             DatabaseObject obj = converter.convert(instance);
-            return service.delete(obj);
+            // Need to add an IE to the modified slot of the referrers
+            Collection<CuratorToolReferrerList> referrers = getReferrers(obj.getDbId());
+            InstanceEdit ie = converter.createInstanceEdit(instance);
+            if (service.delete(obj, ie)) {
+                SimpleInstance ieInst = converter.convert(ie);
+                return ieInst;
+            }
+            throw new InstanceDeletionException(obj);
         }
         catch(Exception e) {
             logger.error("CurationController.delete: " + e.getMessage(), e);

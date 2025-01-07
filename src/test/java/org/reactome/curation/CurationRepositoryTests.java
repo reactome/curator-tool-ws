@@ -170,12 +170,12 @@ class CurationRepositoryTests {
      * Use this method to test delete a DatabaseObject.
      */
     @Test
-    public void testDeleteInstance() {
+    public void testDeleteInstance() throws Exception {
         Reaction reaction = new Reaction();
         reaction.setDbId(12241241L);
         logger.info("Deleting " + reaction + "...");
         // Don't expect to delete this reaction after a test.
-        boolean rtn = repository.delete(reaction);
+        boolean rtn = repository.delete(reaction, null);
         logger.info("Done: " + rtn);
     }
 

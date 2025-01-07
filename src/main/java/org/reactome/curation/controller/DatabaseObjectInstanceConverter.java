@@ -122,7 +122,7 @@ public class DatabaseObjectInstanceConverter {
         Map<Long, DatabaseObject> id2obj = new HashMap<>();
         DatabaseObject databaseObj = this.convert(instance, id2obj);
         if (createIE) {
-             InstanceEdit ie = createInstanceEdit(instance.getDefaultPersonId());
+             InstanceEdit ie = createInstanceEdit(instance);
             if (instance.getDbId() < 0)
                 databaseObj.setCreated(ie);
             else {
@@ -175,7 +175,8 @@ public class DatabaseObjectInstanceConverter {
         }
     }
     
-    private InstanceEdit createInstanceEdit(Long personId) throws Exception {
+    public InstanceEdit createInstanceEdit(SimpleInstance instance) throws Exception {
+        Long personId = instance.getDefaultPersonId();
         if (personId == null) {
             logger.error("Person dbId is not defined!");
             throw new IllegalArgumentException("personId is null");
