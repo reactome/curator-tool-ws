@@ -23,6 +23,8 @@ import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.model.SimpleSchemaClass;
 import org.reactome.curation.model.UserInstances;
+import org.reactome.curation.qa.QAService;
+import org.reactome.curation.qa.model.QAReport;
 import org.reactome.curation.service.CurationService;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.domain.model.InstanceEdit;
@@ -60,6 +62,8 @@ public class CurationController {
     private ObjectMapper objectMapper;
     @Autowired
     private DatabaseObjectInstanceConverter converter;
+    @Autowired
+    private QAService qaService;
     
     /**
      * This method basically provides as a delegate to load the pathway JSON files.
@@ -441,5 +445,19 @@ public class CurationController {
     public Collection<CuratorToolReferrerList> getReferrers(@PathVariable("dbId") Long dbId) throws Exception {
         Collection<CuratorToolReferrerList> referrers =  service.getReferrers(dbId);
         return referrers;
+    }
+
+    //TODO; use the global exception handling
+    @PostMapping("qaReport")
+    public QAReport fetchQAReport(@RequestBody SimpleInstance instance)  {
+        try {
+            DatabaseObject databaseObject = converter.convert(instance, false);
+            QAReport rtn = this.qaService.createQAReport(databaseObject) ;
+            return rtn;
+        }
+        catch(Exception e) {
+            logger.error("QAController.qaReport: " + e.getMessage(), e);
+            throw new IllegalStateException(e.getMessage());
+        }
     }
 }

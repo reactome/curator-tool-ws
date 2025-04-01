@@ -3,6 +3,8 @@ package org.reactome.curation;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.List;
 
 import org.gk.model.ReactomeJavaConstants;
@@ -131,6 +133,24 @@ class ServiceTests {
         time = System.currentTimeMillis() - start;
         logger.info("curationService.getMaxDbId execution time:" + time + " ms");
         logger.info("Finished curationService.getMaxDbId");
+    }
+
+    @Test
+    public void getAllMethods() {
+        DatabaseObject obj = curationService.findById(109581L);
+        Class<?> classOfObject = obj.getClass();
+        //Method[] methods = classOfObject.getDeclaredMethods();
+        Method[] methodsWithoutDeclared = classOfObject.getMethods();
+    }
+
+    @Test
+    public void getDeclaredMethod() throws NoSuchMethodException {
+        DatabaseObject obj = curationService.findById(109581L);
+        Class<?> classOfObject = obj.getClass();
+        //Method[] methods = classOfObject.getDeclaredMethods();
+        Method declaredMethod = classOfObject.getDeclaredMethod("getSpecies");
+
+        //if(!declaredMethod && classOfObject.getPar)
     }
 
 }
