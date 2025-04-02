@@ -1,1 +1,2 @@
+# This file is not used in the app. However, keep it here so that we know what the test user is.
 test@gmail.com,password
