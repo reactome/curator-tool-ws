@@ -9,10 +9,14 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.gk.model.ReactomeJavaConstants;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.qa.model.QACheckResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.stereotype.Repository;
 
@@ -38,10 +42,9 @@ import org.springframework.stereotype.Repository;
  * subunits.</li>
  * </ul>
  *
- * @author gwu
  */
-@Repository
-public class CompartmentCheck extends QAChecker {
+public class CompartmentChecker extends QAChecker {
+    private static final Logger logger = LoggerFactory.getLogger(CompartmentChecker.class);
 
     private final static String MISSING_COMPLEX_COMPARTMENT = "Complex compartment not a subunit compartment";
     private final static String TOO_MANY_COMPLEX_COMPARTMENTS = "More than one complex compartment";
@@ -50,7 +53,7 @@ public class CompartmentCheck extends QAChecker {
 
     private Neo4jClient neo4jClient;
 
-    public CompartmentCheck(Neo4jClient neo4jClient) {
+    public CompartmentChecker(Neo4jClient neo4jClient) {
         this.neo4jClient = neo4jClient;
     }
 
@@ -58,48 +61,34 @@ public class CompartmentCheck extends QAChecker {
     public String getCheckName() {
         return "Compartment Check";
     }
+    
+    @Override
+    public Collection<String> getTargetClasses() {
+        String[] classes = {
+                ReactomeJavaConstants.ReactionlikeEvent,
+                ReactomeJavaConstants.Complex,
+                ReactomeJavaConstants.Pathway,
+                ReactomeJavaConstants.EntitySet
+        };
+        return Stream.of(classes).collect(Collectors.toSet());
+    }
 
     @Override
     public QACheckResult performQACheck(SimpleInstance instance) {
-        ArrayList<String> followAttributes = new ArrayList<>();
-        String clsName = instance.getSchemaClassName();
-        switch (clsName) {
-        case ReactomeJavaConstants.Complex: {
-            followAttributes.add(ReactomeJavaConstants.hasComponent);
-            break;
-        }
-        case ReactomeJavaConstants.EntitySet: {
-            followAttributes.add(ReactomeJavaConstants.hasMember);
-            followAttributes.add(ReactomeJavaConstants.hasCandidate);
-            break;
-        }
-        case ReactomeJavaConstants.Pathway: {
-            followAttributes.add(ReactomeJavaConstants.hasEvent);
-            break;
-        }
-        case ReactomeJavaConstants.Reaction: {
-            followAttributes.add(ReactomeJavaConstants.input);
-            followAttributes.add(ReactomeJavaConstants.output);
-            followAttributes.add(ReactomeJavaConstants.catalystActivity);
-            followAttributes.add(ReactomeJavaConstants.physicalEntity);
-            followAttributes.add(ReactomeJavaConstants.regulatedBy);
-            followAttributes.add(ReactomeJavaConstants.regulator);
-            followAttributes.add(ReactomeJavaConstants.regulatedEntity);
-            break;
-        }
-        }
-        StringBuilder realtionships = new StringBuilder();
-        for (int i = 0; i < followAttributes.size(); i++) {
-            realtionships.append(followAttributes.get(i));
-            if (i != (followAttributes.size() - 1)) {
-                realtionships.append("|");
-            }
+        if (!shouldCheck(instance))
+            return null;
+        
+        String relationships = getRelationships(instance);
+        // Just in case
+        if (relationships == null) {
+            logger.error("Cannot find any relationship: " + instance);
+            throw new IllegalArgumentException("Cannot find any relationship: " + instance);
         }
 
-        return compartmentCheck(instance.getDbId(), realtionships.toString(), clsName);
+        return checkCompartment(instance.getDbId(), relationships, instance.getSchemaClassName());
     }
 
-    public QACheckResult compartmentCheck(Long dbId, String followAttributes, String schemaClass) {
+    public QACheckResult checkCompartment(Long dbId, String followAttributes, String schemaClass) {
         String query = String.format("MATCH (complex:%s {dbId: %d})\n"
                 + "OPTIONAL MATCH (complex)-[:compartment]->(compartment:Compartment)\n"
                 + "WITH complex, compartment AS complexLocation\n"

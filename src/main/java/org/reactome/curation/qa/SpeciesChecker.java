@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.gk.model.ReactomeJavaConstants;
 import org.reactome.curation.model.SimpleInstance;
@@ -13,7 +15,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.stereotype.Repository;
 
-@Repository
 public class SpeciesChecker extends QAChecker {
 
     private static final Logger logger = LoggerFactory
@@ -25,53 +26,39 @@ public class SpeciesChecker extends QAChecker {
         this.neo4jClient = neo4jClient;
     }
 
-
     @Override
     public String getCheckName() {
         return "Species Check";
     }
+    
+    @Override
+    public Collection<String> getTargetClasses() {
+        String[] classes = {
+                ReactomeJavaConstants.ReactionlikeEvent,
+                ReactomeJavaConstants.Complex,
+                ReactomeJavaConstants.Pathway,
+                ReactomeJavaConstants.EntitySet
+        };
+        return Stream.of(classes).collect(Collectors.toSet());
+    }
 
     @Override
     public QACheckResult performQACheck(SimpleInstance instance) {
-        ArrayList<String> followAttributes = new ArrayList<>();
-        String schemaClassName = instance.getSchemaClassName();
-        switch (schemaClassName) {
-        case ReactomeJavaConstants.Complex: {
-            followAttributes.add(ReactomeJavaConstants.hasComponent);
-            break;
+        if (!shouldCheck(instance))
+            return null;
+        
+        String relationships = getRelationships(instance);
+        // Just in case
+        if (relationships == null) {
+            logger.error("Cannot find any relationship: " + instance);
+            throw new IllegalArgumentException("Cannot find any relationship: " + instance);
         }
-        case ReactomeJavaConstants.EntitySet: {
-            followAttributes.add(ReactomeJavaConstants.hasMember);
-            followAttributes.add(ReactomeJavaConstants.hasCandidate);
-            break;
-        }
-        case ReactomeJavaConstants.Pathway: {
-            followAttributes.add(ReactomeJavaConstants.hasEvent);
-            break;
-        }
-        case ReactomeJavaConstants.Reaction: {
-            followAttributes.add(ReactomeJavaConstants.input);
-            followAttributes.add(ReactomeJavaConstants.output);
-            followAttributes.add(ReactomeJavaConstants.catalystActivity);
-            followAttributes.add(ReactomeJavaConstants.physicalEntity);
-            followAttributes.add(ReactomeJavaConstants.regulatedBy);
-            followAttributes.add(ReactomeJavaConstants.regulator);
-            break;
-        }
-        }
-        StringBuilder realtionships = new StringBuilder();
-        for (int i = 0; i < followAttributes.size(); i++) {
-            realtionships.append(followAttributes.get(i));
-            if (i != (followAttributes.size() - 1)) {
-                realtionships.append("|");
-            }
-        }
-
-        return speciesCheck(instance.getDbId(), realtionships.toString(), schemaClassName);
+        
+        return checkSpecies(instance.getDbId(), relationships, instance.getSchemaClassName());
     }
 
     // The breaking characters are required for the query to run correctly
-    public QACheckResult speciesCheck(Long dbId, String followAttributes, String schemaClass) {
+    public QACheckResult checkSpecies(Long dbId, String followAttributes, String schemaClass) {
         String query = String.format("MATCH (complex:%s {dbId: %d})\n"
                 + "OPTIONAL MATCH (complex)-[:species]->(s:Species)\n" + "WITH complex, s AS complexSpecies\n"
                 + "OPTIONAL MATCH (complex)-[r:%s*]->(pe:PhysicalEntity)\n"
