@@ -14,9 +14,18 @@ public class QACheckResult {
     private String[] columns;
     private String[][] rows;
 
-    public QACheckResult(String checkName, boolean checkPassed, String[] columns, String[][] rows) {
+    public QACheckResult(String checkName, String[] columns, String[][] rows) {
         this.checkName = checkName;
         this.columns = columns;
         this.rows = rows;
     }
+    
+    public QACheckResult(String checkName) {
+        this.checkName = checkName;
+    }
+    
+    public boolean isPassed() {
+        return rows == null || rows.length == 0;
+    }
+    
 }
