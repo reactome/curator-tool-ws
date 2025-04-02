@@ -15,9 +15,9 @@ public class QAReport {
     private DatabaseObject instance;
     // Map the test that was run to the issue(s) that occurred more specifically
     // If no issues the array will be size=0
-    private ArrayList<QACheck> testsRun;
+    private ArrayList<QACheckResult> testsRun;
 
-    public QAReport(DatabaseObject databaseObject, ArrayList<QACheck> testsRun) {
+    public QAReport(DatabaseObject databaseObject, ArrayList<QACheckResult> testsRun) {
         this.instance = databaseObject;
         this.testsRun = testsRun;
     }

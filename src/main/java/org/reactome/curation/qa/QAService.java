@@ -1,29 +1,49 @@
 package org.reactome.curation.qa;
 
-import org.reactome.curation.qa.model.QAReport;
-import org.reactome.curation.qa.model.QACheck;
-import org.reactome.server.graph.domain.model.DatabaseObject;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.reactome.curation.model.SimpleInstance;
+import org.reactome.curation.qa.model.QACheckResult;
+import org.reactome.curation.qa.model.QAReport;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.neo4j.core.Neo4jClient;
+import org.springframework.stereotype.Service;
 
 @Service
 public class QAService {
-
+    
     @Autowired
-    private SpeciesCheck speciesCheck;
-    @Autowired
-    private CompartmentCheck compartmentCheck;
+    private Neo4jClient neo4jClient;
+    
+    // Used to control configured QA checkers
+    private Map<String, QAChecker> qaName2Checker;
+    
+    public QAService() {
+    }
+    
+    //TODO: To be updated by using a YML configuration file.
+    private void initQACheckers() {
+        qaName2Checker = new HashMap<>();
+        QAChecker checker = new SpeciesChecker(neo4jClient);
+        qaName2Checker.put("SpeciesCheck", checker);
+        checker = new CompartmentCheck(neo4jClient);
+        qaName2Checker.put("CompartmentCheck", checker);
+    }
 
-    public QAReport createQAReport(DatabaseObject databaseObject) {
-        // TODO: The tests to be run need to be configured based on the schema class, for now testing species
-        ArrayList<QACheck> checks = new ArrayList<>();
-        QACheck speciesCheckTest = this.speciesCheck.checkInstanceType(databaseObject);
-        QACheck complexCheckTest = this.compartmentCheck.checkInstanceType(databaseObject);
-        checks.add(speciesCheckTest);
-        checks.add(complexCheckTest);
-        QAReport qaReport = new QAReport(databaseObject, checks);
+    
+    public QAReport performQACheck(SimpleInstance instance) {
+        if (qaName2Checker == null)
+            this.initQACheckers();
+        ArrayList<QACheckResult> results = new ArrayList<>();
+        for (String name : qaName2Checker.keySet()) {
+            QACheckResult result = qaName2Checker.get(name).performQACheck(instance);
+            if (result == null)
+                continue; // We will return an empty result so that the front-end know that check is passsed.
+            results.add(result);
+        }
+        QAReport qaReport = new QAReport(instance, results);
         return qaReport;
     }
 }

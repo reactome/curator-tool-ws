@@ -451,8 +451,7 @@ public class CurationController {
     @PostMapping("qaReport")
     public QAReport fetchQAReport(@RequestBody SimpleInstance instance)  {
         try {
-            DatabaseObject databaseObject = converter.convert(instance, false);
-            QAReport rtn = this.qaService.createQAReport(databaseObject) ;
+            QAReport rtn = this.qaService.performQACheck(instance) ;
             return rtn;
         }
         catch(Exception e) {

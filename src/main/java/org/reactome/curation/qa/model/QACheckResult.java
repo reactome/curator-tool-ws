@@ -9,19 +9,13 @@ import java.util.ArrayList;
 @Data
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class QACheck {
+public class QACheckResult {
     private String checkName;
-    private Boolean checkPassed;
     private String[] columns;
     private String[][] rows;
 
-
-    public QACheck(String checkName,
-                   boolean checkPassed,
-                   String[] columns,
-                   String[][] rows) {
+    public QACheckResult(String checkName, boolean checkPassed, String[] columns, String[][] rows) {
         this.checkName = checkName;
-        this.checkPassed = checkPassed;
         this.columns = columns;
         this.rows = rows;
     }

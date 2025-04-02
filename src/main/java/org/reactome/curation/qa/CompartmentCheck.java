@@ -12,7 +12,7 @@ import javassist.Loader;
 import org.gk.model.GKInstance;
 import org.gk.model.ReactomeJavaConstants;
 import org.reactome.curation.model.SimpleInstance;
-import org.reactome.curation.qa.model.QACheck;
+import org.reactome.curation.qa.model.QACheckResult;
 import org.reactome.curation.qa.model.QACheckAttributes;
 import org.reactome.server.graph.domain.model.Compartment;
 import org.reactome.server.graph.domain.model.DatabaseObject;
@@ -50,7 +50,7 @@ import static java.util.Arrays.stream;
  * @author gwu
  */
 @Repository
-public class CompartmentCheck {
+public class CompartmentCheck implements QAChecker {
 
     private final static String MISSING_COMPLEX_COMPARTMENT = "Complex compartment not a subunit compartment";
     private final static String TOO_MANY_COMPLEX_COMPARTMENTS = "More than one complex compartment";
@@ -62,10 +62,16 @@ public class CompartmentCheck {
     public CompartmentCheck(Neo4jClient neo4jClient) {
         this.neo4jClient = neo4jClient;
     }
+    
+    @Override
+    public QACheckResult performQACheck(SimpleInstance instance) {
+        return checkInstanceType(instance);
+    }
 
-    public QACheck checkInstanceType(DatabaseObject databaseObject) {
+    public QACheckResult checkInstanceType(SimpleInstance instance) {
         ArrayList<String> followAttributes = new ArrayList<>();
-        switch (databaseObject.getSchemaClass()) {
+        String clsName = instance.getSchemaClassName();
+        switch (clsName) {
             case ReactomeJavaConstants.Complex: {
                 followAttributes.add(ReactomeJavaConstants.hasComponent);
                 break;
@@ -98,11 +104,11 @@ public class CompartmentCheck {
             }
         }
 
-        return compartmentCheck(databaseObject.getDbId(), realtionships.toString(), databaseObject.getSchemaClass());
+        return compartmentCheck(instance.getDbId(), realtionships.toString(), clsName);
     }
 
 
-    public QACheck compartmentCheck(Long dbId, String followAttributes, String schemaClass) {
+    public QACheckResult compartmentCheck(Long dbId, String followAttributes, String schemaClass) {
         String query = String.format(
                 "MATCH (complex:%s {dbId: %d})\n" +
                         "OPTIONAL MATCH (complex)-[:compartment]->(compartment:Compartment)\n" +
@@ -238,7 +244,7 @@ public class CompartmentCheck {
                     i++;
                 }
             }
-            return new QACheck("Compartment Check",
+            return new QACheckResult("Compartment Check",
                     (componentDbIds.isEmpty()), colNames, rows);
         }
         return null;

@@ -2,7 +2,7 @@ package org.reactome.curation.qa;
 
 import org.gk.model.ReactomeJavaConstants;
 import org.reactome.curation.model.SimpleInstance;
-import org.reactome.curation.qa.model.QACheck;
+import org.reactome.curation.qa.model.QACheckResult;
 import org.reactome.curation.qa.model.QACheckAttributes;
 import org.reactome.server.graph.domain.model.Compartment;
 import org.reactome.server.graph.domain.model.DatabaseObject;
@@ -16,19 +16,25 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Repository
-public class SpeciesCheck {
+public class SpeciesChecker implements QAChecker {
 
     private static final Logger logger = LoggerFactory.getLogger(org.reactome.curation.repository.CurationRepository.class);
 
     private Neo4jClient neo4jClient;
 
-    public SpeciesCheck(Neo4jClient neo4jClient) {
+    public SpeciesChecker(Neo4jClient neo4jClient) {
         this.neo4jClient = neo4jClient;
     }
+    
+    @Override
+    public QACheckResult performQACheck(SimpleInstance instance) {
+        return checkInstanceType(instance);
+    }
 
-    public QACheck checkInstanceType(DatabaseObject databaseObject) {
+    public QACheckResult checkInstanceType(SimpleInstance instance) {
         ArrayList<String> followAttributes = new ArrayList<>();
-        switch (databaseObject.getSchemaClass()){
+        String schemaClassName = instance.getSchemaClassName();
+        switch (schemaClassName){
             case ReactomeJavaConstants.Complex: {
                 followAttributes.add(ReactomeJavaConstants.hasComponent);
                 break;
@@ -60,11 +66,11 @@ public class SpeciesCheck {
             }
         }
 
-        return speciesCheck(databaseObject.getDbId(), realtionships.toString(), databaseObject.getSchemaClass());
+        return speciesCheck(instance.getDbId(), realtionships.toString(), schemaClassName);
     }
 
     // The breaking characters are required for the query to run correctly
-    public QACheck speciesCheck(Long dbId, String followAttributes, String schemaClass) {
+    public QACheckResult speciesCheck(Long dbId, String followAttributes, String schemaClass) {
         String query = String.format(
                 "MATCH (complex:%s {dbId: %d})\n" +
                         "OPTIONAL MATCH (complex)-[:species]->(s:Species)\n" +
@@ -79,6 +85,8 @@ public class SpeciesCheck {
                         "RETURN complexSpecies.dbId, complexSpecies.displayName, componentSpecies.dbId, componentSpecies.displayName," +
                         " TYPE(role) AS relationshipType, pe.displayName, pe.dbId",
                 schemaClass, dbId, followAttributes);
+        
+        System.out.println("Query:\n" + query);
 
         Collection<Map<String, Object>> all = neo4jClient.query(query).fetch().all();
 
@@ -166,7 +174,7 @@ public class SpeciesCheck {
                 }
             }
 
-            return new QACheck("Species Check",
+            return new QACheckResult("Species Check",
                     (speciesDbIds.isEmpty()), colNames, rows);
         }
         return null;
