@@ -9,9 +9,20 @@ import org.reactome.curation.qa.model.QACheckResult;
 
 public abstract class QAChecker {
     
+    /**
+     * The entry point for doing QA check.
+     * @param instance
+     * @return
+     */
     public abstract QACheckResult performQACheck(SimpleInstance instance);
     
-    public abstract String getCheckName();
+    /**
+     * The QA checker name.
+     * @return
+     */
+    public String getCheckName() {
+        return this.getClass().getName();
+    }
     
     public abstract Collection<String> getTargetClasses();
     

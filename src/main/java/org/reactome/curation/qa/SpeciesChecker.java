@@ -3,6 +3,7 @@ package org.reactome.curation.qa;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -59,17 +60,18 @@ public class SpeciesChecker extends QAChecker {
 
     // The breaking characters are required for the query to run correctly
     public QACheckResult checkSpecies(Long dbId, String followAttributes, String schemaClass) {
-        String query = String.format("MATCH (complex:%s {dbId: %d})\n"
-                + "OPTIONAL MATCH (complex)-[:species]->(s:Species)\n" + "WITH complex, s AS complexSpecies\n"
-                + "OPTIONAL MATCH (complex)-[r:%s*]->(pe:PhysicalEntity)\n"
-                + "WITH complex, complexSpecies, r, COLLECT(pe) AS components\n" + "UNWIND components AS pe\n"
-                + "UNWIND r AS role\n" + "OPTIONAL MATCH (pe)-[:species|relatedSpecies]->(species:Species)\n"
-                + "WITH complex, complexSpecies, COLLECT(DISTINCT species) AS cSpecies, role, pe\n"
-                + "UNWIND cSpecies as componentSpecies\n"
-                + "RETURN complexSpecies.dbId, complexSpecies.displayName, componentSpecies.dbId, componentSpecies.displayName,"
-                + " TYPE(role) AS relationshipType, pe.displayName, pe.dbId", schemaClass, dbId, followAttributes);
-
-        System.out.println("Query:\n" + query);
+        String query = String.format("MATCH (container:%s {dbId: %d})\n"
+                + "OPTIONAL MATCH (container)-[:species|relatedSpecies]->(s:Species)\n" + "WITH container, s AS containerSpecies\n"
+                + "OPTIONAL MATCH (container)-[r:%s*]->(pe:PhysicalEntity)\n"
+                + "WITH container, containerSpecies, r, COLLECT(pe) AS containeds\n" 
+                + "UNWIND containeds AS pe\n"
+                + "UNWIND r AS role\n" 
+                + "OPTIONAL MATCH (pe)-[:species|relatedSpecies]->(species:Species)\n"
+                + "WITH container, containerSpecies, COLLECT(DISTINCT species) AS cSpecies, role, pe\n"
+                + "UNWIND cSpecies as containedSpecies\n"
+                + "RETURN containerSpecies.dbId, containerSpecies.displayName, containedSpecies.dbId, containedSpecies.displayName,"
+                + " TYPE(role) AS relationshipType, pe.displayName, pe.dbId", 
+                schemaClass, dbId, followAttributes);
 
         Collection<Map<String, Object>> all = neo4jClient.query(query).fetch().all();
 
@@ -77,60 +79,60 @@ public class SpeciesChecker extends QAChecker {
             return getEmptyResult();
 
         // Create a collection of the complex's assigned species (can be multiple)
-        Map<Long, SimpleInstance> containerCompartments = new HashMap<>();
-        Map<String, SimpleInstance> componentCompartments = new HashMap<>();
+        Map<Long, SimpleInstance> containerId2Species = new HashMap<>();
+        Map<String, SimpleInstance> containedId2Species = new HashMap<>();
 
         // Collecting the complex's and component's species name and dbId
         for (Map<String, Object> map : all) {
-            String complexSpeciesDbId = map.get("complexSpecies.dbId").toString();
-            Long containerDbId = Long.parseLong(complexSpeciesDbId);
-            if (!containerCompartments.containsKey(containerDbId)) {
-                // Create a simple instance as a data structure for the container, add to list
-                SimpleInstance containerCompt = new SimpleInstance();
-                containerCompt.setDbId(containerDbId);
-                containerCompt.setDisplayName(map.get("complexSpecies.displayName").toString());
-                containerCompartments.put(containerCompt.getDbId(), containerCompt);
+            Long containerSpeciesDbId = Long.parseLong(map.get("containerSpecies.dbId").toString());
+            if (!containerId2Species.containsKey(containerSpeciesDbId)) {
+                // Create a simple instance as a data structure for the container species
+                SimpleInstance containerSpecies = new SimpleInstance();
+                containerSpecies.setDbId(containerSpeciesDbId);
+                containerSpecies.setDisplayName(map.get("containerSpecies.displayName").toString());
+                containerId2Species.put(containerSpecies.getDbId(), containerSpecies);
             }
-            String participantDbId = map.get("pe.dbId").toString();
+            
+            String containedDbId = map.get("pe.dbId").toString();
             String role = map.get("relationshipType").toString();
-            String key = participantDbId + ":" + role;
-            SimpleInstance pe = componentCompartments.get(key);
-            if (pe == null) {
-                String participantDisplayName = map.get("pe.displayName").toString();
-                pe = new SimpleInstance();
-                pe.setDisplayName(participantDisplayName);
-                pe.setDbId(Long.parseLong(participantDbId));
-                pe.setAttribute("role", role);
-                componentCompartments.put(key, pe);
+            String key = containedDbId + ":" + role;
+            SimpleInstance contained = containedId2Species.get(key);
+            if (contained == null) {
+                String containedDisplayName = map.get("pe.displayName").toString();
+                contained = new SimpleInstance();
+                contained.setDisplayName(containedDisplayName);
+                contained.setDbId(Long.parseLong(containedDbId));
+                contained.setAttribute("role", role);
+                containedId2Species.put(key, contained);
             }
 
-            String componentSpeciesDisplayName = map.get("componentSpecies.displayName").toString();
-            String componentSpeciesDbId = map.get("componentSpecies.dbId").toString();
+            String containedSpeciesDisplayName = map.get("containedSpecies.displayName").toString();
+            String containedSpeciesDbId = map.get("containedSpecies.dbId").toString();
 
             // Create a simple instance to model the component and add to map
-            SimpleInstance componentCompt = new SimpleInstance();
-            componentCompt.setDbId(Long.parseLong(componentSpeciesDbId));
-            componentCompt.setDisplayName(componentSpeciesDisplayName);
-            Object comp = pe.getAttribute("species");
-            if (comp == null) {
-                Object[] compartments = { comp, componentCompt };
-                pe.setAttribute("species", compartments);
+            SimpleInstance containedSpecies = new SimpleInstance();
+            containedSpecies.setDbId(Long.parseLong(containedSpeciesDbId));
+            containedSpecies.setDisplayName(containedSpeciesDisplayName);
+            Object oldContainedSpecies = contained.getAttribute("species");
+            if (oldContainedSpecies != null) {
+                Object[] compartments = { oldContainedSpecies, containedSpecies };
+                contained.setAttribute("species", compartments);
             } else {
-                pe.setAttribute("species", componentCompt);
+                contained.setAttribute("species", containedSpecies);
             }
         }
 
         // Building the table for the front-end
         String[] colNames = { "Role", "Participant", "Species" };
-        String[][] rows = new String[all.size()][colNames.length];
+        List<String[]> rows = new ArrayList<>();
         int i = 0;
         // TODO: The container species should also be checked for extra or less species
         // that the components do not have
-        for (String key : componentCompartments.keySet()) {
+        for (String key : containedId2Species.keySet()) {
             // If the complex species list contains the species of the component continue
             // TODO: need to determine if the species dbId is a sufficient check ie same
             // species under different names
-            if (containerCompartments.containsKey((componentCompartments.get(key).getDbId()))) {
+            if (containerId2Species.containsKey((containedId2Species.get(key).getDbId()))) {
                 continue;
             }
             // Return information about the physical entities that have an assigned species
@@ -140,13 +142,12 @@ public class SpeciesChecker extends QAChecker {
                 // Species", dbId.toString());
                 String role = key.split(":")[1];
                 // TODO: cast this object into strings
-                String componentCompartment = componentCompartments.get(key).getAttribute("species").toString();
-                String participant = componentCompartments.get(key).getDisplayName();
+                String componentCompartment = containedId2Species.get(key).getAttribute("species").toString();
+                String participant = containedId2Species.get(key).getDisplayName();
                 String[] row = { role, participant, componentCompartment };
-
-                rows[i++] = row;
+                rows.add(row);
             }
         }
-        return new QACheckResult("Species Check", colNames, rows);
+        return new QACheckResult(getCheckName(), colNames, rows);
     }
 }

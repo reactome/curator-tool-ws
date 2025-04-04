@@ -1,10 +1,11 @@
 package org.reactome.curation.qa.model;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
+
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.ArrayList;
 
 @Data
 @NoArgsConstructor
@@ -12,9 +13,9 @@ import java.util.ArrayList;
 public class QACheckResult {
     private String checkName;
     private String[] columns;
-    private String[][] rows;
+    private List<String[]> rows;
 
-    public QACheckResult(String checkName, String[] columns, String[][] rows) {
+    public QACheckResult(String checkName, String[] columns, List<String[]> rows) {
         this.checkName = checkName;
         this.columns = columns;
         this.rows = rows;
@@ -25,7 +26,7 @@ public class QACheckResult {
     }
     
     public boolean isPassed() {
-        return rows == null || rows.length == 0;
+        return rows == null || rows.size() == 0;
     }
     
 }

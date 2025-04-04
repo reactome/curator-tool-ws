@@ -18,7 +18,6 @@ import org.reactome.curation.qa.model.QACheckResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.neo4j.core.Neo4jClient;
-import org.springframework.stereotype.Repository;
 
 /**
  * This Complex Compartment QA check detects Complex compartment inconsistency
@@ -188,7 +187,7 @@ public class CompartmentChecker extends QAChecker {
 
         // Check for mismatches
         String[] colNames = { "Role", "Participant", "Compartment", "Issue" };
-        String[][] rows = new String[all.size()][colNames.length];
+        List<String[]> rows = new ArrayList<>();
         int i = 0;
         for (String key : componentCompartments.keySet()) {
             if (containerCompartments.containsKey((componentCompartments.get(key).getDbId()))) {
@@ -202,8 +201,7 @@ public class CompartmentChecker extends QAChecker {
                 String componentCompartment = componentCompartments.get(key).getAttribute("compartment").toString();
                 String participant = componentCompartments.get(key).getDisplayName();
                 String[] row = { role, participant, componentCompartment };
-
-                rows[i++] = row;
+                rows.add(row);
             }
         }
         return new QACheckResult("Compartment Check", colNames, rows);
