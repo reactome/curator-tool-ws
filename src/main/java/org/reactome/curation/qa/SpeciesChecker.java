@@ -80,7 +80,7 @@ public class SpeciesChecker extends QAChecker {
 
         // Create a collection of the complex's assigned species (can be multiple)
         Map<Long, SimpleInstance> containerId2Species = new HashMap<>();
-        Map<String, SimpleInstance> containedId2Species = new HashMap<>();
+        Map<String, SimpleInstance> idkey2contained = new HashMap<>();
 
         // Collecting the complex's and component's species name and dbId
         for (Map<String, Object> map : all) {
@@ -96,14 +96,14 @@ public class SpeciesChecker extends QAChecker {
             String containedDbId = map.get("pe.dbId").toString();
             String role = map.get("relationshipType").toString();
             String key = containedDbId + ":" + role;
-            SimpleInstance contained = containedId2Species.get(key);
+            SimpleInstance contained = idkey2contained.get(key);
             if (contained == null) {
                 String containedDisplayName = map.get("pe.displayName").toString();
                 contained = new SimpleInstance();
                 contained.setDisplayName(containedDisplayName);
                 contained.setDbId(Long.parseLong(containedDbId));
                 contained.setAttribute("role", role);
-                containedId2Species.put(key, contained);
+                idkey2contained.put(key, contained);
             }
 
             String containedSpeciesDisplayName = map.get("containedSpecies.displayName").toString();
@@ -113,13 +113,20 @@ public class SpeciesChecker extends QAChecker {
             SimpleInstance containedSpecies = new SimpleInstance();
             containedSpecies.setDbId(Long.parseLong(containedSpeciesDbId));
             containedSpecies.setDisplayName(containedSpeciesDisplayName);
-            Object oldContainedSpecies = contained.getAttribute("species");
-            if (oldContainedSpecies != null) {
-                Object[] compartments = { oldContainedSpecies, containedSpecies };
-                contained.setAttribute("species", compartments);
-            } else {
-                contained.setAttribute("species", containedSpecies);
+            List<SimpleInstance> oldContainedSpecies = (List<SimpleInstance>) contained.getAttribute("species");
+            if (oldContainedSpecies == null) {
+                oldContainedSpecies = new ArrayList<>();
+                contained.setAttribute(ReactomeJavaConstants.species, oldContainedSpecies);
             }
+            boolean isFound = false;
+            for (SimpleInstance inst : oldContainedSpecies) {
+                if (inst.getDbId().equals(containedSpecies.getDbId())) {
+                    isFound = true;
+                    break;
+                }
+            }
+            if (!isFound)
+                oldContainedSpecies.add(containedSpecies);
         }
 
         // Building the table for the front-end
@@ -128,23 +135,25 @@ public class SpeciesChecker extends QAChecker {
         int i = 0;
         // TODO: The container species should also be checked for extra or less species
         // that the components do not have
-        for (String key : containedId2Species.keySet()) {
+        for (String key : idkey2contained.keySet()) {
             // If the complex species list contains the species of the component continue
             // TODO: need to determine if the species dbId is a sufficient check ie same
             // species under different names
-            if (containerId2Species.containsKey((containedId2Species.get(key).getDbId()))) {
+            if (containerId2Species.containsKey((idkey2contained.get(key).getDbId()))) {
                 continue;
             }
             // Return information about the physical entities that have an assigned species
             // not listed in the parent
             else {
-                // QACheckAttributes testAttributes = new QACheckAttributes("Mismatched
-                // Species", dbId.toString());
                 String role = key.split(":")[1];
-                // TODO: cast this object into strings
-                String componentCompartment = containedId2Species.get(key).getAttribute("species").toString();
-                String participant = containedId2Species.get(key).getDisplayName();
-                String[] row = { role, participant, componentCompartment };
+                SimpleInstance contained = idkey2contained.get(key);
+                List<SimpleInstance> containedSpecies = (List<SimpleInstance>)contained.getAttribute(ReactomeJavaConstants.species);
+                String speciesText = null;
+                if (containedSpecies == null)
+                    speciesText = "";
+                else 
+                    speciesText = containedSpecies + "";
+                String[] row = { role, contained + "", speciesText };
                 rows.add(row);
             }
         }
