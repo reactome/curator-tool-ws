@@ -12,8 +12,14 @@ import lombok.NoArgsConstructor;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class QACheckResult {
     private String checkName;
+    private String issue;
     private String[] columns;
     private List<String[]> rows;
+    
+    public QACheckResult(String checkName, String issue) {
+        this.checkName = checkName;
+        this.issue = issue;
+    }
 
     public QACheckResult(String checkName, String[] columns, List<String[]> rows) {
         this.checkName = checkName;
@@ -26,7 +32,8 @@ public class QACheckResult {
     }
     
     public boolean isPassed() {
-        return rows == null || rows.size() == 0;
+        // Nothing to report.
+        return (rows == null || rows.size() == 0) && (issue == null || issue.length() == 0);
     }
     
 }

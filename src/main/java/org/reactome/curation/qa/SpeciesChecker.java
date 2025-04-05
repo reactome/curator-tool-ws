@@ -23,6 +23,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.stereotype.Repository;
 
+/**
+ * Species check is a quite simple match. Therefore, the report can be all bundled together by comparing each
+ * reference's species assignment and the issue can be reported in the generic table model.
+ */
 @SuppressWarnings("unchecked")
 public class SpeciesChecker extends QAChecker {
 
@@ -60,8 +64,7 @@ public class SpeciesChecker extends QAChecker {
         return checkSpecies(instance.getDbId(), relationships, instance.getSchemaClassName());
     }
 
-    // The breaking characters are required for the query to run correctly
-    public QACheckResult checkSpecies(Long dbId, String followAttributes, String schemaClass) {
+    private QACheckResult checkSpecies(Long dbId, String followAttributes, String schemaClass) {
         String query = String.format("MATCH (container:%s {dbId: %d})\n"
                 + "OPTIONAL MATCH (container)-[:species|relatedSpecies]->(s:Species)\n" + "WITH container, s AS containerSpecies\n"
                 + "OPTIONAL MATCH (container)-[r:%s*]->(pe:PhysicalEntity)\n"
@@ -171,6 +174,6 @@ public class SpeciesChecker extends QAChecker {
                 rows.add(row);
             }
         }
-        return new QACheckResult(getCheckName(), colNames, rows);
+        return createResult(colNames, rows);
     }
 }

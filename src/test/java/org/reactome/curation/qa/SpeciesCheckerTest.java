@@ -61,10 +61,13 @@ class SpeciesCheckerTest {
         CatalystActivity ca = new CatalystActivity();
         ca.setDbId(dbId--);
         ca.setDisplayName("CatalystActivity Test");
-        EntityWithAccessionedSequence catalyst = new EntityWithAccessionedSequence();
+        Complex catalyst = new Complex();
         catalyst.setDbId(dbId--);
         catalyst.setDisplayName("Catalyst Test");
-        catalyst.setSpecies(createSpecies(5229092L));
+        speciesIds = new Long[] {451465L, 159879L};
+        species = createSpeciesList(speciesIds);
+        catalyst.setSpecies(species);
+//        catalyst.setSpecies(createSpecies(159879L));
         ca.setPhysicalEntity(catalyst);
         reaction.setCatalystActivity(Collections.singletonList(ca));
         
@@ -84,7 +87,7 @@ class SpeciesCheckerTest {
 ////         Check this reaction
 //        Long dbId = rtn.getDbId();
 //        System.out.println("New reaction created: " + rtn);
-        Long dbId = 9851578L;
+        Long dbId = 9851588L;
         checkSpecies(dbId);
     }
 
@@ -98,6 +101,10 @@ class SpeciesCheckerTest {
         System.out.println("\nQA Result for " + obj);
         for (QACheckResult result : report.getQaResults()) {
             System.out.println("Checker: " + result.getCheckName());
+            if (result.isPassed()) {
+                System.out.println("passed!");
+                continue;
+            }
             System.out.println("Columns: " + String.join("; ", result.getColumns()));
             for (String[] row : result.getRows()) {
                 System.out.println("Row: " + String.join("; ", row));

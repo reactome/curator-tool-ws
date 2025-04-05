@@ -56,6 +56,10 @@ public abstract class QAChecker {
         return new QACheckResult(getCheckName());
     }
     
+    protected QACheckResult createResult(String[] colNames, List<String[]> rows) {
+        return new QACheckResult(getCheckName(), colNames, rows);
+    }
+    
     protected String getContainerRelationships(SimpleInstance instance) {
         Class<?> graphModelCls = instance.getGraphModelClass();
         if (graphModelCls == null)
