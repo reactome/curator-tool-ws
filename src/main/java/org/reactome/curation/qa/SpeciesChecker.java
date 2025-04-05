@@ -3,8 +3,10 @@ package org.reactome.curation.qa;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -16,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.stereotype.Repository;
 
+@SuppressWarnings("unchecked")
 public class SpeciesChecker extends QAChecker {
 
     private static final Logger logger = LoggerFactory
@@ -81,6 +84,8 @@ public class SpeciesChecker extends QAChecker {
         // Create a collection of the complex's assigned species (can be multiple)
         Map<Long, SimpleInstance> containerId2Species = new HashMap<>();
         Map<String, SimpleInstance> idkey2contained = new HashMap<>();
+        // This is really for the quick check of container species
+        Set<Long> containedSpeciesIds = new HashSet<>();
 
         // Collecting the complex's and component's species name and dbId
         for (Map<String, Object> map : all) {
@@ -108,52 +113,58 @@ public class SpeciesChecker extends QAChecker {
 
             String containedSpeciesDisplayName = map.get("containedSpecies.displayName").toString();
             String containedSpeciesDbId = map.get("containedSpecies.dbId").toString();
-
-            // Create a simple instance to model the component and add to map
+                        // Create a simple instance to model the component and add to map
             SimpleInstance containedSpecies = new SimpleInstance();
             containedSpecies.setDbId(Long.parseLong(containedSpeciesDbId));
             containedSpecies.setDisplayName(containedSpeciesDisplayName);
-            List<SimpleInstance> oldContainedSpecies = (List<SimpleInstance>) contained.getAttribute("species");
-            if (oldContainedSpecies == null) {
-                oldContainedSpecies = new ArrayList<>();
-                contained.setAttribute(ReactomeJavaConstants.species, oldContainedSpecies);
+            containedSpeciesIds.add(containedSpecies.getDbId());
+            List<SimpleInstance> speciesList = (List<SimpleInstance>) contained.getAttribute(ReactomeJavaConstants.species);
+            if (speciesList == null) {
+                speciesList = new ArrayList<>();
+                contained.setAttribute(ReactomeJavaConstants.species, speciesList);
             }
             boolean isFound = false;
-            for (SimpleInstance inst : oldContainedSpecies) {
+            for (SimpleInstance inst : speciesList) {
                 if (inst.getDbId().equals(containedSpecies.getDbId())) {
                     isFound = true;
                     break;
                 }
             }
             if (!isFound)
-                oldContainedSpecies.add(containedSpecies);
+                speciesList.add(containedSpecies);
         }
 
         // Building the table for the front-end
-        String[] colNames = { "Role", "Participant", "Species" };
+        String[] colNames = { "ReferredBy", "Reference", "Species", "Issue" };
         List<String[]> rows = new ArrayList<>();
-        int i = 0;
-        // TODO: The container species should also be checked for extra or less species
-        // that the components do not have
-        for (String key : idkey2contained.keySet()) {
-            // If the complex species list contains the species of the component continue
-            // TODO: need to determine if the species dbId is a sufficient check ie same
-            // species under different names
-            if (containerId2Species.containsKey((idkey2contained.get(key).getDbId()))) {
-                continue;
+        // Make sure contained's species has been listed in the contained
+        for (Long speciesId : containerId2Species.keySet()) {
+            if (!containedSpeciesIds.contains(speciesId)) {
+                String[] row = {
+                        "N/A",
+                        "N/A",
+                        containerId2Species.get(speciesId) + "",
+                        "Extra species in checked instance"
+                     };
+                rows.add(row);
             }
-            // Return information about the physical entities that have an assigned species
-            // not listed in the parent
-            else {
-                String role = key.split(":")[1];
-                SimpleInstance contained = idkey2contained.get(key);
-                List<SimpleInstance> containedSpecies = (List<SimpleInstance>)contained.getAttribute(ReactomeJavaConstants.species);
-                String speciesText = null;
-                if (containedSpecies == null)
-                    speciesText = "";
-                else 
-                    speciesText = containedSpecies + "";
-                String[] row = { role, contained + "", speciesText };
+        }
+        // Make sure contained's species has been listed in the container's species
+        for (String key : idkey2contained.keySet()) {
+            SimpleInstance contained = idkey2contained.get(key);
+            List<SimpleInstance> containedSpeciesList = (List<SimpleInstance>) contained.getAttribute(ReactomeJavaConstants.species);
+            if (containedSpeciesList == null || containedSpeciesList.size() == 0)
+                continue;
+            for (SimpleInstance containedSpecies : containedSpeciesList) {
+                if (containerId2Species.containsKey(containedSpecies.getDbId()))
+                    continue;
+                // Report this if this species is not in the container's list
+                String[] row = {
+                        contained.getAttribute("role").toString(),
+                        contained + "",
+                        containedSpecies + "",
+                        "Reference species not listed"
+                };
                 rows.add(row);
             }
         }
