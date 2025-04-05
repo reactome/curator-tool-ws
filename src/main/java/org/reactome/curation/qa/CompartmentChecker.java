@@ -62,14 +62,8 @@ public class CompartmentChecker extends QAChecker {
     }
     
     @Override
-    public Collection<String> getTargetClasses() {
-        String[] classes = {
-                ReactomeJavaConstants.ReactionlikeEvent,
-                ReactomeJavaConstants.Complex,
-                ReactomeJavaConstants.Pathway,
-                ReactomeJavaConstants.EntitySet
-        };
-        return Stream.of(classes).collect(Collectors.toSet());
+    public Collection<Class<?>> getTargetClasses() {
+        return getContainerLikeClasses();
     }
 
     @Override
@@ -77,7 +71,7 @@ public class CompartmentChecker extends QAChecker {
         if (!shouldCheck(instance))
             return null;
         
-        String relationships = getRelationships(instance);
+        String relationships = getContainerRelationships(instance);
         // Just in case
         if (relationships == null) {
             logger.error("Cannot find any relationship: " + instance);

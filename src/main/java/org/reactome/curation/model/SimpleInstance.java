@@ -112,6 +112,28 @@ public class SimpleInstance extends DatabaseObject {
             rtn.setAttributes(new HashMap<>(getAttributes()));
         return rtn;
     }
+    
+    public Class<? extends DatabaseObject> getGraphModelClass() {
+        String schemaClassName = getSchemaClassName();
+        if (schemaClassName == null)
+            return null; 
+        // Assumed all graph model classes are in the same package
+        String packageName = DatabaseObject.class.getPackageName();
+        String clsName = packageName + "." + schemaClassName;
+        try {
+            Class<?> rawClass = Class.forName(clsName);
+            if (DatabaseObject.class.isAssignableFrom(rawClass)) {
+                @SuppressWarnings("unchecked")
+                Class<? extends DatabaseObject> modelClass = (Class<? extends DatabaseObject>) rawClass;
+                return modelClass;
+            } else {
+                throw new IllegalArgumentException(clsName + " is not a subclass of DatabaseObject.");
+            }
+        }
+        catch(ClassNotFoundException e) {
+            throw new RuntimeException("Class not found: " + e.getMessage(), e);
+        }
+    }
 
 }
 

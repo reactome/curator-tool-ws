@@ -27,9 +27,9 @@ public class QAService {
     private void initQACheckers() {
         qaName2Checker = new HashMap<>();
         QAChecker checker = new SpeciesChecker(neo4jClient);
-        qaName2Checker.put("SpeciesCheck", checker);
+        qaName2Checker.put(checker.getCheckName(), checker);
         checker = new CompartmentChecker(neo4jClient);
-        qaName2Checker.put("CompartmentCheck", checker);
+        qaName2Checker.put(checker.getCheckName(), checker);
     }
 
     

@@ -255,13 +255,9 @@ public class DatabaseObjectInstanceConverter {
     }
     
     private DatabaseObject newInstance(SimpleInstance instance) throws Exception {
-        String schemaClassName = instance.getSchemaClassName();
-        if (schemaClassName == null)
-            return instance; // Use this instance directly. Most likely we just need to use its dbId.
-        // Assumed all graph model classes are in the same package
-        String packageName = DatabaseObject.class.getPackageName();
-        String clsName = packageName + "." + schemaClassName;
-        Class<?> cls = Class.forName(clsName);
+        Class<? extends DatabaseObject> cls = instance.getGraphModelClass();
+        if (cls == null)
+            return instance;
         // Find the constructor having no parameters
         Constructor<?> defaultConstructor = null;
         for (Constructor<?> c : cls.getConstructors()) {
@@ -271,7 +267,7 @@ public class DatabaseObjectInstanceConverter {
             }
         }
         if (defaultConstructor == null)
-            throw new IllegalStateException("Cannot create an object of " + schemaClassName + ": No default constructor.");
+            throw new IllegalStateException("Cannot create an object of " + instance.getSchemaClassName() + ": No default constructor.");
         return (DatabaseObject) defaultConstructor.newInstance();
     }
 

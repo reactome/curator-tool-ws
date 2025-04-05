@@ -13,6 +13,11 @@ import java.util.stream.Stream;
 import org.gk.model.ReactomeJavaConstants;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.qa.model.QACheckResult;
+import org.reactome.server.graph.domain.model.Complex;
+import org.reactome.server.graph.domain.model.DatabaseObject;
+import org.reactome.server.graph.domain.model.EntitySet;
+import org.reactome.server.graph.domain.model.Pathway;
+import org.reactome.server.graph.domain.model.ReactionLikeEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.neo4j.core.Neo4jClient;
@@ -36,14 +41,8 @@ public class SpeciesChecker extends QAChecker {
     }
     
     @Override
-    public Collection<String> getTargetClasses() {
-        String[] classes = {
-                ReactomeJavaConstants.ReactionlikeEvent,
-                ReactomeJavaConstants.Complex,
-                ReactomeJavaConstants.Pathway,
-                ReactomeJavaConstants.EntitySet
-        };
-        return Stream.of(classes).collect(Collectors.toSet());
+    public Collection<Class<?>> getTargetClasses() {
+        return getContainerLikeClasses();
     }
 
     @Override
@@ -51,7 +50,7 @@ public class SpeciesChecker extends QAChecker {
         if (!shouldCheck(instance))
             return null;
         
-        String relationships = getRelationships(instance);
+        String relationships = getContainerRelationships(instance);
         // Just in case
         if (relationships == null) {
             logger.error("Cannot find any relationship: " + instance);
@@ -89,6 +88,11 @@ public class SpeciesChecker extends QAChecker {
 
         // Collecting the complex's and component's species name and dbId
         for (Map<String, Object> map : all) {
+            String role = map.get("relationshipType").toString();
+            if (role.equals(ReactomeJavaConstants.catalystActivity) || role.equals(ReactomeJavaConstants.regulatedBy))
+                continue; // For reaction. We don't want to show that since they are the intermediate step
+            if (role.equals(ReactomeJavaConstants.physicalEntity))
+                role = "catalyst"; // For easy to understanding. PE is too generic.
             Long containerSpeciesDbId = Long.parseLong(map.get("containerSpecies.dbId").toString());
             if (!containerId2Species.containsKey(containerSpeciesDbId)) {
                 // Create a simple instance as a data structure for the container species
@@ -99,7 +103,6 @@ public class SpeciesChecker extends QAChecker {
             }
             
             String containedDbId = map.get("pe.dbId").toString();
-            String role = map.get("relationshipType").toString();
             String key = containedDbId + ":" + role;
             SimpleInstance contained = idkey2contained.get(key);
             if (contained == null) {
