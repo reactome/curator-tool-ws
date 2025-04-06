@@ -129,13 +129,7 @@ public class SpeciesChecker extends QAChecker {
                 speciesList = new ArrayList<>();
                 contained.setAttribute(ReactomeJavaConstants.species, speciesList);
             }
-            boolean isFound = false;
-            for (SimpleInstance inst : speciesList) {
-                if (inst.getDbId().equals(containedSpecies.getDbId())) {
-                    isFound = true;
-                    break;
-                }
-            }
+            boolean isFound = contains(speciesList, containedSpecies.getDbId());
             if (!isFound)
                 speciesList.add(containedSpecies);
         }

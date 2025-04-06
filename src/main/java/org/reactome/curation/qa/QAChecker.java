@@ -31,6 +31,14 @@ public abstract class QAChecker {
         return this.getClass().getName();
     }
     
+    public boolean contains(List<SimpleInstance> instances, Long dbId) {
+        for (SimpleInstance inst : instances) {
+            if (inst.getDbId().equals(dbId))
+                return true;
+        }
+        return false;
+    }
+    
     public abstract Collection<Class<?>> getTargetClasses();
     
     protected Collection<Class<?>> getContainerLikeClasses() {
