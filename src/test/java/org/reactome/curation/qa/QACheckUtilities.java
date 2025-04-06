@@ -19,6 +19,7 @@ public class QACheckUtilities {
         QAReport report = qaService.performQACheck(inst);
         System.out.println("\nQA Result for " + obj);
         for (QACheckResult result : report.getQaResults()) {
+            System.out.println();
             System.out.println("Checker: " + result.getCheckName());
             System.out.println("Issue: " + result.getIssue());
             if (result.isPassed()) {
@@ -29,7 +30,6 @@ public class QACheckUtilities {
             for (String[] row : result.getRows()) {
                 System.out.println("Row: " + String.join("; ", row));
             }
-            System.out.println();
         }
     }
 

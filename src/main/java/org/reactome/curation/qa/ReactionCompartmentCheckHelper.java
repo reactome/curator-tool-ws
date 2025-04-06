@@ -9,7 +9,7 @@ import org.reactome.curation.qa.model.QACheckResult;
 /**
  * A utility class for EntitySet compartment checker.
  */
-public class ReactionCompartmentCheckHelper implements CompartmentCheckHelper {
+public class ReactionCompartmentCheckHelper extends CompartmentCheckHelper {
     
     public ReactionCompartmentCheckHelper() {
         

@@ -144,9 +144,9 @@ public class CompartmentChecker extends QAChecker {
                 containerCompt.setDisplayName(map.get("containerLocation.displayName").toString());
                 containerId2Comp.put(containerCompt.getDbId(), containerCompt);
             }
-            if (map.get("includedLocations.dbId") != null) {
-                String includedLocationsDbIdText = map.get("includedLocations.dbId").toString();
-                Long includedLocDbId = Long.parseLong(includedLocationsDbIdText);
+            if (map.get("includedLocation.dbId") != null) {
+                String includedLocationDbIdText = map.get("includedLocation.dbId").toString();
+                Long includedLocDbId = Long.parseLong(includedLocationDbIdText);
                 if (!includedId2Comp.containsKey(includedLocDbId)) {
                     // Create an entity as a data structure for the container, add to list
                     SimpleInstance containerCompt = new SimpleInstance();
@@ -190,6 +190,7 @@ public class CompartmentChecker extends QAChecker {
             }
         }
 
+        helper.setNeo4jClient(neo4jClient);
         QACheckResult result = helper.checkCompartment(containerId2Comp, 
                 includedId2Comp, 
                 idRole2Contained, 
