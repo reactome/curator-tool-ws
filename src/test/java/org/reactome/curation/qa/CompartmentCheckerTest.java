@@ -1,22 +1,14 @@
 package org.reactome.curation.qa;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.reactome.curation.service.CurationService;
-import org.reactome.server.graph.domain.model.Compartment;
-import org.reactome.server.graph.domain.model.Complex;
-import org.reactome.server.graph.domain.model.DatabaseObject;
-import org.reactome.server.graph.domain.model.DefinedSet;
-import org.reactome.server.graph.domain.model.EntitySet;
-import org.reactome.server.graph.domain.model.EntityWithAccessionedSequence;
-import org.reactome.server.graph.domain.model.LiteratureReference;
-import org.reactome.server.graph.domain.model.PhysicalEntity;
-import org.reactome.server.graph.domain.model.Publication;
-import org.reactome.server.graph.domain.model.Species;
+import org.reactome.server.graph.domain.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -91,6 +83,42 @@ public class CompartmentCheckerTest {
 
         return entitySet;
     }
+
+    private ReactionLikeEvent createReactionLikeEvent() {
+        Long dbId = -1L;
+        Reaction reaction = new Reaction(dbId--);
+        reaction.setDisplayName("Reaction for Compartment Check");
+        reaction.setCompartment(createCompartments(17963L, 24781L));
+
+        SimpleEntity input1 = new SimpleEntity();
+        input1.setDbId(dbId--);
+        input1.setDisplayName("Test Reaction Input 1");
+        input1.setCompartment(createCompartments(24781L, 20699L));
+
+        EntityWithAccessionedSequence input2 = new EntityWithAccessionedSequence();
+        input2.setDbId(dbId--);
+        input2.setReferenceType("ReferenceGeneProduct");
+        input2.setDisplayName("Test Reaction Input 2");
+        input2.setCompartment(createCompartments(17963L, 17963L));
+
+        CatalystActivity ca = new CatalystActivity();
+        ca.setDbId(dbId--);
+        ca.setDisplayName("CatalystActivity Test");
+        Complex catalyst = new Complex();
+        catalyst.setDbId(dbId--);
+        catalyst.setDisplayName("Catalyst Test");
+        catalyst.setCompartment(createCompartments(432051L, 20699L));
+        ca.setPhysicalEntity(catalyst);
+        reaction.setCatalystActivity(Collections.singletonList(ca));
+
+        List<PhysicalEntity> inputs = new ArrayList<>();
+        inputs.add(input1);
+        inputs.add(input1);
+        inputs.add(input2);
+        reaction.setInput(inputs);
+        return reaction;
+    }
+
 
     @Test
     public void checkComplexCompartments() throws Exception {
