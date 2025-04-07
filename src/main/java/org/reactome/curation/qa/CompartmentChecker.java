@@ -4,17 +4,14 @@ package org.reactome.curation.qa;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.gk.model.ReactomeJavaConstants;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.qa.model.QACheckResult;
-import org.reactome.curation.qa.model.QAReport;
 import org.reactome.server.graph.domain.model.Complex;
 import org.reactome.server.graph.domain.model.EntitySet;
 import org.reactome.server.graph.domain.model.ReactionLikeEvent;
@@ -134,6 +131,10 @@ public class CompartmentChecker extends QAChecker {
         Map<Long, SimpleInstance> containedId2Comp = new HashMap<>();
         
         for (Map<String, Object> map : all) {
+            String role = map.get("relationshipType").toString();
+            role = validateContainerContainedRole(role);
+            if (role == null)
+                continue;
             // Handle container compartments
             String containerCompDbIdText = map.get("containerLocation.dbId").toString();
             Long containerCompDbId = Long.parseLong(containerCompDbIdText);
@@ -157,7 +158,6 @@ public class CompartmentChecker extends QAChecker {
             }
             // Parse the contained PE
             String containedId = map.get("pe.dbId").toString();
-            String role = map.get("relationshipType").toString();
             String key = containedId + ":" + role;
             SimpleInstance contained = idRole2Contained.get(key);
             if (contained == null) {
@@ -176,7 +176,7 @@ public class CompartmentChecker extends QAChecker {
                 containedComps = new ArrayList<>();
                 contained.setAttribute(ReactomeJavaConstants.compartment, containedComps);
             }
-            boolean found = contains(containedComps, containedCompId);
+            boolean found = QAChecker.contains(containedComps, containedCompId);
             if (!found) {
                 String containedCompName = map.get("containedLocation.displayName").toString();
                 // Create a simple instance to model the component and add to list

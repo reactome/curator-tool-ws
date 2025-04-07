@@ -92,10 +92,9 @@ public class SpeciesChecker extends QAChecker {
         // Collecting the complex's and component's species name and dbId
         for (Map<String, Object> map : all) {
             String role = map.get("relationshipType").toString();
-            if (role.equals(ReactomeJavaConstants.catalystActivity) || role.equals(ReactomeJavaConstants.regulatedBy))
-                continue; // For reaction. We don't want to show that since they are the intermediate step
-            if (role.equals(ReactomeJavaConstants.physicalEntity))
-                role = "catalyst"; // For easy to understanding. PE is too generic.
+            role = validateContainerContainedRole(role);
+            if (role ==  null)
+                continue; // Nothing to do (e.g. catalystActivity)
             Long containerSpeciesDbId = Long.parseLong(map.get("containerSpecies.dbId").toString());
             if (!containerId2Species.containsKey(containerSpeciesDbId)) {
                 // Create a simple instance as a data structure for the container species
@@ -129,7 +128,7 @@ public class SpeciesChecker extends QAChecker {
                 speciesList = new ArrayList<>();
                 contained.setAttribute(ReactomeJavaConstants.species, speciesList);
             }
-            boolean isFound = contains(speciesList, containedSpecies.getDbId());
+            boolean isFound = QAChecker.contains(speciesList, containedSpecies.getDbId());
             if (!isFound)
                 speciesList.add(containedSpecies);
         }

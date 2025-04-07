@@ -31,7 +31,13 @@ public abstract class QAChecker {
         return this.getClass().getName();
     }
     
-    public boolean contains(List<SimpleInstance> instances, Long dbId) {
+    /**
+     * Utility method. Place here for easy access without creating a new small class. 
+     * @param instances
+     * @param dbId
+     * @return
+     */
+    public static final boolean contains(List<SimpleInstance> instances, Long dbId) {
         for (SimpleInstance inst : instances) {
             if (inst.getDbId().equals(dbId))
                 return true;
@@ -49,6 +55,19 @@ public abstract class QAChecker {
                 EntitySet.class
         };
         return Stream.of(classes).collect(Collectors.toSet());
+    }
+    
+    /**
+     * Validate the role between container and contained, e.g. between a reaction and its catalyst.
+     * @param role
+     * @return
+     */
+    protected String validateContainerContainedRole(String role) {
+        if (role.equals(ReactomeJavaConstants.catalystActivity) || role.equals(ReactomeJavaConstants.regulatedBy))
+            return null; // For reaction. We don't want to show that since they are the intermediate step
+        if (role.equals(ReactomeJavaConstants.physicalEntity))
+            return "catalyst"; // For easy to understanding. PE is too generic.
+        return role;
     }
     
     public boolean shouldCheck(SimpleInstance instance) {
