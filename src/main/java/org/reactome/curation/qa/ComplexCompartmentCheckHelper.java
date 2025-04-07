@@ -1,8 +1,6 @@
 package org.reactome.curation.qa;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -35,6 +33,7 @@ import org.reactome.curation.qa.model.QACheckResult;
  * subunits.</li>
  * </ul>
  */
+@SuppressWarnings("unchecked")
 public class ComplexCompartmentCheckHelper extends CompartmentCheckHelper {
     // A list of pre-defined issues.
     private final static String MISSING_COMPLEX_COMPARTMENT = "Complex compartment not a subunit compartment";
@@ -65,7 +64,7 @@ public class ComplexCompartmentCheckHelper extends CompartmentCheckHelper {
         }
         if (containerId2Comp.size() > 1) {
             result.setIssue(TOO_MANY_COMPLEX_COMPARTMENTS);
-            fillResultForCOmpartmentList(containerId2Comp, result);
+            fillResultForCompartmentList(containerId2Comp, result);
             return result;
         }
         // Keep this for the future discussion.
@@ -89,7 +88,7 @@ public class ComplexCompartmentCheckHelper extends CompartmentCheckHelper {
         }
 
         // Check adjacency
-        if (neo4jClient == null)
+        if (getNeo4jClient() == null)
             return result; // Nothing we can do if this is not set since we need to query the database.
         
         checkAdjacency(containerId2Comp, includedId2Comp, result);
@@ -102,24 +101,7 @@ public class ComplexCompartmentCheckHelper extends CompartmentCheckHelper {
         // The adjacency check is applied to container compartment and included
         Set<Long> idset = new HashSet<>(containerId2Comp.keySet());
         idset.addAll(includedId2Comp.keySet());
-        Map<Long, Set<Long>> compId2AdjacentIds = fetchSurroundedBy(idset);
-        List<Long> idlist = new ArrayList<>(idset);
-        // Perform a pairwise analysis
-        List<Long[]> nonAdjacent = new ArrayList<>();
-        for (int i = 0; i < idlist.size() - 1; i++) {
-            Long id1 = idlist.get(i);
-            Set<Long> id1neighbor = compId2AdjacentIds.get(id1);
-            if (id1neighbor == null)
-                id1neighbor = Collections.EMPTY_SET; // For easy coding
-            // We expect to see surroundedBy is a reciprocal relationship: A->B and B->A
-            // should be defined both.
-            for (int j = i + 1; j < idlist.size(); j++) {
-                Long id2 = idlist.get(j);
-                if (id1neighbor.contains(id2))
-                    continue;
-                nonAdjacent.add(new Long[]{id1, id2});
-            }
-        }
+        List<Long[]> nonAdjacent = getNonAdjacency(idset);
         if (nonAdjacent.size() > 0) {
             result.setIssue(COMPARTMENTS_NOT_ADJACENT);
             // Need to reset columns
@@ -145,28 +127,6 @@ public class ComplexCompartmentCheckHelper extends CompartmentCheckHelper {
                 rows.add(row);
             }
         }
-    }
-    
-    private Map<Long, Set<Long>> fetchSurroundedBy(Set<Long> idset) {
-        String query = String.format("MATCH (compartment:Compartment)\n"
-                + "WHERE compartment.dbId IN %s\n"
-                + "OPTIONAL MATCH (compartment)-[:surroundedBy]->(s:Compartment)\n"
-                + "WITH compartment, s AS surroundCompartment\n"
-                + "RETURN compartment.dbId AS compartmentId, surroundCompartment.dbId AS surroundedById", 
-                idset);
-        Map<Long, Set<Long>> id2surroundedBys = new HashMap<>();
-        Collection<Map<String, Object>> results = neo4jClient.query(query).fetch().all();
-        for (Map<String, Object> map : results) {
-            Long compartmentId = (Long) map.get("compartmentId");
-            Long surroundedById = (Long) map.get("surroundedById");
-            Set<Long> set = id2surroundedBys.get(compartmentId);
-            if (set == null) {
-                set = new HashSet<>();
-                id2surroundedBys.put(compartmentId, set);
-            }
-            set.add(surroundedById);
-        }
-        return id2surroundedBys;
     }
 
     private void checkIncludedLocation(Map<Long, SimpleInstance> containerId2Comp,
@@ -216,7 +176,6 @@ public class ComplexCompartmentCheckHelper extends CompartmentCheckHelper {
         // Check contained only
         for (String idRole : idRole2Contained.keySet()) {
             SimpleInstance inst = idRole2Contained.get(idRole);
-            @SuppressWarnings("unchecked")
             List<SimpleInstance> instComps = (List<SimpleInstance>) inst
                     .getAttribute(ReactomeJavaConstants.compartment);
             if (instComps == null || instComps.size() == 0)

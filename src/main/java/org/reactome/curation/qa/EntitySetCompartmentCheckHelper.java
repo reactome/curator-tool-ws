@@ -28,7 +28,7 @@ public class EntitySetCompartmentCheckHelper extends CompartmentCheckHelper {
         // Check if there are more than two member compartments.
         if (containerId2Comp.size() > 2) {
             result.setIssue(TOO_MANY_MEMBER_COMPARTMENTS);
-            fillResultForCOmpartmentList(containerId2Comp, result);
+            fillResultForCompartmentList(containerId2Comp, result);
             return result;
         }
         // Components and container should have the same number of compartments used.

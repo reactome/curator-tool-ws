@@ -1,12 +1,14 @@
 package org.reactome.curation.qa;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.reactome.curation.service.CurationService;
+import org.reactome.server.graph.domain.model.CatalystActivity;
 import org.reactome.server.graph.domain.model.Compartment;
 import org.reactome.server.graph.domain.model.Complex;
 import org.reactome.server.graph.domain.model.DatabaseObject;
@@ -16,6 +18,9 @@ import org.reactome.server.graph.domain.model.EntityWithAccessionedSequence;
 import org.reactome.server.graph.domain.model.LiteratureReference;
 import org.reactome.server.graph.domain.model.PhysicalEntity;
 import org.reactome.server.graph.domain.model.Publication;
+import org.reactome.server.graph.domain.model.Reaction;
+import org.reactome.server.graph.domain.model.ReactionLikeEvent;
+import org.reactome.server.graph.domain.model.SimpleEntity;
 import org.reactome.server.graph.domain.model.Species;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -35,6 +40,45 @@ public class CompartmentCheckerTest {
 
     private List<Compartment> createCompartments(Long... dbIds) {
         return Stream.of(dbIds).map(dbId -> new Compartment(dbId)).collect(Collectors.toList());
+    }
+    
+    private ReactionLikeEvent createReactionLikeEvent() {
+        Long dbId = -1L;
+        Reaction reaction = new Reaction(dbId--);
+        reaction.setDisplayName("Test Reaction");
+        reaction.setCompartment(createCompartments(70101L, 17940L));
+        
+        SimpleEntity input1 = new SimpleEntity();
+        input1.setDbId(dbId--);
+        input1.setDisplayName("Test Reaction Input 1");
+        input1.setCompartment(createCompartments(17940L));
+
+        EntityWithAccessionedSequence input2 = new EntityWithAccessionedSequence();
+        input2.setDbId(dbId--);
+        input2.setReferenceType("ReferenceGeneProduct");
+        input2.setDisplayName("Test Reaction Input 2");
+        // check for adjacency
+//        input2.setCompartment(createCompartments(984L));
+        // Check for compartment container/contained relationship
+        input2.setCompartment(createCompartments(70101L));
+
+        CatalystActivity ca = new CatalystActivity();
+        ca.setDbId(dbId--);
+        ca.setDisplayName("CatalystActivity Test");
+        Complex catalyst = new Complex();
+        catalyst.setDbId(dbId--);
+        catalyst.setDisplayName("Catalyst Test");
+//        catalyst.setCompartment(createCompartments(17940L, 984L));
+        catalyst.setCompartment(createCompartments(17940L));
+        ca.setPhysicalEntity(catalyst);
+        reaction.setCatalystActivity(Collections.singletonList(ca));
+
+        List<PhysicalEntity> inputs = new ArrayList<>();
+        inputs.add(input1);
+        inputs.add(input1);
+        inputs.add(input2);
+        reaction.setInput(inputs);
+        return reaction;
     }
 
     private Complex createComplex() {
@@ -115,6 +159,19 @@ public class CompartmentCheckerTest {
 //        Long dbId = rtn.getDbId();
 
         Long dbId = 9851591L;
+        QACheckUtilities.performQACheck(dbId, curationService, qaService);
+    }
+    
+    @Test
+    public void checkReactionCompartments() throws Exception {
+        // Create a new Reaction
+//        ReactionLikeEvent reaction = createReactionLikeEvent();
+//        DatabaseObject rtn = curationService.commit(reaction);
+//        System.out.println("New ReactionLikeEvent created: " + rtn);
+//        
+//        Long dbId = rtn.getDbId();
+
+        Long dbId = 9851620L;
         QACheckUtilities.performQACheck(dbId, curationService, qaService);
     }
 
