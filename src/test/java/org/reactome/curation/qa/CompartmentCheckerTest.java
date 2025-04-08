@@ -43,6 +43,7 @@ public class CompartmentCheckerTest {
         return Stream.of(dbIds).map(dbId -> new Compartment(dbId)).collect(Collectors.toList());
     }
 
+
     private ReactionLikeEvent createReactionLikeEvent() {
         Long dbId = -1L;
         Reaction reaction = new Reaction(dbId--);
@@ -137,39 +138,49 @@ public class CompartmentCheckerTest {
         return entitySet;
     }
 
-    private ReactionLikeEvent createReactionLikeEvent() {
+    private Pathway createPathway() {
         Long dbId = -1L;
-        Reaction reaction = new Reaction(dbId--);
-        reaction.setDisplayName("Reaction for Compartment Check");
-        reaction.setCompartment(createCompartments(17963L, 24781L));
+        Pathway pathway = new Pathway(dbId--);
+        pathway.setDisplayName("Pathway for Compartment Check");
+        pathway.setCompartment(createCompartments(17963L, 24781L));
 
-        SimpleEntity input1 = new SimpleEntity();
-        input1.setDbId(dbId--);
-        input1.setDisplayName("Test Reaction Input 1");
-        input1.setCompartment(createCompartments(24781L, 20699L));
+        Event event1 = new BlackBoxEvent();
+        event1.setDbId(dbId--);
+        event1.setDisplayName("Test BlackBox Event");
+        event1.setCompartment(createCompartments(24781L, 20699L));
 
-        EntityWithAccessionedSequence input2 = new EntityWithAccessionedSequence();
-        input2.setDbId(dbId--);
-        input2.setReferenceType("ReferenceGeneProduct");
-        input2.setDisplayName("Test Reaction Input 2");
-        input2.setCompartment(createCompartments(17963L, 17963L));
+        Reaction event2 = new Reaction();
+        event2.setDbId(dbId--);
+        event2.setDisplayName("Test Reaction");
+        event2.setCompartment(createCompartments(70101L, 17940L));
 
-        CatalystActivity ca = new CatalystActivity();
-        ca.setDbId(dbId--);
-        ca.setDisplayName("CatalystActivity Test");
-        Complex catalyst = new Complex();
-        catalyst.setDbId(dbId--);
-        catalyst.setDisplayName("Catalyst Test");
-        catalyst.setCompartment(createCompartments(432051L, 20699L));
-        ca.setPhysicalEntity(catalyst);
-        reaction.setCatalystActivity(Collections.singletonList(ca));
+        Event event3 = new CellDevelopmentStep();
+        event3.setDbId(dbId--);
+        event3.setDisplayName("Test Cell Development Event");
+        event2.setCompartment(createCompartments(70101L, 17940L));
 
-        List<PhysicalEntity> inputs = new ArrayList<>();
-        inputs.add(input1);
-        inputs.add(input1);
-        inputs.add(input2);
-        reaction.setInput(inputs);
-        return reaction;
+        Event event4 = new Depolymerisation();
+        event4.setDbId(dbId--);
+        event4.setDisplayName("Test Depolymerisation Event");
+        event2.setCompartment(createCompartments(70101L, 17940L));
+
+
+        Event event5 = new FailedReaction();
+        event5.setDbId(dbId--);
+        event5.setDisplayName("Failed Reaction");
+        event2.setCompartment(createCompartments(70101L, 17940L));
+
+
+
+        List<Event> events = new ArrayList<>();
+        events.add(event1);
+        events.add(event2);
+        events.add(event3);
+        events.add(event4);
+        events.add(event5);
+
+        pathway.setHasEvent(events);
+        return pathway;
     }
 
 
@@ -209,6 +220,19 @@ public class CompartmentCheckerTest {
 //        Long dbId = rtn.getDbId();
 
         Long dbId = 9851620L;
+        QACheckUtilities.performQACheck(dbId, curationService, qaService);
+    }
+
+    @Test
+    public void checkPathwayCompartments() throws Exception {
+//        // Create a new Pathway
+//        Pathway pathway = createPathway();
+//        DatabaseObject rtn = curationService.commit(pathway);
+//        System.out.println("New Pathway created: " + rtn);
+//
+//        Long dbId = rtn.getDbId();
+
+        Long dbId = 9851344L;
         QACheckUtilities.performQACheck(dbId, curationService, qaService);
     }
 
