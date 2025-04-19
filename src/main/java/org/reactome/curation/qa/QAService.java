@@ -26,9 +26,14 @@ public class QAService {
     //TODO: To be updated by using a YML configuration file.
     private void initQACheckers() {
         qaName2Checker = new HashMap<>();
-        QAChecker checker = new SpeciesChecker(neo4jClient);
+        QAChecker checker = new SpeciesChecker();
+        checker.setNeo4jClient(neo4jClient);
         qaName2Checker.put(checker.getCheckName(), checker);
-        checker = new CompartmentChecker(neo4jClient);
+        checker = new CompartmentChecker();
+        checker.setNeo4jClient(neo4jClient);
+        qaName2Checker.put(checker.getCheckName(), checker);
+        checker = new EntitySetTypeCheck();
+        checker.setNeo4jClient(neo4jClient);
         qaName2Checker.put(checker.getCheckName(), checker);
     }
 

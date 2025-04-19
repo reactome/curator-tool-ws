@@ -12,9 +12,20 @@ import org.reactome.curation.qa.model.QACheckResult;
 import org.reactome.server.graph.domain.model.Complex;
 import org.reactome.server.graph.domain.model.EntitySet;
 import org.reactome.server.graph.domain.model.Pathway;
+import org.reactome.server.graph.domain.model.Reaction;
 import org.reactome.server.graph.domain.model.ReactionLikeEvent;
+import org.springframework.data.neo4j.core.Neo4jClient;
 
 public abstract class QAChecker {
+    private Neo4jClient neo4jClient;
+    
+    public void setNeo4jClient(Neo4jClient client) {
+        this.neo4jClient = client;
+    }
+    
+    public Neo4jClient getNeoj4Client() {
+        return this.neo4jClient;
+    }
     
     /**
      * The entry point for doing QA check.
@@ -49,7 +60,7 @@ public abstract class QAChecker {
     
     protected Collection<Class<?>> getContainerLikeClasses() {
         Class<?>[] classes = {
-                ReactionLikeEvent.class,
+                Reaction.class, // Apply to Reaction only, not to ReactionLikeEvent.
                 Complex.class,
                 Pathway.class,
                 EntitySet.class

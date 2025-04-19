@@ -1,10 +1,7 @@
 package org.reactome.curation.qa;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
-import org.gk.model.ReactomeJavaConstants;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.qa.model.QACheckResult;
 

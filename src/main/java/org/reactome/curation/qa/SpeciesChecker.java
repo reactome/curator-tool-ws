@@ -7,21 +7,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.gk.model.ReactomeJavaConstants;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.qa.model.QACheckResult;
-import org.reactome.server.graph.domain.model.Complex;
-import org.reactome.server.graph.domain.model.DatabaseObject;
-import org.reactome.server.graph.domain.model.EntitySet;
-import org.reactome.server.graph.domain.model.Pathway;
-import org.reactome.server.graph.domain.model.ReactionLikeEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.neo4j.core.Neo4jClient;
-import org.springframework.stereotype.Repository;
 
 /**
  * Species check is a quite simple match. Therefore, the report can be all bundled together by comparing each
@@ -33,10 +24,7 @@ public class SpeciesChecker extends QAChecker {
     private static final Logger logger = LoggerFactory
             .getLogger(org.reactome.curation.repository.CurationRepository.class);
 
-    private Neo4jClient neo4jClient;
-
-    public SpeciesChecker(Neo4jClient neo4jClient) {
-        this.neo4jClient = neo4jClient;
+    public SpeciesChecker() {
     }
 
     @Override
@@ -78,7 +66,7 @@ public class SpeciesChecker extends QAChecker {
                 + " TYPE(role) AS relationshipType, pe.displayName, pe.dbId", 
                 schemaClass, dbId, followAttributes);
 
-        Collection<Map<String, Object>> all = neo4jClient.query(query).fetch().all();
+        Collection<Map<String, Object>> all = getNeoj4Client().query(query).fetch().all();
 
         if (all.isEmpty())
             return getEmptyResult();

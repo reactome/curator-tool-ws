@@ -17,7 +17,6 @@ import org.reactome.server.graph.domain.model.EntitySet;
 import org.reactome.server.graph.domain.model.ReactionLikeEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.neo4j.core.Neo4jClient;
 
 /**
  * The compartment check is quite complicated. The found issue is summarized in a single text. However, the detailed information
@@ -31,10 +30,7 @@ public class CompartmentChecker extends QAChecker {
     // Cache the helper
     private Map<Class<?>, CompartmentCheckHelper> cls2helper = new HashMap<>();
 
-    private Neo4jClient neo4jClient;
-
-    public CompartmentChecker(Neo4jClient neo4jClient) {
-        this.neo4jClient = neo4jClient;
+    public CompartmentChecker() {
     }
 
     @Override
@@ -121,7 +117,7 @@ public class CompartmentChecker extends QAChecker {
                 + "pe.displayName, pe.dbId",
                 schemaClass, inst.getDbId(), followAttributes);
 
-        Collection<Map<String, Object>> all = neo4jClient.query(query).fetch().all();
+        Collection<Map<String, Object>> all = getNeoj4Client().query(query).fetch().all();
         if (all.isEmpty())
             return getEmptyResult();
 
@@ -190,7 +186,7 @@ public class CompartmentChecker extends QAChecker {
             }
         }
 
-        helper.setNeo4jClient(neo4jClient);
+        helper.setNeo4jClient(getNeoj4Client());
         QACheckResult result = helper.checkCompartment(containerId2Comp, 
                 includedId2Comp, 
                 idRole2Contained, 
