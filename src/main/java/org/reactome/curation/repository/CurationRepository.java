@@ -720,7 +720,7 @@ public class CurationRepository {
                 }
                 break;
             default:
-                // n.speciesName, n._doRelease, r.order, r.stoichiometry, match
+                // n.speciesName, n._doRelease, n.realseDate, r.order, r.stoichiometry, match
                 if (!key.equals("p.dbId")) {
                     Object obj = map.get(key);
                     String attrName = key.split("\\.")[1];
@@ -745,7 +745,7 @@ public class CurationRepository {
         // we have our own query
         String query = String.format(
                 "MATCH (n:TopLevelPathway) %s "
-                        + "RETURN n.dbId, n.displayName, n.schemaClass, n.speciesName, n._doRelease, n.hasDiagram",
+                        + "RETURN n.dbId, n.displayName, n.schemaClass, n.speciesName, n._doRelease, n.releaseDate, n.hasDiagram",
                 !speciesName.equalsIgnoreCase("All") ? String.format("WHERE n.speciesName = '%s'", speciesName) : "");
 
         Collection<Map<String, Object>> all = neo4jClient.query(query).fetch().all();
@@ -801,10 +801,12 @@ public class CurationRepository {
      *         corresponding event, related to that parent via a hasEvent
      *         relationship
      */
+    //TODO: _doRelease has not been imported yet. Need to update this back after it is fixed.
     private Map<Long, Map<Long, SimpleInstance>> getAllEvents() {
         Map<Long, Map<Long, SimpleInstance>> parentDbId2DbId2SimpleInstance = new HashMap<>();
         String query = "MATCH (p:Event)-[r:hasEvent]->(n:Event) "
-                + "RETURN DISTINCT p.dbId, n.dbId, n.displayName, n.speciesName, n.schemaClass, n._doRelease, n.hasDiagram, r.order";
+                + "RETURN DISTINCT p.dbId, n.dbId, n.displayName, n.speciesName, "
+                + "n.schemaClass, n.releaseDate, n.hasDiagram, r.order";
         // Execute the query
         Collection<Map<String, Object>> all = neo4jClient.query(query).fetch().all();
         // Populate parentDbId2DbId2SimpleInstance with query results
