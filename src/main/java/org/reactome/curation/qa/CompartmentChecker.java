@@ -131,6 +131,10 @@ public class CompartmentChecker extends QAChecker {
             role = validateContainerContainedRole(role);
             if (role == null)
                 continue;
+            if (map.get("containerLocation.dbId") == null || map.get("containedLocation.dbId") == null) {
+                // Escape this if no compartment is assigned to the container or contained
+                continue;
+            }
             // Handle container compartments
             String containerCompDbIdText = map.get("containerLocation.dbId").toString();
             Long containerCompDbId = Long.parseLong(containerCompDbIdText);

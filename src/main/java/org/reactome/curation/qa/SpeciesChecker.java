@@ -83,6 +83,10 @@ public class SpeciesChecker extends QAChecker {
             role = validateContainerContainedRole(role);
             if (role ==  null)
                 continue; // Nothing to do (e.g. catalystActivity)
+            if (map.get("containerSpecies.dbId") == null || map.get("containedSpecies.dbId") == null) {
+                // Escape this if no species is assigned to the container or contained
+                continue; // Skip this if there is no container species
+            }
             Long containerSpeciesDbId = Long.parseLong(map.get("containerSpecies.dbId").toString());
             if (!containerId2Species.containsKey(containerSpeciesDbId)) {
                 // Create a simple instance as a data structure for the container species
@@ -106,7 +110,7 @@ public class SpeciesChecker extends QAChecker {
 
             String containedSpeciesDisplayName = map.get("containedSpecies.displayName").toString();
             String containedSpeciesDbId = map.get("containedSpecies.dbId").toString();
-                        // Create a simple instance to model the component and add to map
+            // Create a simple instance to model the component and add to map
             SimpleInstance containedSpecies = new SimpleInstance();
             containedSpecies.setDbId(Long.parseLong(containedSpeciesDbId));
             containedSpecies.setDisplayName(containedSpeciesDisplayName);

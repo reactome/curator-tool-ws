@@ -30,7 +30,7 @@ public abstract class CompartmentCheckHelper {
                                                    Map<Long, SimpleInstance> includedId2Comp,
                                                    Map<String, SimpleInstance> idRole2Contained,
                                                    Map<Long, SimpleInstance> containedId2Comp);
-    
+    @SuppressWarnings("unchecked")
     protected List<Long[]> getNonAdjacency(Set<Long> idset) {
         Map<Long, Set<Long>> compId2AdjacentIds = fetchSurroundedBy(idset);
         List<Long> idlist = new ArrayList<>(idset);

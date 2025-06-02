@@ -9,12 +9,20 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.gk.model.ReactomeJavaConstants;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.qa.model.QACheckResult;
 import org.reactome.server.graph.domain.model.EntitySet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * This check is to ensure that an EntitySet has members of the same type.
+ * It will report if there are different types of members in an EntitySet.
+ * Note: Set inside an EntitySet is allowed, so this check will not report.
+ * 
+ * @author gwu
+ */
 public class EntitySetTypeCheck extends QAChecker {
     private static final Logger logger = LoggerFactory.getLogger(EntitySetTypeCheck.class);
     
@@ -56,6 +64,11 @@ public class EntitySetTypeCheck extends QAChecker {
         allTypeNames.add(inst.getSchemaClassName());
         for (Map<String, Object> row : all) {
             String clsName = (String) row.get("contained.schemaClass");
+            // Escape Set
+            if (clsName.equals(ReactomeJavaConstants.DefinedSet) || 
+                clsName.equals(ReactomeJavaConstants.CandidateSet) ||
+                clsName.equals(ReactomeJavaConstants.EntitySet)) // This should not happen
+                continue; // Skip DefinedSet and CandidateSet
             allTypeNames.add(clsName);
         }
         if (allTypeNames.size() == 0 || allTypeNames.size() == 1)
@@ -63,22 +76,21 @@ public class EntitySetTypeCheck extends QAChecker {
         // Should display whatever we have collected from the database
         String[] colNames = { "ReferredBy", "Reference", "SchemaClass" };
         List<String[]> rows = new ArrayList<>();
-        // Add the EntitySet
-        String[] currentRow = {
-                "N/A",
-                "N/A",
-                inst.getSchemaClassName()
-        };
-        rows.add(currentRow);
+        // There is no need to report the container here since it doesn't matter here.
+        // Repeat again to get the report.
         for (Map<String, Object> row : all) {
             String relType = (String) row.get("relType");
             String displayName = (String) row.get("contained.displayName");
+            String clsName = (String) row.get("contained.schemaClass");
+            if (clsName.equals(ReactomeJavaConstants.DefinedSet) || 
+                clsName.equals(ReactomeJavaConstants.CandidateSet) ||
+                clsName.equals(ReactomeJavaConstants.EntitySet)) // This should not happen
+                continue; // Skip DefinedSet and CandidateSet
             Long dbId = (Long) row.get("contained.dbId");
             SimpleInstance contained = new SimpleInstance();
             contained.setDbId(dbId);
             contained.setDisplayName(displayName);
-            String clsName = (String) row.get("contained.schemaClass");
-            currentRow = new String[] {
+            String[] currentRow = new String[] {
               relType,
               contained.toString(),
               clsName
