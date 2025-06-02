@@ -134,6 +134,19 @@ public class SimpleInstance extends DatabaseObject {
             throw new RuntimeException("Class not found: " + e.getMessage(), e);
         }
     }
+    
+    @Override
+    public String toString() {
+        // Generate a JSON-like string for the instance for the front-end
+        StringBuilder sb = new StringBuilder();
+        sb.append("{");
+        sb.append("\"dbId\":").append(getDbId()).append(",");
+        sb.append("\"displayName\":\"").append(getDisplayName()).append("\",");
+        // We'd like to use simple name, SimpleInstance, here. 
+        sb.append("\"schemaClassName\":\"").append(getClass().getSimpleName()).append("\"");
+        sb.append("}");
+        return sb.toString();
+    }
 
 }
 
