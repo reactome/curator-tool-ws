@@ -41,6 +41,9 @@ public class QAService {
         checker = new EntityFunctionalStatusDiseaseEntityCheck();
         checker.setNeo4jClient(neo4jClient);    
         qaName2Checker.put(checker.getCheckName(), checker);
+        checker = new ReviewStatusSlotCheck();
+        checker.setNeo4jClient(neo4jClient);
+        qaName2Checker.put(checker.getCheckName(), checker);
     }
 
     
