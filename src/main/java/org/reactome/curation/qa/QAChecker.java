@@ -32,7 +32,14 @@ public abstract class QAChecker {
      * @param instance
      * @return
      */
-    public abstract QACheckResult performQACheck(SimpleInstance instance);
+    public QACheckResult performQACheck(SimpleInstance instance) {
+        if (!shouldCheck(instance)) {
+            return null; // No need to check if the instance is not a target class.
+        }
+        return _performQACheck(instance);
+    }
+    
+    protected abstract QACheckResult _performQACheck(SimpleInstance instance);
     
     /**
      * The QA checker name.

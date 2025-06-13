@@ -36,10 +36,7 @@ public class ReviewStatusSlotCheck extends QAChecker {
     }
     
     @Override
-    public QACheckResult performQACheck(SimpleInstance instance) {
-        if (!shouldCheck(instance)) {
-            return null;
-        }
+    protected QACheckResult _performQACheck(SimpleInstance instance) {
         List<String> issues = checkReviewStatus(instance);
         if (issues.isEmpty()) {
             return getEmptyResult(); // No issues found

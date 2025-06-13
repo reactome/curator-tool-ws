@@ -38,10 +38,7 @@ public class SpeciesChecker extends QAChecker {
     }
 
     @Override
-    public QACheckResult performQACheck(SimpleInstance instance) {
-        if (!shouldCheck(instance))
-            return null;
-        
+    protected QACheckResult _performQACheck(SimpleInstance instance) {
         String relationships = getContainerRelationships(instance);
         // Just in case
         if (relationships == null) {

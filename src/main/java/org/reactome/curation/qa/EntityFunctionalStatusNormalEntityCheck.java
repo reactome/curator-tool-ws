@@ -25,7 +25,7 @@ public class EntityFunctionalStatusNormalEntityCheck extends QAChecker {
     
     
     @Override
-    public QACheckResult performQACheck(SimpleInstance instance) {
+    protected QACheckResult _performQACheck(SimpleInstance instance) {
         String query = String.format("MATCH (efs:EntityFunctionalStatus {dbId: %d})\n"
                 + "MATCH (efs)-[:normalEntity]->(normalEntity:PhysicalEntity)\n"
                 + "MATCH (rle:ReactionLikeEvent)-[:entityFunctionalStatus]->(efs)\n"

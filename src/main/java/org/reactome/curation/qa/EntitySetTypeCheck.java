@@ -35,7 +35,7 @@ public class EntitySetTypeCheck extends QAChecker {
     }
 
     @Override
-    public QACheckResult performQACheck(SimpleInstance instance) {
+    protected QACheckResult _performQACheck(SimpleInstance instance) {
         if (!shouldCheck(instance))
             return null;
         

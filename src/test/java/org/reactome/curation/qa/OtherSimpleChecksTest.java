@@ -19,6 +19,16 @@ class OtherSimpleChecksTest {
     }
     
     @Test
+    public void testCellMarkerReferenceCheck() throws Exception {
+        // A known issue
+        Long dbId = 9729117L; 
+        QACheckUtilities.performQACheck(dbId, curationService, qaService);
+        // No issue for this Cell
+        dbId = 9758185L;
+        QACheckUtilities.performQACheck(dbId, curationService, qaService);
+    }
+    
+    @Test
     public void testReviewStatusSlotCheck() throws Exception {
         // A known issue
         Long dbId = 912446L; // Use an existing Pathway for testing. This should be passed.
