@@ -77,6 +77,9 @@
   }, {
     "name" : "ControlledVocabulary",
     "children" : [ {
+      "name" : "DeletedControlledVocabulary",
+      "abstract" : false
+    }, {
       "name" : "NegativePrecedingEventReason",
       "abstract" : false
     }, {
@@ -86,6 +89,9 @@
         "abstract" : false
       } ],
       "abstract" : true
+    }, {
+      "name" : "RetractionStatus",
+      "abstract" : false
     }, {
       "name" : "ReviewStatus",
       "abstract" : false
@@ -151,6 +157,23 @@
       "name" : "EvidenceType",
       "abstract" : false
     }, {
+      "name" : "GO_Term",
+      "children" : [ {
+        "name" : "GO_BiologicalProcess",
+        "abstract" : false
+      }, {
+        "name" : "GO_CellularComponent",
+        "children" : [ {
+          "name" : "Compartment",
+          "abstract" : false
+        } ],
+        "abstract" : false
+      }, {
+        "name" : "GO_MolecularFunction",
+        "abstract" : false
+      } ],
+      "abstract" : true
+    }, {
       "name" : "PsiMod",
       "abstract" : false
     }, {
@@ -168,27 +191,43 @@
     "name" : "FunctionalStatusType",
     "abstract" : false
   }, {
-    "name" : "GO_Term",
+    "name" : "InstanceEdit",
+    "abstract" : false
+  }, {
+    "name" : "Interaction",
     "children" : [ {
-      "name" : "GO_BiologicalProcess",
+      "name" : "DirectedInteraction",
       "abstract" : false
     }, {
-      "name" : "GO_CellularComponent",
-      "children" : [ {
-        "name" : "Compartment",
-        "abstract" : false
-      } ],
-      "abstract" : false
-    }, {
-      "name" : "GO_MolecularFunction",
+      "name" : "UndirectedInteraction",
       "abstract" : false
     } ],
     "abstract" : true
   }, {
-    "name" : "InstanceEdit",
-    "abstract" : false
+    "name" : "MetaDatabaseObject",
+    "children" : [ {
+      "name" : "Deleted",
+      "abstract" : false
+    }, {
+      "name" : "DeletedInstance",
+      "abstract" : false
+    }, {
+      "name" : "Release",
+      "children" : [ {
+        "name" : "DBInfo",
+        "abstract" : false
+      } ],
+      "abstract" : false
+    }, {
+      "name" : "UpdateTracker",
+      "abstract" : false
+    } ],
+    "abstract" : true
   }, {
     "name" : "NegativePrecedingEvent",
+    "abstract" : false
+  }, {
+    "name" : "PathwayDiagram",
     "abstract" : false
   }, {
     "name" : "Person",
@@ -309,6 +348,9 @@
       "abstract" : false
     } ],
     "abstract" : true
+  }, {
+    "name" : "StableIdentifier",
+    "abstract" : false
   }, {
     "name" : "Summation",
     "abstract" : false

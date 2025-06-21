@@ -167,10 +167,34 @@ public class CuratorToolExporter {
                 String attName = att.getName();
                 if (old2new.keySet().contains(attName))
                     attName = old2new.get(attName);
+                else if ((cls.getName().startsWith("GO_") || cls.getName().equals(ReactomeJavaConstants.Compartment)) 
+                        && attName.equals(ReactomeJavaConstants.accession)) {
+                    // This is a special case for Interaction classes
+                    attName = "identifier";
+                }
+                else if (attName.equals(ReactomeJavaConstants.referenceEntity)) {
+                    // This is a special case for ReferenceEntity
+                    attName = "referenceEntityList";
+                }
                 curationAtt.setName(attName);
                 curationAtt.setCategory(CurationAttribute.Category.getCategory(att.getCategory()));
                 curationAtt.setDefiningType(CurationAttribute.DefiningType.getDefiningType(att.getDefiningType()));
                 curationAttributes.add(curationAtt);
+                // Need to duplicate the modified to the modfiedList
+                if (att.getName().equals(ReactomeJavaConstants.modified)) {
+                    CurationAttribute modifiedAtt = new CurationAttribute();
+                    modifiedAtt.setName("modifiedList");
+                    modifiedAtt.setCategory(curationAtt.getCategory());
+                    modifiedAtt.setDefiningType(curationAtt.getDefiningType());
+                    curationAttributes.add(modifiedAtt);
+                }          
+                else if (att.getName().equals(ReactomeJavaConstants.stableIdentifier)) { // Duplicated
+                    CurationAttribute stIdAtt = new CurationAttribute();
+                    stIdAtt.setName("stId");
+                    stIdAtt.setCategory(curationAtt.getCategory());
+                    stIdAtt.setDefiningType(curationAtt.getDefiningType());
+                    curationAttributes.add(stIdAtt);
+                }
             }
             clsName2attributes.put(cls.getName(), curationAttributes);
         }
@@ -190,7 +214,8 @@ public class CuratorToolExporter {
     private Map<String, String> mapAttNames() {
         Map<String, String> old2new = Map.of(
                 "DB_ID", "dbId",
-                "stableIdentifier", "stId",
+                "_doRelease", "doRelease",
+//                "stableIdentifier", "stId",
                 "_displayName", "displayName"
                 );
         return old2new;
