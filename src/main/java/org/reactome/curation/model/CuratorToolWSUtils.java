@@ -32,6 +32,8 @@ public class CuratorToolWSUtils {
                 Class[] parameterTypes = method.getParameterTypes();
                 if (parameterTypes.length == 1) {
                     Class<?> parameterType = parameterTypes[0];
+                    // The method defined using super class may not be found using a subclass using getMethod directly.
+                    // So we need to check if the parameter type is assignable from the value's class.
                     if (parameterType.isAssignableFrom(parameterCls)) {
                         return method; // Found the method
                     }
