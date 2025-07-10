@@ -14,7 +14,7 @@ import org.reactome.server.graph.domain.model.DatabaseObject;
 public class CuratorToolWSUtils {
     
     /**
-     * Find the set methos for an attribute in the DatabaseObjet class.
+     * Find the set method for an attribute in the DatabaseObjet class.
      * @param attributeName
      * @param value
      * @param object
@@ -27,10 +27,18 @@ public class CuratorToolWSUtils {
                                       DatabaseObject object) throws Exception {
         String methodName = "set" + attributeName.substring(0, 1).toUpperCase() + attributeName.substring(1);
         Class parameterCls = value.getClass();
-        if (parameterCls == ArrayList.class)
-            parameterCls = List.class; // Make it more generic since it is used in class definitions
-        Method method = object.getClass().getMethod(methodName, parameterCls);
-        return method;
+        for (Method method : object.getClass().getMethods()) {
+            if (method.getName().equals(methodName)) {
+                Class[] parameterTypes = method.getParameterTypes();
+                if (parameterTypes.length == 1) {
+                    Class<?> parameterType = parameterTypes[0];
+                    if (parameterType.isAssignableFrom(parameterCls)) {
+                        return method; // Found the method
+                    }
+                }
+            }
+        }
+        return null; // Not found
     }
 
 }

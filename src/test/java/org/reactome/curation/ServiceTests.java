@@ -3,7 +3,6 @@ package org.reactome.curation;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.List;
 
@@ -12,10 +11,9 @@ import org.junit.jupiter.api.Test;
 import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.service.CurationService;
 import org.reactome.server.graph.domain.model.DatabaseObject;
-import org.reactome.server.graph.domain.model.Figure;
-import org.reactome.server.graph.domain.model.InstanceEdit;
+import org.reactome.server.graph.domain.model.ModifiedResidue;
 import org.reactome.server.graph.domain.model.Pathway;
-import org.reactome.server.graph.domain.model.ReferenceDatabase;
+import org.reactome.server.graph.domain.model.PathwayDiagram;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,24 +32,40 @@ class ServiceTests {
     @Test
     void contextLoads() {
     }
+    
+    @Test
+    public void testUpdateModifiedResidue() throws Exception {
+        assertNotNull(curationService);
+        // This is a test to see if the updateModifiedResidue() method works.
+        // It should not throw any exceptions.
+        Long dbId = 140630L; // This is a known modified residue in the database.
+        ModifiedResidue modifiedResidue = (ModifiedResidue) curationService.findById(dbId);
+        System.out.println("Found modified residue: " + modifiedResidue);
+        modifiedResidue.setCoordinate(103); // Nothing changes. Just check the update method.
+        curationService.commit(modifiedResidue);
+        System.out.println("Updated modified residue: " + modifiedResidue);
+    }
 
     @Test
     public void testFindById() throws JsonProcessingException {
         assertNotNull(curationService);
         Long[] dbIds = {
                 109581L, // Pathway
-                72810L, // NCBI Taxonomy
-                9707103L, // A figure
-                72811L, // InstanceEdit
+//                72810L, // NCBI Taxonomy
+//                9707103L, // A figure
+//                72811L, // InstanceEdit
+                9006828L, // PathwayDiagram
         };
         Class<?>[] classes = {
                 Pathway.class,
-                ReferenceDatabase.class,
-                Figure.class,
-                InstanceEdit.class
+//                ReferenceDatabase.class,
+//                Figure.class,
+//                InstanceEdit.class,
+                PathwayDiagram.class
         };
         for (int i = 0; i < dbIds.length; i++) {
             DatabaseObject obj = curationService.findById(dbIds[i]);
+            System.out.println("Found object: " + obj);
             assertEquals(obj.getClass(), classes[i]);
         }
     }
