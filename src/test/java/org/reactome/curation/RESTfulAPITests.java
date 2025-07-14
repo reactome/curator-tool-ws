@@ -17,7 +17,10 @@ import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.user.model.User;
 import org.reactome.server.graph.domain.model.Complex;
+import org.reactome.server.graph.domain.model.DatabaseObject;
+import org.reactome.server.graph.domain.model.ModifiedResidue;
 import org.reactome.server.graph.domain.model.Reaction;
+import org.reactome.server.graph.domain.model.ReferenceGeneProduct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,6 +74,24 @@ class RESTfulAPITests {
                 .getResponse()
                 .getContentAsString();
         outputInstanceList(json);
+    }
+    
+    private String getJWT() throws Exception {
+        User request = new User("test", "password");
+        ObjectMapper mapper = CurationWSTestHelper.createObjectMapper();
+        String jsonObj = mapper.writeValueAsString(request);
+        System.out.println(jsonObj);
+        
+        String url = "/api/authenticate";
+        String jwt = mockMvc.perform(post(url).contentType(MediaType.APPLICATION_JSON)
+                .content(jsonObj))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        jwt = jwt.substring(1, jwt.length() - 1); // Get rid of quotation marker
+        System.out.println(jwt);
+        return jwt;
     }
     
     @Test
@@ -372,21 +393,24 @@ class RESTfulAPITests {
     @Test
     public void testFindById() throws Exception {
         assertNotNull(mockMvc);
+        
+        String jwt = getJWT();
+        
         Long[] dbIds = {
                 //TODO: The following query is used:
                 // MATCH (n:DatabaseObject{dbId:$dbId}) OPTIONAL MATCH (n)-[r]-(m) WITH n, r, m ORDER BY TYPE(r) ASC, r.order ASC RETURN n, COLLECT(r), COLLECT(m) LIMIT $limit
                 // This query is slow for homo sapiens because of the undirection relationship, which will pull out many results. 
                 // Need to consider to add the direction here to increase the performance.
 //                48887L, // Homo sapiens. The query is quite slow!
-//                109581L, // Pathway
+                109581L, // Pathway
 //                72810L, // NCBI Taxonomy
 //                9707103L, // A figure
-                72811L, // InstanceEdit
+//                72811L, // InstanceEdit
         };
         // The URL should start with "/" to make it true
         String url = BASE_URL + "findDatabaseObjectByDbId/";
         for (Long dbId : dbIds) {
-            String json = mockMvc.perform(get(url + dbId))
+            String json = mockMvc.perform(get(url + dbId).header("Authorization", "Bearer " + jwt))
                     .andExpect(status().isOk())
                     .andReturn()
                     .getResponse()
@@ -427,15 +451,15 @@ class RESTfulAPITests {
         assertNotNull(mockMvc);
         String[] clsNames = {
 //                ReactomeJavaConstants.EntityWithAccessionedSequence,
-//                ReactomeJavaConstants.Pathway,
+                ReactomeJavaConstants.Pathway,
 //                ReactomeJavaConstants.Reaction,
 //                ReactomeJavaConstants.ReferenceGeneProduct,
 //                ReactomeJavaConstants.Species
-                "ReviewStatus" // A new class
+//                "ReviewStatus" // A new class
         };
         String url = BASE_URL + "getAttributes/";
         for (String clsName : clsNames) {
-            String json = mockMvc.perform(get(url + clsName))
+            String json = mockMvc.perform(get(url + clsName).header("Authorization", "Bearer " + getJWT()))
                     .andExpect(status().isOk())
                     .andReturn()
                     .getResponse()
@@ -546,6 +570,22 @@ class RESTfulAPITests {
         logger.info("Done saving a new Complex: " + dbId);
     }
     
+    @Test
+    public void testUpdateModifiedResidue() throws Exception {
+        assertNotNull(mockMvc);
+        
+        ModifiedResidue modifiedResidue = new ModifiedResidue();
+        modifiedResidue.setDbId(140630L); // This is a known modified residue in the database.
+        ReferenceGeneProduct rpg = new ReferenceGeneProduct();
+        rpg.setDbId(140617L); // This is a known ReferenceGeneProduct in the database.
+        modifiedResidue.setReferenceSequence(rpg);
+        
+        SimpleInstance instance = converter.convert(modifiedResidue);
+        System.out.println("Found modified residue: " + instance);
+        
+        DatabaseObject object = converter.convert(instance);
+        System.out.println("Converted to DatabaseObject: " + object);
+    }
     
     @Test
     public void testStoreReactionWithNewValues() throws Exception {
