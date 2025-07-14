@@ -21,6 +21,7 @@ import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.model.CuratorToolWSUtils;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.service.CurationService;
+import org.reactome.curation.service.StableIdentifierGenerator;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.domain.model.InstanceEdit;
 import org.reactome.server.graph.domain.model.Person;
@@ -72,6 +73,13 @@ public class DatabaseObjectInstanceConverter {
             // as collection
             if (value instanceof Collection<?>) {
                 Collection<?> valueList = (Collection<?>) value;
+
+                // Sort the list of modified attributes by date
+                // Check again if the value is DatabaseObject Instance (maybe specify InstanceEdit)
+//                if (attribute.getName().equals("modifiedList")) {
+//                    valueList = this.sortModifiedListAttribute((ArrayList<InstanceEdit>) valueList);
+//                }
+
                 convertedValue = new ArrayList<>();
                 for (Object value1 : valueList) {
                     if (value1 instanceof DatabaseObject) {
@@ -81,17 +89,23 @@ public class DatabaseObjectInstanceConverter {
                     else
                         ((List)convertedValue).add(value1); // Nothing needs to be done
                 }
-            }
+                }
             else {
                 if (value instanceof DatabaseObject)
                     convertedValue = convertInShell((DatabaseObject)value);
                 else
                     convertedValue = value;
             }
+
             instance.setAttribute(attribute.getName(), convertedValue);
         }
         return instance;
     }
+
+//    public ArrayList<?> sortModifiedListAttribute(ArrayList<InstanceEdit> valueList) {
+//       Collections.sort(valueList, (o1, o2) -> o2.getDateTime().compareTo(o1.getDateTime()));
+//       return valueList;
+//    }
     
     public SimpleInstance convertInShell(DatabaseObject databaseObject) {
         SimpleInstance instance = new SimpleInstance();
@@ -126,7 +140,13 @@ public class DatabaseObjectInstanceConverter {
             if (instance.getDbId() < 0)
                 databaseObj.setCreated(ie);
             else {
-                //TODO: Need to change the modified to a list
+                List<InstanceEdit> modifiedList = databaseObj.getModifiedList();
+                // If the modifiedList is not defined, we need to create it
+                if (modifiedList == null) {
+                    modifiedList = new ArrayList<>();
+                }
+                modifiedList.add(ie);
+                databaseObj.setModifiedList(modifiedList);
                 databaseObj.setModified(ie);
             }
             // Get the new instances so that we can add created

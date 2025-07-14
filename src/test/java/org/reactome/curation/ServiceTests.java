@@ -5,17 +5,20 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
+import org.gk.model.GKInstance;
 import org.gk.model.ReactomeJavaConstants;
 import org.junit.jupiter.api.Test;
 import org.reactome.curation.model.CurationAttribute;
+import org.reactome.curation.model.InstanceList;
+import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.service.CurationService;
-import org.reactome.server.graph.domain.model.DatabaseObject;
-import org.reactome.server.graph.domain.model.Figure;
-import org.reactome.server.graph.domain.model.InstanceEdit;
-import org.reactome.server.graph.domain.model.Pathway;
-import org.reactome.server.graph.domain.model.ReferenceDatabase;
+import org.reactome.curation.service.StableIdentifierGenerator;
+import org.reactome.server.graph.domain.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,12 +27,15 @@ import org.springframework.boot.test.context.SpringBootTest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 @SpringBootTest
-class ServiceTests {
+public class ServiceTests {
     
     private static final Logger logger = LoggerFactory.getLogger(ServiceTests.class);
 
     @Autowired
     private CurationService curationService;
+
+    @Autowired
+    private StableIdentifierGenerator stableIdentifierGenerator;
 
     @Test
     void contextLoads() {
@@ -151,6 +157,46 @@ class ServiceTests {
         Method declaredMethod = classOfObject.getDeclaredMethod("getSpecies");
 
         //if(!declaredMethod && classOfObject.getPar)
+    }
+
+    @Test
+    public void testGenerateIdentifier() throws Exception {
+        //Long dbId = 453350L;
+//        dbId = 68419L;
+        //PEs
+        Long complex = 1227679L; // Complex with species
+        Long complexNoSpecies = 9036168L; // Species is assigned from hasComponent
+        Long entitySet = 5632207L; // entity set with species
+        Long polymer = 2160866L; // Polymer with no species, has repeated unit
+        Long reaction = 5627353L; // Event/reaction with species
+
+        DatabaseObject obj = curationService.findById(9957279L);
+        String id = stableIdentifierGenerator.generateIdentifier(obj);
+        System.out.println(obj + " -> " + id);
+    }
+
+    @Test
+    public void testSpeciesAbbreviation() throws Exception {
+
+        DatabaseObject human = this.curationService.findById(48887L); // Homo Sapiens
+        DatabaseObject mouse = this.curationService.findById(48892L); // Mus musculus
+        DatabaseObject zebrafish = this.curationService.findById(68323L); // Danio rerio
+        DatabaseObject chicken = this.curationService.findById(49591L); // Gallus gallus
+        DatabaseObject fly = this.curationService.findById(56210L); // Drosophila melanogaster
+        ArrayList<DatabaseObject> speciesInstances = new ArrayList();
+
+        speciesInstances.add(human);
+        speciesInstances.add(mouse);
+        speciesInstances.add(zebrafish);
+        speciesInstances.add(chicken);
+        speciesInstances.add(fly);
+
+        System.out.println("Species\tAbbrevitaion");
+        for (DatabaseObject speciesInstance : speciesInstances) {
+            Species species = (Species) speciesInstance;
+            String abbreviation = species.getAbbreviation();
+            System.out.println(speciesInstance.getDisplayName() + "\t" + abbreviation);
+        }
     }
 
 }

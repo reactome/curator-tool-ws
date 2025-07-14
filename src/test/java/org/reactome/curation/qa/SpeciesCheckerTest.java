@@ -184,7 +184,7 @@ class SpeciesCheckerTest {
 ////         Check this reaction
 //        Long dbId = rtn.getDbId();
 //        System.out.println("New pathway created: " + rtn);
-        Long dbId = 9851338L;
+        Long dbId = 210992L;
         checkSpecies(dbId);
     }
 

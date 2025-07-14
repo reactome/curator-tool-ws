@@ -26,9 +26,10 @@ import org.reactome.curation.model.UserInstances;
 import org.reactome.curation.qa.QAService;
 import org.reactome.curation.qa.model.QAReport;
 import org.reactome.curation.service.CurationService;
-import org.reactome.curation.service.DynamicNeo4jService;
+import org.reactome.curation.service.StableIdentifierGenerator;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.domain.model.InstanceEdit;
+import org.reactome.server.graph.domain.model.StableIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,6 +68,8 @@ public class CurationController {
     private DatabaseObjectInstanceConverter converter;
     @Autowired
     private QAService qaService;
+    @Autowired
+    private StableIdentifierGenerator stableIdentifierGenerator;
     
     /**
      * This method basically provides as a delegate to load the pathway JSON files.
@@ -195,6 +198,18 @@ public class CurationController {
                 for (DatabaseObject obj : newInstances)
                     obj2id.put(obj, obj.getDbId());
             }
+
+            //TODO: think about generating stId after the new physical entities are assigned
+            if(this.stableIdentifierGenerator.needStid(databaseObject)){
+                StableIdentifier stableIdentifier = this.stableIdentifierGenerator.generateStableId(databaseObject, databaseObject.getCreated());
+                databaseObject.setStableIdentifier(stableIdentifier);
+
+                String stId = this.stableIdentifierGenerator.generateIdentifier(databaseObject);
+                databaseObject.setStId(stId);
+            }
+
+            service.commit(databaseObject);
+
             DatabaseObject stored = service.commit(databaseObject);
             // For the front end, we just need to return a SimpleInstance having attributes that may change
             SimpleInstance rtn = converter.convertInShell(stored);
