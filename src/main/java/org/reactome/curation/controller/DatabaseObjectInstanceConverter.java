@@ -21,7 +21,6 @@ import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.model.CuratorToolWSUtils;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.service.CurationService;
-import org.reactome.curation.service.StableIdentifierGenerator;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.domain.model.InstanceEdit;
 import org.reactome.server.graph.domain.model.Person;
@@ -84,19 +83,17 @@ public class DatabaseObjectInstanceConverter {
                     else
                         ((List)convertedValue).add(value1); // Nothing needs to be done
                 }
-                }
+            }
             else {
                 if (value instanceof DatabaseObject)
                     convertedValue = convertInShell((DatabaseObject)value);
                 else
                     convertedValue = value;
             }
-
             instance.setAttribute(attribute.getName(), convertedValue);
         }
         return instance;
     }
-
     
     public SimpleInstance convertInShell(DatabaseObject databaseObject) {
         SimpleInstance instance = new SimpleInstance();
