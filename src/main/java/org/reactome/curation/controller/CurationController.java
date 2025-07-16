@@ -26,15 +26,11 @@ import org.reactome.curation.model.UserInstances;
 import org.reactome.curation.qa.QAService;
 import org.reactome.curation.qa.model.QAReport;
 import org.reactome.curation.service.CurationService;
-import org.reactome.curation.service.StableIdentifierGenerator;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.domain.model.InstanceEdit;
-import org.reactome.server.graph.domain.model.StableIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -68,8 +64,6 @@ public class CurationController {
     private DatabaseObjectInstanceConverter converter;
     @Autowired
     private QAService qaService;
-    @Autowired
-    private StableIdentifierGenerator stableIdentifierGenerator;
     
     /**
      * This method basically provides as a delegate to load the pathway JSON files.
@@ -198,20 +192,7 @@ public class CurationController {
                 for (DatabaseObject obj : newInstances)
                     obj2id.put(obj, obj.getDbId());
             }
-
             DatabaseObject stored = service.commit(databaseObject);
-
-            //TODO: think about generating stId after the new physical entities are assigned
-            if(this.stableIdentifierGenerator.needStid(stored)){
-                StableIdentifier stableIdentifier = this.stableIdentifierGenerator.generateStableId(stored, stored.getCreated());
-                stored.setStableIdentifier(stableIdentifier);
-
-                String stId = this.stableIdentifierGenerator.generateIdentifier(stored);
-                stored.setStId(stId);
-            }
-
-             stored = service.commit(databaseObject);
-
             // For the front end, we just need to return a SimpleInstance having attributes that may change
             SimpleInstance rtn = converter.convertInShell(stored);
             if (obj2id != null && obj2id.size() > 0) {

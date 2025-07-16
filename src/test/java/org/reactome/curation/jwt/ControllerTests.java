@@ -23,8 +23,8 @@ class ControllerTests {
 
     @Test
     public void testAuthenticate() throws Exception {
-        String userName = "deidre";
-        String password = "beavers";
+        String userName = "test";
+        String password = "password";
         
         User request = new User(userName, password);
 
