@@ -4,6 +4,7 @@ import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import org.reactome.curation.controller.DatabaseObjectInstanceConverter;
 import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.repository.CurationRepository;
 import org.reactome.server.graph.domain.model.*;
@@ -15,19 +16,19 @@ import org.springframework.stereotype.Service;
  * Methods handling stable identifiers are collected here. This class implements the following approach based on Joel's
  * document in http://devwiki.reactome.org/index.php/Development_Teleconferences#Minutes_and_Agendas:
  * If instance is a physical entity:
- If one species instance is attached, use it to get the prefix
- If more than one species instance is attached, the prefix is ‘NUL’
- If no species instances are attached:
- Get all species instances recursively from the physical entity
- (i.e. components from complexes, members/candidates from sets, repeated unit from polymers)
- If one species instance is attached, use it to get the prefix
- If more than one species instance is attached, the prefix is ‘NUL’
- If no species instance is attached, the prefix is ‘ALL’
-
- If instance is an event:
- If one species instance is attached, use it to get the prefix
- If no or more than one species is attached, the prefix is ‘NUL’
-
+ * If one species instance is attached, use it to get the prefix
+ * If more than one species instance is attached, the prefix is ‘NUL’
+ * If no species instances are attached:
+ * Get all species instances recursively from the physical entity
+ * (i.e. components from complexes, members/candidates from sets, repeated unit from polymers)
+ * If one species instance is attached, use it to get the prefix
+ * If more than one species instance is attached, the prefix is ‘NUL’
+ * If no species instance is attached, the prefix is ‘ALL’
+ * <p>
+ * If instance is an event:
+ * If one species instance is attached, use it to get the prefix
+ * If no or more than one species is attached, the prefix is ‘NUL’
+ *
  * @author Gwu
  */
 //@SuppressWarnings("unchecked")
@@ -41,19 +42,22 @@ public class StableIdentifierGenerator {
     private CurationService curationService;
     @Autowired
     private CurationRepository curationRepository;
+    @Autowired
+    private DatabaseObjectInstanceConverter dbConverter;
 
     public StableIdentifierGenerator() {
     }
 
     /**
      * Check if a DatabaseObject needs to have a stable id.
+     *
      * @param dbObject Instance to check
      * @return true if stable id is needed
      */
     public boolean needStid(DatabaseObject dbObject) {
         Set<Class<?>> classes = getClassNamesWithStableIds();
-        for(Class<?> cls : classes) {
-            if(cls.isAssignableFrom(dbObject.getClass())){
+        for (Class<?> cls : classes) {
+            if (cls.isAssignableFrom(dbObject.getClass())) {
                 return true;
             }
         }
@@ -71,14 +75,15 @@ public class StableIdentifierGenerator {
 
     /**
      * Create a StableIdentifier instance for the passed GKInstance object.
+     *
      * @param instance Instance for which to create stable id instance
-     * @param created Created instance edit instance to attach to newly created stable id instance
+     * @param created  Created instance edit instance to attach to newly created stable id instance
      * @return Stable identifier instance
      * @throws Exception Thrown if unable to generate an identifier for the instance or if unable to set attribute
-     * values for the newly created StableIdentifier instance
+     *                   values for the newly created StableIdentifier instance
      */
     public StableIdentifier generateStableId(DatabaseObject instance,
-                                           InstanceEdit created) throws Exception {
+                                             InstanceEdit created) throws Exception {
         if (!needStid(instance))
             return null;
         StableIdentifier stableIdentifier = new StableIdentifier();
@@ -89,17 +94,28 @@ public class StableIdentifierGenerator {
             stableIdentifier.setCreated(created);
 //        stableId.setIsInflated(true);
         stableIdentifier.setDisplayName(id + "." + stableIdentifier.getIdentifierVersion());
+
+        // Get the new instances so that we can add stableIdentifier and stId
+
+//        Set<Long> newDbIds = new HashSet<>();
+//        this.dbConverter.grepNewInstanceDbIds(instance, newDbIds);
+//        newDbIds.stream().forEach(dbId -> {
+//            DatabaseObject valueObj = id2obj.get(dbId);
+//            if (valueObj != null) // Just in case
+//                StableIdentifier childStableIdentifier = new StableIdentifier();
+//            String id = generateIdentifier(instance);
+//            childStableIdentifier.setIdentifier(id);
+//            childStableIdentifier.setIdentifierVersion("1");
+//            valueObj.setCreated(ie);
+//        });
+
         return stableIdentifier;
     }
 
-//    private static String generateStableIdentifierName(DatabaseObject instance) throws Exception {
-//        String identifier = (String) instance.getAttributeValue(ReactomeJavaConstants.identifier);
-//        String version = (String) instance.getAttributeValue(ReactomeJavaConstants.identifierVersion);
-//        return identifier + "." + version;
-//    }
 
     /**
      * The actual method to generate a stable identifier for a GKInstance.
+     *
      * @param instance Instance for which to generate a stable identifier
      * @return String containing the generated stable identifier value
      * @throws Exception Thrown if unable to get species abbreviation for instance
@@ -135,6 +151,7 @@ public class StableIdentifierGenerator {
 
     /**
      * Species is a mandatory value. If nothing there, we will use NUL.
+     *
      * @param event
      * @throws Exception
      */

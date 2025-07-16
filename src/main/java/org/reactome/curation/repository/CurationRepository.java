@@ -1373,8 +1373,7 @@ public class CurationRepository {
                         + "OPTIONAL MATCH (pe)-[:species]->(species:Species)\n"
                         + "WITH container, containerSpecies, COLLECT(DISTINCT species) AS cSpecies, role, pe\n"
                         + "UNWIND cSpecies as containedSpecies\n"
-                        + "RETURN containerSpecies.dbId, containerSpecies.displayName, containedSpecies.dbId, containedSpecies.displayName,"
-                        + " TYPE(role) AS relationshipType, pe.displayName, pe.dbId",
+                        + "RETURN containedSpecies.dbId, containedSpecies.displayName,",
                 schemaClass, dbId, followAttributes);
 
         Collection<Map<String, Object>> all = neo4jClient.query(query).fetch().all();

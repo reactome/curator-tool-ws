@@ -1,7 +1,6 @@
 package org.reactome.curation.jwt.controller;
 
 import org.reactome.curation.jwt.util.JwtUtil;
-import org.reactome.curation.service.DynamicNeo4jService;
 import org.reactome.curation.user.model.User;
 import org.reactome.curation.user.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,8 +23,6 @@ public class AuthenticateController {
     @Autowired
     private UserService userService;
 
-    @Autowired
-    private DynamicNeo4jService neo4jService;
 
 
 
@@ -42,7 +39,6 @@ public class AuthenticateController {
     @PostMapping("/authenticate")
     public String authenticate(@RequestBody User user) {
         if (userService.authenticate(user.getUsername(), user.getPassword())) {
-            List<String> results = neo4jService.runSimpleQuery(user.getUsername(), user.getPassword());
             return JwtUtil.generateToken(user.getUsername(), user.getPassword());
         }
         throw new BadCredentialsException("Invalid username or password");

@@ -199,18 +199,19 @@ public class CurationController {
                     obj2id.put(obj, obj.getDbId());
             }
 
-            //TODO: think about generating stId after the new physical entities are assigned
-            if(this.stableIdentifierGenerator.needStid(databaseObject)){
-                StableIdentifier stableIdentifier = this.stableIdentifierGenerator.generateStableId(databaseObject, databaseObject.getCreated());
-                databaseObject.setStableIdentifier(stableIdentifier);
+            DatabaseObject stored = service.commit(databaseObject);
 
-                String stId = this.stableIdentifierGenerator.generateIdentifier(databaseObject);
-                databaseObject.setStId(stId);
+            //TODO: think about generating stId after the new physical entities are assigned
+            if(this.stableIdentifierGenerator.needStid(stored)){
+                StableIdentifier stableIdentifier = this.stableIdentifierGenerator.generateStableId(stored, stored.getCreated());
+                stored.setStableIdentifier(stableIdentifier);
+
+                String stId = this.stableIdentifierGenerator.generateIdentifier(stored);
+                stored.setStId(stId);
             }
 
-            service.commit(databaseObject);
+             stored = service.commit(databaseObject);
 
-            DatabaseObject stored = service.commit(databaseObject);
             // For the front end, we just need to return a SimpleInstance having attributes that may change
             SimpleInstance rtn = converter.convertInShell(stored);
             if (obj2id != null && obj2id.size() > 0) {
