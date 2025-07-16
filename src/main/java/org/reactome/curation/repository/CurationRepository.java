@@ -1362,22 +1362,4 @@ public class CurationRepository {
         }
         return listRefs;
     }
-
-    public Collection<Map<String, Object>> grepSpecies(Long dbId, String followAttributes, String schemaClass) {
-        String query = String.format("MATCH (container:%s {dbId: %d})\n"
-                        + "OPTIONAL MATCH (container)-[:species]->(s:Species)\n" + "WITH container, s AS containerSpecies\n"
-                        + "OPTIONAL MATCH (container)-[r:%s*]->(pe:PhysicalEntity)\n"
-                        + "WITH container, containerSpecies, r, COLLECT(pe) AS containeds\n"
-                        + "UNWIND containeds AS pe\n"
-                        + "UNWIND r AS role\n"
-                        + "OPTIONAL MATCH (pe)-[:species]->(species:Species)\n"
-                        + "WITH container, containerSpecies, COLLECT(DISTINCT species) AS cSpecies, role, pe\n"
-                        + "UNWIND cSpecies as containedSpecies\n"
-                        + "RETURN containerSpecies.dbId, containerSpecies.displayName, containedSpecies.dbId, containedSpecies.displayName,"
-                        + " TYPE(role) AS relationshipType, pe.displayName, pe.dbId",
-                schemaClass, dbId, followAttributes);
-
-        Collection<Map<String, Object>> all = neo4jClient.query(query).fetch().all();
-        return all;
-    }
 }
