@@ -64,6 +64,8 @@ public class CurationController {
     private DatabaseObjectInstanceConverter converter;
     @Autowired
     private QAService qaService;
+    @Autowired
+    private StableIdentifierGenerator stableIdentifierGenerator;
     
     /**
      * This method basically provides as a delegate to load the pathway JSON files.
@@ -192,7 +194,18 @@ public class CurationController {
                 for (DatabaseObject obj : newInstances)
                     obj2id.put(obj, obj.getDbId());
             }
+
+            // Commit instance so that species relationships are assigned
             DatabaseObject stored = service.commit(databaseObject);
+            this.stableIdentifierGenerator.setStableIdentifierAndStId(stored);
+
+            if (newInstances != null && !newInstances.isEmpty()) {
+                for (DatabaseObject newInstance : newInstances) {
+                    this.stableIdentifierGenerator.setStableIdentifierAndStId(newInstance);
+                }
+            }
+            stored = service.commit(databaseObject);
+
             // For the front end, we just need to return a SimpleInstance having attributes that may change
             SimpleInstance rtn = converter.convertInShell(stored);
             if (obj2id != null && obj2id.size() > 0) {

@@ -1,15 +1,15 @@
-package org.reactome.curation.service;
+package org.reactome.curation.controller;
 
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import org.reactome.curation.controller.DatabaseObjectInstanceConverter;
 import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.repository.CurationRepository;
+import org.reactome.curation.service.CurationService;
 import org.reactome.server.graph.domain.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 
 /**
@@ -32,7 +32,7 @@ import org.springframework.stereotype.Service;
  * @author Gwu
  */
 //@SuppressWarnings("unchecked")
-@Service
+@Component // generate a bean for this file
 public class StableIdentifierGenerator {
     private final String NUL_SPECIES = "NUL";
     private final String ALL_SPECIES = "ALL";
@@ -42,8 +42,6 @@ public class StableIdentifierGenerator {
     private CurationService curationService;
     @Autowired
     private CurationRepository curationRepository;
-    @Autowired
-    private DatabaseObjectInstanceConverter dbConverter;
 
     public StableIdentifierGenerator() {
     }
@@ -54,7 +52,7 @@ public class StableIdentifierGenerator {
      * @param dbObject Instance to check
      * @return true if stable id is needed
      */
-    public boolean needStid(DatabaseObject dbObject) {
+    private boolean needStid(DatabaseObject dbObject) {
         Set<Class<?>> classes = getClassNamesWithStableIds();
         for (Class<?> cls : classes) {
             if (cls.isAssignableFrom(dbObject.getClass())) {
@@ -73,6 +71,16 @@ public class StableIdentifierGenerator {
         return stidClasses;
     }
 
+    public void setStableIdentifierAndStId(DatabaseObject instance) throws Exception {
+        if(this.needStid(instance)){
+            StableIdentifier stableIdentifier = this.generateStableId(instance, instance.getCreated());
+            instance.setStableIdentifier(stableIdentifier);
+
+            String stId = this.generateIdentifier(instance);
+            instance.setStId(stId);
+        }
+    }
+
     /**
      * Create a StableIdentifier instance for the passed GKInstance object.
      *
@@ -82,32 +90,17 @@ public class StableIdentifierGenerator {
      * @throws Exception Thrown if unable to generate an identifier for the instance or if unable to set attribute
      *                   values for the newly created StableIdentifier instance
      */
-    public StableIdentifier generateStableId(DatabaseObject instance,
+    private StableIdentifier generateStableId(DatabaseObject instance,
                                              InstanceEdit created) throws Exception {
         if (!needStid(instance))
             return null;
-        StableIdentifier stableIdentifier = new StableIdentifier();
         String id = generateIdentifier(instance);
+        StableIdentifier stableIdentifier = new StableIdentifier();
         stableIdentifier.setIdentifier(id);
         stableIdentifier.setIdentifierVersion("1");
         if (created != null)
             stableIdentifier.setCreated(created);
-//        stableId.setIsInflated(true);
         stableIdentifier.setDisplayName(id + "." + stableIdentifier.getIdentifierVersion());
-
-        // Get the new instances so that we can add stableIdentifier and stId
-
-//        Set<Long> newDbIds = new HashSet<>();
-//        this.dbConverter.grepNewInstanceDbIds(instance, newDbIds);
-//        newDbIds.stream().forEach(dbId -> {
-//            DatabaseObject valueObj = id2obj.get(dbId);
-//            if (valueObj != null) // Just in case
-//                StableIdentifier childStableIdentifier = new StableIdentifier();
-//            String id = generateIdentifier(instance);
-//            childStableIdentifier.setIdentifier(id);
-//            childStableIdentifier.setIdentifierVersion("1");
-//            valueObj.setCreated(ie);
-//        });
 
         return stableIdentifier;
     }
@@ -120,7 +113,7 @@ public class StableIdentifierGenerator {
      * @return String containing the generated stable identifier value
      * @throws Exception Thrown if unable to get species abbreviation for instance
      */
-    public String generateIdentifier(DatabaseObject instance) throws Exception {
+    private String generateIdentifier(DatabaseObject instance) throws Exception {
         String species = getSpeciesForSTID(instance);
         String id = "R-" + species + "-" + instance.getDbId();
         return id;
