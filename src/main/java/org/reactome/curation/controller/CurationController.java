@@ -204,7 +204,7 @@ public class CurationController {
                     this.stableIdentifierGenerator.setStableIdentifierAndStId(newInstance);
                 }
             }
-            stored = service.commit(databaseObject);
+            stored = service.commit(stored);
 
             // For the front end, we just need to return a SimpleInstance having attributes that may change
             SimpleInstance rtn = converter.convertInShell(stored);
