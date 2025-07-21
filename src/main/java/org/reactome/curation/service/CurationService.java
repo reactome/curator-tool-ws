@@ -32,9 +32,11 @@ import org.reactome.curation.repository.PathwayDiagramRepository;
 //import org.reactome.server.graph.aop.LazyFetchAspect;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.domain.model.InstanceEdit;
+import org.reactome.server.graph.domain.model.Species;
 import org.reactome.server.graph.repository.AdvancedDatabaseObjectRepository;
 import org.reactome.server.graph.service.helper.AttributeClass;
 import org.reactome.server.graph.service.helper.AttributeProperties;
+import org.reactome.server.graph.service.helper.StoichiometryObject;
 import org.reactome.server.graph.service.util.DatabaseObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -411,12 +413,13 @@ public class CurationService {
     }
     
     private void grepNewInstances(DatabaseObject obj, Set<DatabaseObject> newInstances) {
-        Map<String, Object> field2value = DatabaseObjectUtils.getAllFields(obj, false);
+        Map<String, Object> field2value = DatabaseObjectUtils.getAllFields(obj, true);
         // Recursive calling to store all new instances
         for (String field : field2value.keySet()) {
             Object value = field2value.get(field);
-            if (value instanceof DatabaseObject) {
-                DatabaseObject valueObj = (DatabaseObject) value;
+            if (value instanceof StoichiometryObject) {
+                StoichiometryObject stoichiometryObject = (StoichiometryObject) value;
+                DatabaseObject valueObj = (DatabaseObject) stoichiometryObject.getObject();
                 if (valueObj.getDbId() != null && valueObj.getDbId() < 0) {
                     if (!newInstances.contains(valueObj)) {
                         newInstances.add(valueObj);
@@ -427,9 +430,11 @@ public class CurationService {
             if (value instanceof List) {
                 List<?> list = (List<?>) value;
                 for (Object value1 : list) {
-                    if (!(value1 instanceof DatabaseObject))
+                   Class<?> clazz = value1.getClass();
+                    if (!(StoichiometryObject.class.isAssignableFrom(clazz)))
                         break; // Do nothing
-                    DatabaseObject valueObj = (DatabaseObject) value1;
+                    StoichiometryObject stoichiometryObject = (StoichiometryObject) value1;
+                    DatabaseObject valueObj = stoichiometryObject.getObject();
                     if (valueObj.getDbId() != null && valueObj.getDbId() < 0) {
                         if (!newInstances.contains(valueObj)) {
                             newInstances.add(valueObj);
@@ -460,5 +465,9 @@ public class CurationService {
         Long ieDbId = modified == null ? null : modified.getDbId();
         Long storedIeDbId = stored.getModified() == null ? null : stored.getModified().getDbId();
         return !Objects.equals(ieDbId, storedIeDbId);
+    }
+
+    public Set<Species> grepSpecies(Long dbId, String followAttributes, String schemaClass) {
+        return this.curationRepository.grepSpecies(dbId, followAttributes, schemaClass);
     }
 }

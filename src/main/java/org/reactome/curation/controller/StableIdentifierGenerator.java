@@ -1,14 +1,13 @@
 package org.reactome.curation.controller;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
-import java.util.stream.Collectors;
 
-import org.reactome.curation.model.CurationAttribute;
-import org.reactome.curation.repository.CurationRepository;
 import org.reactome.curation.service.CurationService;
 import org.reactome.server.graph.domain.model.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 
@@ -37,13 +36,13 @@ public class StableIdentifierGenerator {
     private final String NUL_SPECIES = "NUL";
     private final String ALL_SPECIES = "ALL";
     private Set<Class<?>> stidClasses;
+    private static final Logger logger = LoggerFactory.getLogger(StableIdentifierGenerator.class);
 
-    @Autowired
-    private CurationService curationService;
-    @Autowired
-    private CurationRepository curationRepository;
+    private final CurationService curationService;
 
-    public StableIdentifierGenerator() {
+
+    public StableIdentifierGenerator(CurationService curationService) {
+        this.curationService = curationService;
     }
 
     /**
@@ -53,7 +52,7 @@ public class StableIdentifierGenerator {
      * @return true if stable id is needed
      */
     private boolean needStid(DatabaseObject dbObject) {
-        Set<Class<?>> classes = getClassNamesWithStableIds();
+        Set<Class<?>> classes = getClassesWithStableIds();
         for (Class<?> cls : classes) {
             if (cls.isAssignableFrom(dbObject.getClass())) {
                 return true;
@@ -62,7 +61,7 @@ public class StableIdentifierGenerator {
         return false;
     }
 
-    private Set<Class<?>> getClassNamesWithStableIds() {
+    private Set<Class<?>> getClassesWithStableIds() {
         if (stidClasses == null) {
             stidClasses = new HashSet<>();
             stidClasses.add(PhysicalEntity.class);
@@ -71,7 +70,7 @@ public class StableIdentifierGenerator {
         return stidClasses;
     }
 
-    public void setStableIdentifierAndStId(DatabaseObject instance) throws Exception {
+    public void setStableIdentifier(DatabaseObject instance) throws Exception {
         if(this.needStid(instance)){
             StableIdentifier stableIdentifier = this.generateStableId(instance, instance.getCreated());
             instance.setStableIdentifier(stableIdentifier);
@@ -131,7 +130,7 @@ public class StableIdentifierGenerator {
     }
 
     private String getSpeciesFromPhysicalEntity(DatabaseObject physicalEntity) throws Exception {
-        Set<DatabaseObject> speciesSet = getSpeciesFromPE(physicalEntity);
+        Set<Species> speciesSet = getSpeciesFromPE(physicalEntity);
         if (speciesSet.size() == 0)
             return ALL_SPECIES;
         else if (speciesSet.size() > 1)
@@ -156,37 +155,28 @@ public class StableIdentifierGenerator {
         return getSpeciesAbbreviation(species);
     }
 
-    private Set<DatabaseObject> getSpeciesFromPE(DatabaseObject pe) throws Exception {
+    private Set<Species> getSpeciesFromPE(DatabaseObject pe) throws Exception {
 
-        if (!this.isValidAttribute(pe, "species"))
-            return null;
         Method method = pe.getClass().getMethod("getSpecies");
-        ArrayList<DatabaseObject> species = (ArrayList<DatabaseObject>) method.invoke(pe);
-        if (species != null && !species.isEmpty())
-            return new HashSet<>(species);
-        if (Complex.class.isAssignableFrom(pe.getClass()))
-            return this.grepAllSpeciesInPE(pe, "hasComponent", "Complex");
-        if (EntitySet.class.isAssignableFrom(pe.getClass()))
-            return this.grepAllSpeciesInPE(pe, "hasMember", "EntitySet");
-        if (Polymer.class.isAssignableFrom(pe.getClass()))
-            return this.grepAllSpeciesInPE(pe, "repeatedUnit", "Polymer");
+        try {
+            ArrayList<Species> species = (ArrayList<Species>) method.invoke(pe);
+            if (species != null && !species.isEmpty())
+                return new HashSet<>(species);
+            if (Complex.class.isAssignableFrom(pe.getClass()))
+                return this.grepAllSpeciesInPE(pe, "hasComponent", "Complex");
+            if (EntitySet.class.isAssignableFrom(pe.getClass()))
+                return this.grepAllSpeciesInPE(pe, "hasMember", "EntitySet");
+            if (Polymer.class.isAssignableFrom(pe.getClass()))
+                return this.grepAllSpeciesInPE(pe, "repeatedUnit", "Polymer");
+        }
+        catch (InvocationTargetException | NoSuchMethodException e) {
+            logger.error("An error occurred while invoking " + pe.getDisplayName() + " with method " + method.getName());
+        }
         return null;
     }
 
-    private Set<DatabaseObject> grepAllSpeciesInPE(DatabaseObject pe, String followRelationship, String schemaClass) throws Exception {
-        Set<DatabaseObject> speciesSet = new HashSet<>();
-        // Collecting the complex's and component's species name and dbId
-        Collection<Map<String, Object>> all = this.curationRepository.grepSpecies(pe.getDbId(), followRelationship, schemaClass);
-        for (Map<String, Object> map : all) {
-            String containedSpeciesDisplayName = map.get("containedSpecies.displayName").toString();
-            String containedSpeciesDbId = map.get("containedSpecies.dbId").toString();
-            // Create a simple instance to model the species and add to map
-            Species species = new Species();
-            species.setDbId(Long.parseLong(containedSpeciesDbId));
-            species.setDisplayName(containedSpeciesDisplayName);
-            speciesSet.add(species);
-        }
-        return speciesSet;
+    private Set<Species> grepAllSpeciesInPE(DatabaseObject pe, String followRelationship, String schemaClass) throws Exception {
+        return this.curationService.grepSpecies(pe.getDbId(), followRelationship, schemaClass);
     }
 
 
@@ -208,13 +198,6 @@ public class StableIdentifierGenerator {
             throw new IllegalArgumentException(species.getDisplayName() + " has no abbreviation");
         }
         return abbreviation;
-    }
-
-    private boolean isValidAttribute(DatabaseObject databaseObject, String attributeName) throws Exception {
-        List<CurationAttribute> attributes = curationService.getAttributes(databaseObject.getSchemaClass());
-        List<String> attNames = attributes.stream().map(CurationAttribute::getName).collect(Collectors.toUnmodifiableList());
-
-        return attNames.contains(attributeName);
     }
 
 }

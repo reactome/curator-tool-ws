@@ -197,11 +197,12 @@ public class CurationController {
 
             // Commit instance so that species relationships are assigned
             DatabaseObject stored = service.commit(databaseObject);
-            this.stableIdentifierGenerator.setStableIdentifierAndStId(stored);
+            this.stableIdentifierGenerator.setStableIdentifier(stored);
 
             if (newInstances != null && !newInstances.isEmpty()) {
                 for (DatabaseObject newInstance : newInstances) {
-                    this.stableIdentifierGenerator.setStableIdentifierAndStId(newInstance);
+                    this.stableIdentifierGenerator.setStableIdentifier(newInstance);
+                    service.commit(newInstance);
                 }
             }
             stored = service.commit(stored);

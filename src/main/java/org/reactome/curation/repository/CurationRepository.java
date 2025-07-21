@@ -3,14 +3,7 @@ package org.reactome.curation.repository;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang.WordUtils;
@@ -32,6 +25,7 @@ import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.domain.model.InstanceEdit;
+import org.reactome.server.graph.domain.model.Species;
 import org.reactome.server.graph.service.helper.StoichiometryObject;
 import org.reactome.server.graph.service.util.DatabaseObjectUtils;
 import org.slf4j.Logger;
@@ -1363,7 +1357,7 @@ public class CurationRepository {
         return listRefs;
     }
 
-    public Collection<Map<String, Object>> grepSpecies(Long dbId, String followAttributes, String schemaClass) {
+    public Set<Species> grepSpecies(Long dbId, String followAttributes, String schemaClass) {
         String query = String.format("MATCH (container:%s {dbId: %d})\n"
                         + "OPTIONAL MATCH (container)-[:species]->(s:Species)\n" + "WITH container, s AS containerSpecies\n"
                         + "OPTIONAL MATCH (container)-[r:%s*]->(pe:PhysicalEntity)\n"
@@ -1376,7 +1370,17 @@ public class CurationRepository {
                         + "RETURN containedSpecies.dbId, containedSpecies.displayName",
                 schemaClass, dbId, followAttributes);
 
+        Set<Species> speciesSet = new HashSet<>();
         Collection<Map<String, Object>> all = neo4jClient.query(query).fetch().all();
-        return all;
+        for (Map<String, Object> map : all) {
+            String containedSpeciesDisplayName = map.get("containedSpecies.displayName").toString();
+            String containedSpeciesDbId = map.get("containedSpecies.dbId").toString();
+            // Create a simple instance to model the species and add to map
+            Species species = new Species();
+            species.setDbId(Long.parseLong(containedSpeciesDbId));
+            species.setDisplayName(containedSpeciesDisplayName);
+            speciesSet.add(species);
+        }
+        return speciesSet;
     }
 }

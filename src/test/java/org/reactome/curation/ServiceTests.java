@@ -5,17 +5,16 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import org.gk.model.ReactomeJavaConstants;
 import org.junit.jupiter.api.Test;
 import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.service.CurationService;
-import org.reactome.server.graph.domain.model.DatabaseObject;
-import org.reactome.server.graph.domain.model.Figure;
-import org.reactome.server.graph.domain.model.InstanceEdit;
-import org.reactome.server.graph.domain.model.Pathway;
-import org.reactome.server.graph.domain.model.ReferenceDatabase;
+import org.reactome.server.graph.domain.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -151,6 +150,20 @@ class ServiceTests {
         Method declaredMethod = classOfObject.getDeclaredMethod("getSpecies");
 
         //if(!declaredMethod && classOfObject.getPar)
+    }
+
+    @Test
+    public void grepAllInstances() {
+        Complex layer1 = new Complex(-1L);
+        layer1.setName(Collections.singletonList("Complex layer 1"));
+        Complex layer2 = new Complex(-2L);
+        layer2.setName(Collections.singletonList("Complex layer 2"));
+        List<PhysicalEntity> complexList = new ArrayList<>();
+        complexList.add(layer2);
+        layer1.setHasComponent(complexList);
+//        DatabaseObject databaseObject = converter.convert(instance, true);
+        Set<DatabaseObject> newInstances = curationService.grepNewInstances(layer1);
+        System.out.println(newInstances);
     }
 
 }
