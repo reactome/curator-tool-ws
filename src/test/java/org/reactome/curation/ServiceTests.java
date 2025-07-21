@@ -153,17 +153,31 @@ class ServiceTests {
     }
 
     @Test
-    public void grepAllInstances() {
+    public void grepAllInstancesComplex() {
         Complex layer1 = new Complex(-1L);
-        layer1.setName(Collections.singletonList("Complex layer 1"));
+        layer1.setDisplayName("Complex layer 1");
         Complex layer2 = new Complex(-2L);
-        layer2.setName(Collections.singletonList("Complex layer 2"));
+        layer2.setDisplayName("Complex layer 2");
         List<PhysicalEntity> complexList = new ArrayList<>();
         complexList.add(layer2);
         layer1.setHasComponent(complexList);
-//        DatabaseObject databaseObject = converter.convert(instance, true);
         Set<DatabaseObject> newInstances = curationService.grepNewInstances(layer1);
         System.out.println(newInstances);
     }
+
+    @Test
+    public void grepAllInstancesPathway() {
+        Pathway pathway = new Pathway(-1L);
+        pathway.setDisplayName("Pathway as layer 1");
+        Reaction rxn = new Reaction(-2L);
+        rxn.setDisplayName("Rxn as layer 2");
+        List<Event> rxnList = new ArrayList<>();
+        rxnList.add(rxn);
+        pathway.setHasEvent(rxnList);
+        Set<DatabaseObject> newInstances = curationService.grepNewInstances(pathway);
+        System.out.println(newInstances);
+    }
+
+
 
 }

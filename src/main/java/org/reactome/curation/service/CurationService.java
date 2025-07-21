@@ -417,9 +417,8 @@ public class CurationService {
         // Recursive calling to store all new instances
         for (String field : field2value.keySet()) {
             Object value = field2value.get(field);
-            if (value instanceof StoichiometryObject) {
-                StoichiometryObject stoichiometryObject = (StoichiometryObject) value;
-                DatabaseObject valueObj = (DatabaseObject) stoichiometryObject.getObject();
+            if (value instanceof DatabaseObject) {
+                DatabaseObject valueObj = (DatabaseObject) value;
                 if (valueObj.getDbId() != null && valueObj.getDbId() < 0) {
                     if (!newInstances.contains(valueObj)) {
                         newInstances.add(valueObj);
@@ -427,20 +426,24 @@ public class CurationService {
                     }
                 }
             }
+
             if (value instanceof List) {
                 List<?> list = (List<?>) value;
                 for (Object value1 : list) {
-                   Class<?> clazz = value1.getClass();
-                    if (!(StoichiometryObject.class.isAssignableFrom(clazz)))
-                        break; // Do nothing
-                    StoichiometryObject stoichiometryObject = (StoichiometryObject) value1;
-                    DatabaseObject valueObj = stoichiometryObject.getObject();
-                    if (valueObj.getDbId() != null && valueObj.getDbId() < 0) {
-                        if (!newInstances.contains(valueObj)) {
-                            newInstances.add(valueObj);
-                            grepNewInstances(valueObj, newInstances);
-                        }
+                    DatabaseObject valueObj = null;
+                    if (value1 instanceof DatabaseObject) {
+                        valueObj = (DatabaseObject) value1;
                     }
+                    if (value1 instanceof StoichiometryObject) {
+                        StoichiometryObject stoichiometryObject = (StoichiometryObject) value1;
+                        valueObj = stoichiometryObject.getObject();
+                    }
+
+                    if (valueObj == null || valueObj.getDbId() > 0 || newInstances.contains(valueObj))
+                        break; // do nothing
+
+                    newInstances.add(valueObj);
+                    grepNewInstances(valueObj, newInstances);
                 }
             } 
         }
