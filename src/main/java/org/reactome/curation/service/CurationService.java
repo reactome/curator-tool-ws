@@ -413,7 +413,7 @@ public class CurationService {
     }
     
     private void grepNewInstances(DatabaseObject obj, Set<DatabaseObject> newInstances) {
-        Map<String, Object> field2value = DatabaseObjectUtils.getAllFields(obj, true);
+        Map<String, Object> field2value = DatabaseObjectUtils.getAllFields(obj, false);
         // Recursive calling to store all new instances
         for (String field : field2value.keySet()) {
             Object value = field2value.get(field);
@@ -434,13 +434,13 @@ public class CurationService {
                     if (value1 instanceof DatabaseObject) {
                         valueObj = (DatabaseObject) value1;
                     }
-                    if (value1 instanceof StoichiometryObject) {
+                    else if (value1 instanceof StoichiometryObject) {
                         StoichiometryObject stoichiometryObject = (StoichiometryObject) value1;
                         valueObj = stoichiometryObject.getObject();
                     }
 
                     if (valueObj == null || valueObj.getDbId() > 0 || newInstances.contains(valueObj))
-                        break; // do nothing
+                        continue; // do nothing
 
                     newInstances.add(valueObj);
                     grepNewInstances(valueObj, newInstances);

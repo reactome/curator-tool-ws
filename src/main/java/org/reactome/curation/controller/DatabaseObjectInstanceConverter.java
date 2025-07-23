@@ -72,8 +72,6 @@ public class DatabaseObjectInstanceConverter {
             // as collection
             if (value instanceof Collection<?>) {
                 Collection<?> valueList = (Collection<?>) value;
-
-                // Check again if the value is DatabaseObject Instance (maybe specify InstanceEdit)
                 convertedValue = new ArrayList<>();
                 for (Object value1 : valueList) {
                     if (value1 instanceof DatabaseObject) {

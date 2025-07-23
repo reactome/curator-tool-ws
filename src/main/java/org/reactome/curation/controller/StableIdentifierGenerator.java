@@ -8,6 +8,7 @@ import org.reactome.curation.service.CurationService;
 import org.reactome.server.graph.domain.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 
@@ -38,11 +39,10 @@ public class StableIdentifierGenerator {
     private Set<Class<?>> stidClasses;
     private static final Logger logger = LoggerFactory.getLogger(StableIdentifierGenerator.class);
 
-    private final CurationService curationService;
+    @Autowired
+    private CurationService curationService;
 
-
-    public StableIdentifierGenerator(CurationService curationService) {
-        this.curationService = curationService;
+    public StableIdentifierGenerator() {
     }
 
     /**

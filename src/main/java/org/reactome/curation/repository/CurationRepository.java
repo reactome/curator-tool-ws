@@ -1373,11 +1373,11 @@ public class CurationRepository {
         Set<Species> speciesSet = new HashSet<>();
         Collection<Map<String, Object>> all = neo4jClient.query(query).fetch().all();
         for (Map<String, Object> map : all) {
-            String containedSpeciesDisplayName = map.get("containedSpecies.displayName").toString();
-            String containedSpeciesDbId = map.get("containedSpecies.dbId").toString();
+            String containedSpeciesDisplayName = (String) map.get("containedSpecies.displayName");
+            Long containedSpeciesDbId = (Long) map.get("containedSpecies.dbId");
             // Create a simple instance to model the species and add to map
             Species species = new Species();
-            species.setDbId(Long.parseLong(containedSpeciesDbId));
+            species.setDbId(containedSpeciesDbId);
             species.setDisplayName(containedSpeciesDisplayName);
             speciesSet.add(species);
         }
