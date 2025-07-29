@@ -28,6 +28,9 @@ import org.springframework.stereotype.Component;
  * If instance is an event:
  * If one species instance is attached, use it to get the prefix
  * If no or more than one species is attached, the prefix is ‘NUL’
+ * 
+ * Note: The identifierVersion is handled by another project, release-update-stable-ids: 
+ * https://github.com/reactome/release-update-stable-ids.
  *
  * @author Gwu
  */
