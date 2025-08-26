@@ -422,6 +422,35 @@ class RESTfulAPITests {
     }
     
     @Test
+    public void testJSONDeserization() throws Exception {
+        assertNotNull(mockMvc);
+        Long[] dbIds = {
+                141412L, // An EWAS
+//                141429L, // A reaction has the same instance appearing in two slots.
+//                109581L, // Pathway
+//                72810L, // NCBI Taxonomy
+//                9707103L, // A figure
+//                72811L, // InstanceEdit
+        };
+        // The URL should start with "/" to make it true
+        String url = BASE_URL + "findByDbId/";
+        String jwt = getJWT();
+        ObjectMapper mapper = CurationWSTestHelper.createObjectMapper();
+        for (Long dbId : dbIds) {
+            String json = mockMvc.perform(get(url + dbId).header("Authorization", "Bearer " + jwt))
+                    .andExpect(status().isOk())
+                    .andReturn()
+                    .getResponse()
+                    .getContentAsString();
+            System.out.println(json);
+            SimpleInstance instance = mapper.readValue(json, SimpleInstance.class);
+            System.out.println("SimpleInstance from JSON:\n" + mapper.writerWithDefaultPrettyPrinter().writeValueAsString(instance));
+//            DatabaseObject obj = curationService.findById(dbId);
+//            System.out.println(obj);
+        }
+    }
+    
+    @Test
     public void testFindByIdInInstance() throws Exception {
         assertNotNull(mockMvc);
         Long[] dbIds = {
@@ -434,8 +463,9 @@ class RESTfulAPITests {
         };
         // The URL should start with "/" to make it true
         String url = BASE_URL + "findByDbId/";
+        String jwt = getJWT();
         for (Long dbId : dbIds) {
-            String json = mockMvc.perform(get(url + dbId))
+            String json = mockMvc.perform(get(url + dbId).header("Authorization", "Bearer " + jwt))
                     .andExpect(status().isOk())
                     .andReturn()
                     .getResponse()
