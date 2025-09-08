@@ -389,6 +389,31 @@ class RESTfulAPITests {
         System.out.println(json);
     }
     
+    @Test
+    public void testFindByIds() throws Exception {
+        assertNotNull(mockMvc);
+        
+        String jwt = getJWT();
+        
+        List<Long> dbIds = List.of(73894L, 9612973L, 162582L);
+        // The URL should start with "/" to make it true
+        String url = BASE_URL + "findByDbIds/";
+        
+        ObjectMapper mapper = CurationWSTestHelper.createObjectMapper();
+        
+        String queryText = mapper.writeValueAsString(dbIds);
+        logger.info("Query text: " + queryText);
+        
+        String rtn = mockMvc.perform(post(url).header("Authorization", "Bearer " + jwt)
+                           .contentType(MediaType.APPLICATION_JSON)
+                           .content(queryText))
+                           .andExpect(status().isOk())
+                           .andReturn()
+                           .getResponse()
+                           .getContentAsString();
+        logger.info("Found instances:\n" + rtn);
+    }
+    
 
     @Test
     public void testFindById() throws Exception {

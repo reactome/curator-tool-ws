@@ -152,6 +152,23 @@ public class CurationController {
         }
     }
     
+    @PostMapping("findByDbIds")
+    public List<SimpleInstance> findByDbIds(@RequestBody List<Long> dbIds) {
+        try {
+            List<DatabaseObject> objs = service.findInstancesByIds(dbIds);
+            List<SimpleInstance> instances = new ArrayList<>(objs.size());
+            for (DatabaseObject obj : objs) {
+                SimpleInstance instance = converter.convert(obj);
+                instances.add(instance);
+            }
+            return instances;
+        }
+        catch(Exception e) {
+            logger.error("CurationController.findByDbIds: " + e.getMessage(), e);
+            throw new IllegalStateException(e.getMessage());
+        }
+    }
+    
     /**
      * Call this method to fill the attributes for a LiteratureReference represented in
      * the passed SimpleInstance.

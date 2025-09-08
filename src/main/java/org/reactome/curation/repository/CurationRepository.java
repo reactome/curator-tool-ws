@@ -3,7 +3,16 @@ package org.reactome.curation.repository;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang.WordUtils;
@@ -449,6 +458,22 @@ public class CurationRepository {
                 return dObj;
         }
         return null; // Don't care
+    }
+    
+    /**
+     * Find all instances for the given dbIds. The returned instances are fully loaded.
+     * @param dbIds
+     * @return
+     */
+    public List<DatabaseObject> findInstances(List<Long> dbIds) {
+        String query = "" +
+                    "MATCH (n:DatabaseObject) " +
+                    "WHERE n.dbId IN $dbIds " +
+                    "OPTIONAL MATCH (n)-[r]-(m) " +
+                    "WITH n, r, m " +
+                    "ORDER BY TYPE(r) ASC, r.order ASC " +
+                    "RETURN n, COLLECT(r), COLLECT(m)";
+       return neo4jTemplate.findAll(query, Map.of("dbIds", dbIds), DatabaseObject.class);
     }
 
     /**

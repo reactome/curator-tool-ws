@@ -308,6 +308,15 @@ public class CurationService {
                                        List<String> clsNames) {
         return curationRepository.findInstance(displayName, clsNames);
     }
+    
+    /**
+     * Find instances for a list of dbIds. The returned DataaseObjects are fully loaded.
+     * @param dbIds
+     * @return
+     */
+    public List<DatabaseObject> findInstancesByIds(List<Long> dbIds) {
+        return curationRepository.findInstances(dbIds);
+    }
 
     public Long getNextDbId(){
         return curationRepository.nextDbId();

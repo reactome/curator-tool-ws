@@ -5,14 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.gk.model.ReactomeJavaConstants;
-import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Test;
-import org.reactome.curation.model.CuratorToolReferrer;
 import org.reactome.curation.model.CuratorToolReferrerList;
 import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
@@ -20,13 +17,19 @@ import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.model.UserInstances;
 import org.reactome.curation.repository.CurationFileRepository;
 import org.reactome.curation.repository.CurationRepository;
-import org.reactome.server.graph.domain.model.*;
+import org.reactome.server.graph.domain.model.Complex;
+import org.reactome.server.graph.domain.model.DatabaseObject;
+import org.reactome.server.graph.domain.model.LiteratureReference;
+import org.reactome.server.graph.domain.model.PhysicalEntity;
+import org.reactome.server.graph.domain.model.Publication;
+import org.reactome.server.graph.domain.model.Reaction;
+import org.reactome.server.graph.domain.model.SimpleEntity;
+import org.reactome.server.graph.domain.model.Summation;
 import org.reactome.server.graph.repository.AdvancedDatabaseObjectRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.yaml.snakeyaml.scanner.ScannerImpl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -323,6 +326,16 @@ class CurationRepositoryTests {
             for(SimpleInstance obj : ref.getReferrers()) {
                 System.out.println(obj.getDisplayName());
             }
+        }
+    }
+    
+    
+    @Test
+    public void testFindInstances() throws Exception {
+        List<Long> dbIds = List.of(73894L, 9612973L, 162582L);
+        List<DatabaseObject> instances = repository.findInstances(dbIds);
+        for(DatabaseObject inst : instances) {
+            System.out.println(inst.getDbId() + "\t" + inst.getDisplayName() + "\t" + inst.getSchemaClass());
         }
     }
 }
