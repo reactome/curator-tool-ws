@@ -739,7 +739,7 @@ public class CurationRepository {
         // we have our own query
         String query = String.format(
                 "MATCH (n:TopLevelPathway) %s "
-                        + "RETURN n.dbId, n.displayName, n.schemaClass, n.speciesName, n._doRelease, n.releaseDate, n.hasDiagram",
+                        + "RETURN n.dbId, n.displayName, n.schemaClass, n.speciesName, n.doRelease, n.releaseDate, n.hasDiagram",
                 !speciesName.equalsIgnoreCase("All") ? String.format("WHERE n.speciesName = '%s'", speciesName) : "");
 
         Collection<Map<String, Object>> all = neo4jClient.query(query).fetch().all();
