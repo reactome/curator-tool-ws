@@ -473,4 +473,28 @@ public class CurationController {
             throw new IllegalStateException(e.getMessage());
         }
     }
+
+    // TODO: for Json serialization simple text instead of arrayList
+    /**
+     * Perform a query to get a collection of databases objects from dbIds
+     * @param dbIds
+     * @return
+     */
+    @PostMapping("fetchInstancesInBatch")
+    public List<SimpleInstance> fetchInstancesInBatch(@RequestBody ArrayList<Long> dbIds) {
+        try {
+           List<SimpleInstance> objs = new ArrayList<>();
+            for(Long dbId : dbIds) {
+                DatabaseObject obj = service.findById(dbId);
+                if (obj == null)
+                    throw new DatabaseObjectNotFoundException(dbId);
+                objs.add(converter.convert(obj));
+            }
+            return objs;
+        }
+        catch(Exception e) {
+            logger.error("CurationController.fetchInstancesInBatch: " + e.getMessage(), e);
+            throw new IllegalStateException(e.getMessage());
+        }
+    }
 }

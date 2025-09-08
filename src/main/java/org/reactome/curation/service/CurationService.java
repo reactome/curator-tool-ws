@@ -134,6 +134,13 @@ public class CurationService {
     public DatabaseObject findById(Long dbId) {
        return objectRepository.findById(dbId, 1);
     }
+
+    public List<DatabaseObject> findByIdInBatch(List<Long> dbIds) {
+        List<DatabaseObject> instances = new ArrayList<>();
+        for(Long dbId : dbIds)
+            instances.add(objectRepository.findById(dbId, 1));
+        return instances;
+    }
     
     public DatabaseObject commit(DatabaseObject obj) throws Exception {
         return curationRepository.commit(obj);
@@ -473,4 +480,5 @@ public class CurationService {
     public Set<Species> grepSpecies(Long dbId, String followAttributes, String schemaClass) {
         return this.curationRepository.grepSpecies(dbId, followAttributes, schemaClass);
     }
+
 }

@@ -131,7 +131,7 @@ public class CurationRepository {
         if (!neo4jTemplate.existsById(obj.getDbId(), obj.getClass())) {
             throw new DatabaseObjectNotFoundException(obj);
         }
-        
+
         Collection<CuratorToolReferrerList> referrers = null;
         if (ie != null) {
             referrers = getReferrers(obj.getDbId());
@@ -141,18 +141,18 @@ public class CurationRepository {
                 Node ieNode = Cypher.node(getNodeLabel(ie))
                         .withProperties("dbId", Cypher.literalOf(ie.getDbId()))
                         .named(getNodeName(ie));
-                for (CuratorToolReferrerList referList: referrers) {
+                for (CuratorToolReferrerList referList : referrers) {
                     for (SimpleInstance referrer : referList.getReferrers()) {
                         Node referrerNode = Cypher.node(getNodeLabel(referrer))
                                 .withProperties("dbId", Cypher.literalOf(referrer.getDbId()))
                                 .named(getNodeName(referrer));
-                        
+
                         // TODO: This will be changed. For the time being, delete any existing modified rel
                         // Since we'd like to use ie's class name, the following cypher query should 
                         // work to remove any modified relationship.
                         // Match the existing ie node by dbId and referrer node
                         Node allIENodes = Cypher.node(getNodeLabel(ie));
-                        
+
                         var query = Cypher.match(referrerNode.relationshipFrom(allIENodes, "modified").named("r"))
                                 .delete("r")
                                 .build();
@@ -167,7 +167,7 @@ public class CurationRepository {
                 }
             }
         }
-        
+
         // Build a dsl query to delete the node having this dbId
         Node objNode = Cypher.node(getNodeLabel(obj)).named(getNodeName(obj)).withProperties("dbId",
                 Cypher.literalOf(obj.getDbId()));
@@ -189,13 +189,13 @@ public class CurationRepository {
         // To be updated
 //        String newDisplayName = InstanceDisplayNameGenerator
     }
-    
+
     //TODO: Need to get the user name from the API call or from the http session via logging
     private void attachInstanceEdit(DatabaseObject obj) {
         // This is just for test
         // 
         InstanceEdit ie = new InstanceEdit();
-        
+
     }
 
     /**
@@ -230,7 +230,7 @@ public class CurationRepository {
         updateDisplayName(obj);
         // Get all get methods
         Map<String, Object> field2value = DatabaseObjectUtils.getAllFields(obj, false); // Use "false" to avoid empty
-                                                                                        // fields
+        // fields
         // Make sure existing DatabaseObject referred by the passed obj still exists to
         // avoid overwriting other curators' editing
         DatabaseObject deleted = findAnyDeletedValue(field2value);
@@ -332,7 +332,7 @@ public class CurationRepository {
             DatabaseObject valueObj = (DatabaseObject) value;
             if (valueObj.getDbId() == null || valueObj.getDbId() < 0)
                 return store(valueObj); // We should not let Spring creates another transaction for this call (see
-                                        // https://www.marcobehler.com/guides/spring-transaction-management-transactional-in-depth)
+            // https://www.marcobehler.com/guides/spring-transaction-management-transactional-in-depth)
         } else if (value instanceof StoichiometryObject) {
             StoichiometryObject stoiObj = (StoichiometryObject) value;
             if (stoiObj.getObject().getDbId() == null || stoiObj.getObject().getDbId() < 0)
@@ -498,8 +498,7 @@ public class CurationRepository {
         if (text == null || text.trim().length() == 0) {
             List emptyList = Collections.EMPTY_LIST;
             return listInstances(className, skip, limit, emptyList, emptyList, emptyList, emptyList);
-        }
-        else {
+        } else {
             // if the query (text) is a number (passed as a string), to an equal map for dbId
             if (text.matches("\\d+")) {
                 // Otherwise, for display name contains
@@ -508,8 +507,7 @@ public class CurationRepository {
                 List<ListOperand> operands = Collections.singletonList(ListOperand.EQUAL);
                 List<String> searchKeys = Collections.singletonList(text);
                 return listInstances(className, skip, limit, attributes, attributeTypes, operands, searchKeys);
-            }
-            else {
+            } else {
                 // Otherwise, for display name contains
                 List<String> attributes = Collections.singletonList("displayName");
                 List<String> attributeTypes = Collections.singletonList("string");
@@ -522,7 +520,7 @@ public class CurationRepository {
 
     /**
      * Get a list of objects in SimpleInstance.
-     * TODO: The performance may be slow with multiple match. Need to 
+     * TODO: The performance may be slow with multiple match. Need to
      * pay attention to the speed.
      * TODO: Better to use raw Cypher query directly. cypher dsl is just too complicated, unncessary!
      */
@@ -534,9 +532,9 @@ public class CurationRepository {
                                       List<ListOperand> operands,
                                       List<String> searchKeys) {
         // Make sure the four arrays have the same lengths
-        if (attributes.size() != attributeTypes.size() || 
-            attributes.size() != operands.size()  || 
-            attributes.size() != searchKeys.size()) {
+        if (attributes.size() != attributeTypes.size() ||
+                attributes.size() != operands.size() ||
+                attributes.size() != searchKeys.size()) {
             // Handle the case where the arrays are not of the same length
             throw new IllegalArgumentException("All arrays must have the same length");
         }
@@ -567,34 +565,31 @@ public class CurationRepository {
                 relationships.add(relationship);
                 if (operands.get(i) == ListOperand.IS_NULL || operands.get(i) == ListOperand.IS_NOT_NULL) {
                     // Special relationship condition
-                    var relationShipCondition = operands.get(i) == ListOperand.IS_NULL ? 
-                                                Cypher.name(relName).isNull() :
-                                                Cypher.name(relName).isNotNull();
+                    var relationShipCondition = operands.get(i) == ListOperand.IS_NULL ?
+                            Cypher.name(relName).isNull() :
+                            Cypher.name(relName).isNotNull();
                     relationshipConditions.add(relationShipCondition);
-                    
+
                     if (operands.get(i) == ListOperand.IS_NULL) {
-                        optionalRelationships.add(true); 
+                        optionalRelationships.add(true);
                         optionalWiths.add(relName);
-                    }
-                    else {
+                    } else {
                         optionalRelationships.add(false);
                         optionalWiths.add(null);
                     }
-                }
-                else {
+                } else {
                     relationshipConditions
-                        .add(createQueryCondition("displayName", operands.get(i), searchKeys.get(i), attributeNode));
+                            .add(createQueryCondition("displayName", operands.get(i), searchKeys.get(i), attributeNode));
                     optionalRelationships.add(false);
                     optionalWiths.add(null);
                 }
-            }
-            else {
+            } else {
                 attributeConditions
                         .add(createQueryCondition(attributes.get(i), operands.get(i), searchKeys.get(i), instance));
-            } 
+            }
 
         }
-        
+
         // Need to combine attribute conditions into a single condition
         // If we have more than one attribute condition.
         Condition combinedAttributeConditions = null;
@@ -608,41 +603,40 @@ public class CurationRepository {
             }
         }
         if (combinedAttributeConditions != null) // This is quite danger to cast like this. However, no better way to do that
-            ((OngoingReadingWithoutWhere)query).where(combinedAttributeConditions);
-        
+            ((OngoingReadingWithoutWhere) query).where(combinedAttributeConditions);
+
         for (int j = 0; j < relationships.size(); j++) {
             if (optionalRelationships.get(j)) {
                 query.optionalMatch(relationships.get(j));
                 var optionalWith = optionalWiths.get(j);
                 if (optionalWith != null) // Most likely we need to consider using raw cypher directly.
                     query = query.with(instance, Cypher.name(optionalWith));
-            }
-            else
+            } else
                 query.match(relationships.get(j));
             var where = relationshipConditions.get(j);
             if (where != null) // Usually this should not be null. But just in case.
                 // Quite danger to cast like this. 
                 if (query instanceof OngoingReadingWithoutWhere)
-                    ((OngoingReadingWithoutWhere)query).where(where);
+                    ((OngoingReadingWithoutWhere) query).where(where);
                 else if (query instanceof OrderableOngoingReadingAndWithWithoutWhere)
-                    ((OrderableOngoingReadingAndWithWithoutWhere)query).where(where);
-                else 
+                    ((OrderableOngoingReadingAndWithWithoutWhere) query).where(where);
+                else
                     logger.error("Have not handled query type for where: " + query.getClass().getName());
         }
         // Count the total instances based on these conditions and relationships
         // Make sure distinct is used to avoid duplicated: e.g. for is not null, multiple relationships
         // will return the same instance multiple times.
-        query.with(Functions.countDistinct(instance).as("totalCount"), 
-                   Functions.collectDistinct(instance).as("instances"))
+        query.with(Functions.countDistinct(instance).as("totalCount"),
+                        Functions.collectDistinct(instance).as("instances"))
                 .unwind(Cypher.name("instances")).as(Cypher.name("inst"));
-        
+
         var queryBuild = query
                 .returning(Cypher.name("totalCount"), Cypher.name("inst").property("dbId"),
                         Cypher.name("inst").property("displayName"), Cypher.name("inst").property("schemaClass"))
                 .orderBy(Cypher.name("inst").property("displayName")).skip(skip).limit(limit).build();
-        
+
 //        System.out.println("query: " + Renderer.getDefaultRenderer().render(queryBuild));
-        
+
         Collection<Map<String, Object>> all = neo4jClient.query(queryBuild.getCypher()).fetch().all();
         List<SimpleInstance> instances = new ArrayList<>();
         Integer totalCount = null;
@@ -662,7 +656,7 @@ public class CurationRepository {
         instanceList.setInstances(instances);
         return instanceList;
     }
-   
+
 
     private SimpleInstance constructInstance(Map<String, Object> map, String className) {
         SimpleInstance inst = new SimpleInstance();
@@ -692,36 +686,36 @@ public class CurationRepository {
     private void populateAttrValues(SimpleInstance inst, Map<String, Object> map) {
         for (String key : map.keySet()) {
             switch (key) {
-            case "n.dbId":
-                inst.setDbId(Long.parseLong(map.get("n.dbId").toString()));
-                break;
-            case "n.displayName":
-                Object displayName = map.get(key);
-                if (displayName != null) {
-                    inst.setDisplayName(displayName.toString());
-                } else {
-                    logger.warn(
-                            String.format("No {key} in the database for instance with dbId = ", key) + inst.getDbId());
-                }
-                break;
-            case "n.schemaClass":
-                Object schemaClassName = map.get(key);
-                if (schemaClassName != null) {
-                    inst.setSchemaClassName(schemaClassName.toString());
-                } else {
-                    logger.warn(
-                            String.format("No {key} in the database for instance with dbId = ", key) + inst.getDbId());
-                }
-                break;
-            default:
-                // n.speciesName, n._doRelease, n.realseDate, r.order, r.stoichiometry, match
-                if (!key.equals("p.dbId")) {
-                    Object obj = map.get(key);
-                    String attrName = key.split("\\.")[1];
-                    if (obj != null) {
-                        inst.setAttribute(attrName, obj);
+                case "n.dbId":
+                    inst.setDbId(Long.parseLong(map.get("n.dbId").toString()));
+                    break;
+                case "n.displayName":
+                    Object displayName = map.get(key);
+                    if (displayName != null) {
+                        inst.setDisplayName(displayName.toString());
+                    } else {
+                        logger.warn(
+                                String.format("No {key} in the database for instance with dbId = ", key) + inst.getDbId());
                     }
-                }
+                    break;
+                case "n.schemaClass":
+                    Object schemaClassName = map.get(key);
+                    if (schemaClassName != null) {
+                        inst.setSchemaClassName(schemaClassName.toString());
+                    } else {
+                        logger.warn(
+                                String.format("No {key} in the database for instance with dbId = ", key) + inst.getDbId());
+                    }
+                    break;
+                default:
+                    // n.speciesName, n._doRelease, n.realseDate, r.order, r.stoichiometry, match
+                    if (!key.equals("p.dbId")) {
+                        Object obj = map.get(key);
+                        String attrName = key.split("\\.")[1];
+                        if (obj != null) {
+                            inst.setAttribute(attrName, obj);
+                        }
+                    }
             }
         }
     }
@@ -732,7 +726,7 @@ public class CurationRepository {
      *
      * @param speciesName
      * @return List of top event instances that match speciesName (or any species if
-     *         speciesName == "All").
+     * speciesName == "All").
      */
     private List<SimpleInstance> getTopEvents(String speciesName) {
         // Need some specific information for event tree. Therefore,
@@ -792,8 +786,8 @@ public class CurationRepository {
      * @param operandsCsv
      * @param searchKeysCsv
      * @return a map of parent dbId's to a map of child dbId's to their
-     *         corresponding event, related to that parent via a hasEvent
-     *         relationship
+     * corresponding event, related to that parent via a hasEvent
+     * relationship
      */
     //TODO: _doRelease has not been imported yet. Need to update this back after it is fixed.
     private Map<Long, Map<Long, SimpleInstance>> getAllEvents() {
@@ -826,7 +820,7 @@ public class CurationRepository {
      * @param parentDbId2DbId2SimpleInstance
      * @param recursive
      * @return flag to indicate that at least one child (recursively) matched
-     *         searchKey (see: getTopEvents() and getAllEvents()
+     * searchKey (see: getTopEvents() and getAllEvents()
      */
     private void populateChildren(SimpleInstance inst,
                                   Map<Long, Map<Long, SimpleInstance>> parentDbId2DbId2SimpleInstance) {
@@ -847,6 +841,7 @@ public class CurationRepository {
 
     /**
      * This method will return anything listed under TopLevelEvents regardless their species assignment.
+     *
      * @return List of top events.
      */
     public List<SimpleInstance> getEventTree(String speciesName) {
@@ -867,7 +862,7 @@ public class CurationRepository {
     /**
      * @param dbId
      * @return For a given event identified by dbId, a list of "nodes" and "edges",
-     *         that themselves are maps of node/edge attribute->value respectively
+     * that themselves are maps of node/edge attribute->value respectively
      */
     public Map<String, List<Map<String, Object>>> getHierarchicalPlotData(Long dbId) {
         // Lists of nodes and edges that will be accumulated from the result of the
@@ -939,7 +934,7 @@ public class CurationRepository {
         ret.put("edges", edges);
         return ret;
     }
-    
+
     /**
      * Use this method to fetch a ReactionLikeEvent with all participants filled, e.g.,
      * regulators and physicalEntity in CAS should be loaded too. This is a convenient way
@@ -947,6 +942,7 @@ public class CurationRepository {
      * TODO: Most likely it would be better to let this method to figure out the renderabe type
      * of an entity should be. For the time being, let the front-end code do this.
      * TODO: Need to determine complex or entityset drug by doing a new layer query!!!
+     *
      * @param dbId
      * @return
      */
@@ -971,7 +967,7 @@ public class CurationRepository {
         var casNode = Cypher.node(ReactomeJavaConstants.CatalystActivity).named("cas");
         var catalystNode = Cypher.node(ReactomeJavaConstants.PhysicalEntity).named("catalyst");
         query = query.optionalMatch(node.relationshipTo(casNode, "catalystActivity").named("rel_catalystActivity"))
-                     .optionalMatch(casNode.relationshipTo(catalystNode, "physicalEntity").named("rel_catalyst"));
+                .optionalMatch(casNode.relationshipTo(catalystNode, "physicalEntity").named("rel_catalyst"));
         var caRefNode = Cypher.node(ReactomeJavaConstants.ReferenceEntity).named("catalystRef");
         query = query.optionalMatch(catalystNode.relationshipTo(caRefNode, ReactomeJavaConstants.referenceEntity).named("rel_caRef"));
 
@@ -981,7 +977,7 @@ public class CurationRepository {
         var regulationNode = Cypher.node(ReactomeJavaConstants.PositiveRegulation).named("posRegulatedBy");
         var activatorNode = Cypher.node(ReactomeJavaConstants.PhysicalEntity).named("activator");
         query = query.optionalMatch(node.relationshipTo(regulationNode, "regulatedBy").named("rel_pos_regulation"))
-                     .optionalMatch(regulationNode.relationshipTo(activatorNode, "regulator").named("rel_pos_regulator"));
+                .optionalMatch(regulationNode.relationshipTo(activatorNode, "regulator").named("rel_pos_regulator"));
         var activatorRefNode = Cypher.node(ReactomeJavaConstants.ReferenceEntity).named("activatorRef");
         query = query.optionalMatch(activatorNode.relationshipTo(activatorRefNode, ReactomeJavaConstants.referenceEntity).named("rel_cativatorRef"));
 
@@ -989,30 +985,30 @@ public class CurationRepository {
         regulationNode = Cypher.node(ReactomeJavaConstants.NegativeRegulation).named("negRegulatedBy");
         var inhibitorNode = Cypher.node(ReactomeJavaConstants.PhysicalEntity).named("inhibitor");
         query = query.optionalMatch(node.relationshipTo(regulationNode, "regulatedBy").named("rel_neg_regulation"))
-                     .optionalMatch(regulationNode.relationshipTo(inhibitorNode, "regulator").named("rel_neg_regulator"));
+                .optionalMatch(regulationNode.relationshipTo(inhibitorNode, "regulator").named("rel_neg_regulator"));
         var inhibitorRefNode = Cypher.node(ReactomeJavaConstants.ReferenceEntity).named("inhibitorRef");
         query = query.optionalMatch(inhibitorNode.relationshipTo(inhibitorRefNode, ReactomeJavaConstants.referenceEntity).named("rel_inhibitorRef"));
 
         // Combine all returned objects together for easy parsing
         var queryBuild = query.with(Cypher.name("node"), Cypher.name("input"), Cypher.name("inputRef"),
-                Cypher.name("output"), Cypher.name("outputRef"),
-                Cypher.name("catalyst"), Cypher.name("catalystRef"),
-                   Cypher.name("activator"), Cypher.name("activatorRef"),
-                   Cypher.name("inhibitor"), Cypher.name("inhibitorRef"),
-                   Cypher.name("rel_input"), Cypher.name("rel_output"))
-              .unwind(Cypher.raw("[{node: node, role: 'reaction'}, "
-                      + "{node: input, rel: rel_input, role: 'input', ref: inputRef}, "
-                      + "{node: output, rel: rel_output, role: 'output', ref: outputRef}, "
-                      + "{node: catalyst, role: 'catalyst', ref: catalystRef}, "
-                      + "{node: activator, role: 'activator', ref: activatorRef}, "
-                      + "{node: inhibitor, role: 'inhibitor', ref: inhibitorRef}]")) // Use raw to avoid any modification!!!
-              .as(Cypher.name("data"))
-              .returningDistinct(Cypher.name("data").property("node").property("dbId").as("inst.dbId"), // Prefix inst. so that we can use existed method.
-                                 Cypher.name("data").property("node").property("displayName").as("inst.displayName"),
-                                 Cypher.name("data").property("node").property("schemaClass").as("inst.schemaClass"),
-                                 Cypher.name("data").property("role").as("role"),
-                                 Cypher.name("data").property("rel").property("stoichiometry").as("stoichiometry"),
-                                 Cypher.name("data").property("ref").property("schemaClass").as("inst.ref.schemaClass")).build();
+                        Cypher.name("output"), Cypher.name("outputRef"),
+                        Cypher.name("catalyst"), Cypher.name("catalystRef"),
+                        Cypher.name("activator"), Cypher.name("activatorRef"),
+                        Cypher.name("inhibitor"), Cypher.name("inhibitorRef"),
+                        Cypher.name("rel_input"), Cypher.name("rel_output"))
+                .unwind(Cypher.raw("[{node: node, role: 'reaction'}, "
+                        + "{node: input, rel: rel_input, role: 'input', ref: inputRef}, "
+                        + "{node: output, rel: rel_output, role: 'output', ref: outputRef}, "
+                        + "{node: catalyst, role: 'catalyst', ref: catalystRef}, "
+                        + "{node: activator, role: 'activator', ref: activatorRef}, "
+                        + "{node: inhibitor, role: 'inhibitor', ref: inhibitorRef}]")) // Use raw to avoid any modification!!!
+                .as(Cypher.name("data"))
+                .returningDistinct(Cypher.name("data").property("node").property("dbId").as("inst.dbId"), // Prefix inst. so that we can use existed method.
+                        Cypher.name("data").property("node").property("displayName").as("inst.displayName"),
+                        Cypher.name("data").property("node").property("schemaClass").as("inst.schemaClass"),
+                        Cypher.name("data").property("role").as("role"),
+                        Cypher.name("data").property("rel").property("stoichiometry").as("stoichiometry"),
+                        Cypher.name("data").property("ref").property("schemaClass").as("inst.ref.schemaClass")).build();
 
 //        System.out.println(Renderer.getDefaultRenderer().render(queryBuild));
         // Process the query result and model it into a SimpleInstance to return
@@ -1052,8 +1048,7 @@ public class CurationRepository {
                     if (inputs == null)
                         inputs = new ArrayList<>();
                     targetList = inputs;
-                }
-                else if (role.equals("output")) {
+                } else if (role.equals("output")) {
                     if (outputs == null)
                         outputs = new ArrayList<>();
                     targetList = outputs;
@@ -1068,20 +1063,17 @@ public class CurationRepository {
                         targetList.add(clone);
                     }
                 }
-            }
-            else { // catalyst, activator and inhibitor
+            } else { // catalyst, activator and inhibitor
                 List<SimpleInstance> targetList = null;
                 if (role.equals("catalyst")) {
                     if (catalysts == null)
                         catalysts = new ArrayList<>();
                     targetList = catalysts;
-                }
-                else if (role.equals("activator")) {
+                } else if (role.equals("activator")) {
                     if (activators == null)
                         activators = new ArrayList<>();
                     targetList = activators;
-                }
-                else if (role.equals("inhibitor")) {
+                } else if (role.equals("inhibitor")) {
                     if (inhibitors == null)
                         inhibitors = new ArrayList<>();
                     targetList = inhibitors;
@@ -1116,17 +1108,17 @@ public class CurationRepository {
         return condition;
     }
 
-    private Condition createQueryCondition(String attribute, 
-                                          ListOperand operand, 
-                                          String searchKey, 
-                                          Node instance) {
+    private Condition createQueryCondition(String attribute,
+                                           ListOperand operand,
+                                           String searchKey,
+                                           Node instance) {
         Condition condition = null;
         var attributeProp = instance.property(attribute);
         switch (operand) {
             // We will convert everything to string to avoid type checking (e.g. dbId should be integer)
             case EQUAL:
                 condition = attributeProp.isNotNull()
-                                         .and(Functions.toString(attributeProp).isEqualTo(Cypher.literalOf(searchKey)));
+                        .and(Functions.toString(attributeProp).isEqualTo(Cypher.literalOf(searchKey)));
                 break;
             case NOT_EQUAL:
                 condition = attributeProp.isNotNull()
@@ -1140,8 +1132,8 @@ public class CurationRepository {
                 if (searchKey != null) // searchKey may be null for IS_NULL or IS_NOT_NULL
                     searchKey = searchKey.toLowerCase(); // Only here to avoid equal check
                 condition = attributeProp.isNotNull()
-                                          .and(Functions.toString(attributeProp)
-                                                        .matches(".*(?i)" + searchKey + ".*"));
+                        .and(Functions.toString(attributeProp)
+                                .matches(".*(?i)" + searchKey + ".*"));
                 break;
             case IS_NOT_NULL:
                 condition = attributeProp.isNotNull();
@@ -1216,7 +1208,7 @@ public class CurationRepository {
         // This should be called once so the query is kept here
         String query = "CREATE INDEX db_id_index IF NOT EXISTS FOR (n:DatabaseObject) ON (n.dbId)";
         neo4jClient.query(query).run(); // Nothing is needed but still need to get something. Otherwise Cypher is not
-                                        // sent.
+        // sent.
         // Create another index for _displayName for named based search (e.g. contains)
         query = "CREATE TEXT INDEX databaseobject_text_index_displayname IF "
                 + "NOT EXISTS FOR (n:DatabaseObject) ON (n.displayName)";
@@ -1323,30 +1315,28 @@ public class CurationRepository {
     }
 
     private Collection<CuratorToolReferrerList> checkReferrers(Collection<CuratorToolReferrer> references,
-                                                              Relationship.Direction direction) throws ClassNotFoundException {
+                                                               Relationship.Direction direction) throws ClassNotFoundException {
         Map<String, ArrayList<SimpleInstance>> finalReferrals = new HashMap<>();
         Collection<CuratorToolReferrerList> listRefs = new ArrayList<>();
         for (CuratorToolReferrer ref : references) {
-                String clsName = DatabaseObject.class.getPackageName() + '.' + ref.getSimpleInstance().getSchemaClassName();
-                Class<?> cls = Class.forName(clsName);
-                Map<String, Relationship> field2relRefObj = this.getField2rel(cls);
-                Relationship relationshipFromRef = field2relRefObj.get(ref.getClassName());
-                if(relationshipFromRef != null) {
-                    if (relationshipFromRef.direction().equals(direction)) {
-                        if(finalReferrals.containsKey(ref.getClassName()))
-                        {
-                           finalReferrals.get(ref.getClassName()).add(ref.getSimpleInstance());
-                        }
-                        else {
-                            ArrayList<SimpleInstance> insts = new ArrayList();
-                            insts.add(ref.getSimpleInstance());
-                            finalReferrals.put(ref.getClassName(), insts);
-                        }
+            String clsName = DatabaseObject.class.getPackageName() + '.' + ref.getSimpleInstance().getSchemaClassName();
+            Class<?> cls = Class.forName(clsName);
+            Map<String, Relationship> field2relRefObj = this.getField2rel(cls);
+            Relationship relationshipFromRef = field2relRefObj.get(ref.getClassName());
+            if (relationshipFromRef != null) {
+                if (relationshipFromRef.direction().equals(direction)) {
+                    if (finalReferrals.containsKey(ref.getClassName())) {
+                        finalReferrals.get(ref.getClassName()).add(ref.getSimpleInstance());
+                    } else {
+                        ArrayList<SimpleInstance> insts = new ArrayList();
+                        insts.add(ref.getSimpleInstance());
+                        finalReferrals.put(ref.getClassName(), insts);
                     }
                 }
+            }
 
         }
-        for(String key : finalReferrals.keySet()){
+        for (String key : finalReferrals.keySet()) {
             ArrayList<SimpleInstance> insts = new ArrayList();
             insts = finalReferrals.get(key);
             CuratorToolReferrerList curatorToolReferrerList = new CuratorToolReferrerList();
@@ -1384,3 +1374,4 @@ public class CurationRepository {
         return speciesSet;
     }
 }
+

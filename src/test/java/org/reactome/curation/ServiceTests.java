@@ -5,10 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import org.gk.model.ReactomeJavaConstants;
 import org.junit.jupiter.api.Test;
@@ -176,6 +173,17 @@ class ServiceTests {
         pathway.setHasEvent(rxnList);
         Set<DatabaseObject> newInstances = curationService.grepNewInstances(pathway);
         System.out.println(newInstances);
+    }
+
+    @Test
+    public void testBatchQuery() {
+        ArrayList<Long> dbIds = new ArrayList();
+        dbIds.add(9734984L);
+        dbIds.add(9725066L);
+        dbIds.add(48887L);
+        dbIds.add(459L);
+        Collection<DatabaseObject> instances = curationService.findByIdInBatch(dbIds);
+        System.out.println(instances);
     }
 
 
