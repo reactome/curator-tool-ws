@@ -464,7 +464,9 @@ public class CurationRepository {
      * Find all instances for the given dbIds. The returned instances are fully loaded.
      * @param dbIds
      * @return
+     * @deprecated: Don't call this method. This is highly efficient and may cause out of memory issue.
      */
+    @Deprecated
     public List<DatabaseObject> findInstances(List<Long> dbIds) {
         String query = "" +
                     "MATCH (n:DatabaseObject) " +
