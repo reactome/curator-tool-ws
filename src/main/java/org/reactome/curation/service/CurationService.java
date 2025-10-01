@@ -131,6 +131,10 @@ public class CurationService {
         this.diagramRepository.saveCytoscapeNewtork(pathwayId, json);
     }
     
+    public boolean existsById(Long dbId) {
+        return this.curationRepository.existsById(dbId);
+    }
+    
     public DatabaseObject findById(Long dbId) {
        return objectRepository.findById(dbId, 1);
     }

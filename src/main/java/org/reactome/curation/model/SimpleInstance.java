@@ -143,7 +143,7 @@ public class SimpleInstance extends DatabaseObject {
         sb.append("\"dbId\":").append(getDbId()).append(",");
         sb.append("\"displayName\":\"").append(getDisplayName()).append("\",");
         // We'd like to use simple name, SimpleInstance, here. 
-        sb.append("\"schemaClassName\":\"").append(getClass().getSimpleName()).append("\"");
+        sb.append("\"schemaClassName\":\"").append(getSchemaClassName()).append("\"");
         sb.append("}");
         return sb.toString();
     }

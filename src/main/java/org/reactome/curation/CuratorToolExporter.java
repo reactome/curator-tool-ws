@@ -196,7 +196,10 @@ public class CuratorToolExporter {
                     curationAttributes.add(stIdAtt);
                 }
             }
-            clsName2attributes.put(cls.getName(), curationAttributes);
+            String clsName = cls.getName();
+            if (clsName.startsWith("_"))
+                clsName = clsName.substring(1);
+            clsName2attributes.put(clsName, curationAttributes);
         }
         // Hacking this so that we have a top level pathway
         clsName2attributes.put(TopLevelPathway.class.getSimpleName(), 
@@ -216,7 +219,9 @@ public class CuratorToolExporter {
                 "DB_ID", "dbId",
                 "_doRelease", "doRelease",
 //                "stableIdentifier", "stId",
-                "_displayName", "displayName"
+                "_displayName", "displayName",
+                "deletedInstanceDB_ID", "deletedInstanceDbId",
+                "replacementInstanceDB_IDs", "replacementInstanceDbIds"
                 );
         return old2new;
     }

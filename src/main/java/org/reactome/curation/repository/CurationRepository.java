@@ -1226,6 +1226,15 @@ public class CurationRepository {
         else
             return store(obj);
     }
+    
+    /**
+     * Check if an instance with dbId exists in the database.
+     * @param dbId
+     * @return
+     */
+    public boolean existsById(Long dbId) {
+        return neo4jTemplate.existsById(dbId, DatabaseObject.class);
+    }
 
     /**
      * Get the list of class names in the database.

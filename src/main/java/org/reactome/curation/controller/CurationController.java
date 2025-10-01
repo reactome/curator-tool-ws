@@ -134,6 +134,11 @@ public class CurationController {
         return obj;
     }
     
+    @GetMapping("existsByDbId/{dbId}")
+    public Boolean existsByDbId(Long dbId) {
+        return this.service.existsById(dbId);
+    }
+    
     @GetMapping("findByDbId/{dbId}")
     public SimpleInstance findByDdIdInInstance(@PathVariable("dbId") Long dbId) {
         try {

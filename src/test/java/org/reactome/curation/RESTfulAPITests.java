@@ -486,6 +486,7 @@ class RESTfulAPITests {
     public void testFindByIdInInstance() throws Exception {
         assertNotNull(mockMvc);
         Long[] dbIds = {
+                9776999L, // UpdateTracker
                 141412L, // An EWAS
                 141429L, // A reaction has the same instance appearing in two slots.
                 109581L, // Pathway
