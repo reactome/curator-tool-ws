@@ -290,6 +290,10 @@ public class CurationService {
         return curationRepository.countInstances(clsName, query);
     }
     
+    public SimpleInstance fetchPathwayDiagramForPathway(Long pathwayId) {
+        return curationRepository.fetchPathwayDiagramForPathway(pathwayId);
+    }
+    
     public InstanceList listInstances(String className,
                                       int skip,
                                       int limit,

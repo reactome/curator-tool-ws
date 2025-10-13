@@ -546,6 +546,25 @@ public class CurationRepository {
             }
         }
     }
+    
+    /**
+     * This is basically a shortcut of attribute-based search for a pathway diagram. The implementation 
+     * may call listInstances(). However, we'd like to support a pathway id based search here. 
+     * @param pathwayId
+     * @return
+     */
+    public SimpleInstance fetchPathwayDiagramForPathway(Long pathwayId) {
+        String query = "" +
+                "MATCH (inst:PathwayDiagram)-[:representedPathway]->(p:Pathway) " +
+                "WHERE p.dbId =  " + pathwayId + " " +
+                "RETURN inst.dbId, inst.displayName, inst.schemaClass " +
+                "LIMIT 1";
+        Optional<Map<String, Object>> result = neo4jClient.query(query).fetch().first();
+        if (result.isEmpty())
+            return null;
+        SimpleInstance inst = constructInstance(result.get(), ReactomeJavaConstants.PathwayDiagram);
+        return inst;
+    }
 
     /**
      * Get a list of objects in SimpleInstance.

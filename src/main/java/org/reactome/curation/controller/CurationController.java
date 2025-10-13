@@ -290,6 +290,19 @@ public class CurationController {
     }
     
     /**
+     * Fetch a pathway diagram for a given pathway dbId. The returned SimpleInstance 
+     * is a shell object having only dbId, displayName, schemaClass. 
+     * 
+     */
+    @GetMapping("fetchPathwayDiagramForPathway/{dbId}")
+    public SimpleInstance fetchPathwayDiagramForPathway(@PathVariable("dbId") Long dbId) {
+        SimpleInstance instance = service.fetchPathwayDiagramForPathway(dbId);
+        if (instance == null)
+            throw new DatabaseObjectNotFoundException(dbId);
+        return instance;
+    }
+    
+    /**
      * This API can accept an optional parameter called query for searching based on display name
      * in the format like ?query=TP53. 
      * Note: the query string should be encoded using the standard http way from the front end (e.g. no space, etc).

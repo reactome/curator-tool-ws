@@ -454,6 +454,28 @@ class RESTfulAPITests {
     }
     
     @Test
+    public void testFetchPathwayDiagram() throws Exception {
+        assertNotNull(mockMvc);
+        
+        String jwt = getJWT();
+        
+        Long[] dbIds = {
+                9615710L, // Late endosomal microautophagy
+                
+        };
+        // The URL should start with "/" to make it true
+        String url = BASE_URL + "fetchPathwayDiagramForPathway/";
+        for (Long dbId : dbIds) {
+            String json = mockMvc.perform(get(url + dbId).header("Authorization", "Bearer " + jwt))
+                    .andExpect(status().isOk())
+                    .andReturn()
+                    .getResponse()
+                    .getContentAsString();
+            System.out.println(json);
+        }
+    }
+    
+    @Test
     public void testJSONDeserization() throws Exception {
         assertNotNull(mockMvc);
         Long[] dbIds = {
