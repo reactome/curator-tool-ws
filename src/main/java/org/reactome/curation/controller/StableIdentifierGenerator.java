@@ -75,9 +75,10 @@ public class StableIdentifierGenerator {
 
     public void setStableIdentifier(DatabaseObject instance) throws Exception {
         if(this.needStid(instance)){
-            StableIdentifier stableIdentifier = this.generateStableId(instance, instance.getCreated());
+            StableIdentifier stableIdentifier = this.generateStableId(instance);
+            if (stableIdentifier == null)
+                return; // No need to set stable identifier
             instance.setStableIdentifier(stableIdentifier);
-
             String stId = this.generateIdentifier(instance);
             instance.setStId(stId);
         }
@@ -92,21 +93,55 @@ public class StableIdentifierGenerator {
      * @throws Exception Thrown if unable to generate an identifier for the instance or if unable to set attribute
      *                   values for the newly created StableIdentifier instance
      */
-    private StableIdentifier generateStableId(DatabaseObject instance,
-                                             InstanceEdit created) throws Exception {
-        if (!needStid(instance))
-            return null;
+    private StableIdentifier generateStableId(DatabaseObject instance) throws Exception {
         String id = generateIdentifier(instance);
-        StableIdentifier stableIdentifier = new StableIdentifier();
-        stableIdentifier.setIdentifier(id);
-        stableIdentifier.setIdentifierVersion("1");
-        if (created != null)
-            stableIdentifier.setCreated(created);
-        stableIdentifier.setDisplayName(id + "." + stableIdentifier.getIdentifierVersion());
+        // Need to check if there is a need to re-assign stable identifier.
+        StableIdentifier existingSI = instance.getStableIdentifier();
+        if (existingSI != null) {
+            // Make sure exitingSI is loaded
+            if (!existingSI.isLoaded) {
+                existingSI = (StableIdentifier) curationService.findById(existingSI.getDbId());
+                instance.setStableIdentifier(existingSI); // Need to replace with the loaded one
+            }
+            if (id.equals(existingSI.getIdentifier())) {
+                return null; // The identifierVersion will be handled during slicing.
+            }
+        }
+        StableIdentifier rtn = null;
+        InstanceEdit created = getLastInstanceEdit(instance);
+        if (existingSI != null) {
+            rtn = existingSI;
+            rtn.setIdentifier(id); // Update identifier value. But leave the identifierVersion alone
+            if (created != null) {
+                rtn.setModified(created);
+                List<InstanceEdit> modifiedList = rtn.getModifiedList();
+                if (modifiedList == null)
+                    modifiedList = new ArrayList<>();
+                modifiedList.add(created);
+                rtn.setModifiedList(modifiedList); 
+            }            
+        }
+        else {
+            rtn = new StableIdentifier();
+            rtn.setIdentifierVersion("1");
+            if (created != null)
+                rtn.setCreated(created);
+        }
+        rtn.setDisplayName(id + "." + rtn.getIdentifierVersion());
 
-        return stableIdentifier;
+        return rtn;
     }
 
+    private InstanceEdit getLastInstanceEdit(DatabaseObject instance) {
+        InstanceEdit lastIE = null;
+        List<InstanceEdit> ieList = instance.getModifiedList();
+        if (ieList != null && !ieList.isEmpty()) {
+            lastIE = ieList.get(ieList.size() - 1);
+        } else {
+            lastIE = instance.getCreated();
+        }
+        return lastIE;
+    }
 
     /**
      * The actual method to generate a stable identifier for a GKInstance.
@@ -187,20 +222,9 @@ public class StableIdentifierGenerator {
         if (!Species.class.isAssignableFrom(species.getClass())) {
             throw new IllegalArgumentException("Instance " + species.getDbId() + " is not a species instance");
         }
-        if (!species.isLoaded) {
-            // We need to query the database to get the abbreviation
-            species = curationService.findById(species.getDbId());
-            if (species == null)
-                throw new IllegalArgumentException("Cannot find species in the database: " + species);
-        }
-        // If species is shell, it should be replaced by a db copy already. However,
-        // the db copy is not checked out for easy management.
-        Species spec = (Species) species;
-        String abbreviation = spec.getAbbreviation();
-        if (abbreviation == null || abbreviation.isEmpty()) {
-            throw new IllegalArgumentException(species.getDisplayName() + " has no abbreviation");
-        }
-        return abbreviation;
+        if (species.isLoaded) // Usually it is not the case
+            return ((Species) species).getAbbreviation();
+        return curationService.querySpeciesAbbreviation(species.getDbId());
     }
 
 }

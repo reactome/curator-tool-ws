@@ -16,6 +16,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang.WordUtils;
+import org.gk.model.InstanceNotFoundException;
 import org.gk.model.ReactomeJavaConstants;
 import org.neo4j.cypherdsl.core.Condition;
 import org.neo4j.cypherdsl.core.Cypher;
@@ -188,24 +189,31 @@ public class CurationRepository {
         return true;
     }
 
+
     /**
-     * Check if the display name needs to be updated.
-     *
+     * Store the DatabaseObject's shell representation (dbId and displayName only) so that we can
+     * refer to it from other objects.
      * @param obj
+     * @return
      * @throws Exception
      */
-    private void updateDisplayName(DatabaseObject obj) throws Exception {
-        // To be updated
-//        String newDisplayName = InstanceDisplayNameGenerator
+    @Transactional
+    public DatabaseObject storeShell(DatabaseObject obj) throws Exception {
+        // Only instance that has not been in the database can be stored
+        if (obj.getDbId() != null && neo4jTemplate.existsById(obj.getDbId(), obj.getClass())) {
+            throw new IllegalStateException(obj + " is in the database and cannot be stored. Call update instead.");
+        }
+        if (obj.getDbId() == null || obj.getDbId() < 0)
+            obj.setDbId(nextDbId());
+        // To do save, we create a DatabaseObject without relationships first
+        DatabaseObject proxyNode = obj.getClass().getConstructor().newInstance();
+        proxyNode.setDbId(obj.getDbId());
+        // Don't forget to copy the dbId there. It is not in the above loop.
+        proxyNode.setDbId(obj.getDbId());
+        neo4jTemplate.save(proxyNode);
+        return obj;
     }
     
-    //TODO: Need to get the user name from the API call or from the http session via logging
-    private void attachInstanceEdit(DatabaseObject obj) {
-        // This is just for test
-        // 
-        InstanceEdit ie = new InstanceEdit();
-        
-    }
 
     /**
      * Store a new DatabaseObject. The DatabaseObject should be new and doesn't have
@@ -235,8 +243,6 @@ public class CurationRepository {
         if (obj.getDbId() != null && neo4jTemplate.existsById(obj.getDbId(), obj.getClass())) {
             throw new IllegalStateException(obj + " is in the database and cannot be stored. Call update instead.");
         }
-        // Make sure the display name is still correct.
-        updateDisplayName(obj);
         // Get all get methods
         Map<String, Object> field2value = DatabaseObjectUtils.getAllFields(obj, false); // Use "false" to avoid empty
                                                                                         // fields
@@ -326,6 +332,27 @@ public class CurationRepository {
             neo4jClient.query(update.build().getCypher()).run(); // Nothing should be returned
         }
         return obj;
+    }
+    
+    /**
+     * Query species abbreviation for a given species dbId.
+     * 
+     * @param speciesDbId
+     * @return abbreviation or null if not found
+     * @throws Exception
+     */
+    public String querySpeciesAbbreviation(Long speciesDbId) {
+        String query = "" +
+                "MATCH (s:Species) " +
+                "WHERE s.dbId = $dbId " +
+                "RETURN s.abbreviation AS abbreviation " +
+                "LIMIT 1";
+        Optional<Map<String, Object>> result = neo4jClient.query(query)
+                .bindAll(Map.of("dbId", speciesDbId))
+                .fetch().first();
+        if (result.isEmpty() || result.get().get("abbreviation") == null)
+            throw new DatabaseObjectNotFoundException(speciesDbId);  
+        return (String) result.get().get("abbreviation");
     }
 
     /**

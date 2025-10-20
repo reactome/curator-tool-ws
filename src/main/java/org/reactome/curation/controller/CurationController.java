@@ -214,6 +214,7 @@ public class CurationController {
         if (this.service.isConflictWithStored(instance))
             throw new InstanceChangedException(instance);
         try {
+            boolean isUpdate = instance.getDbId() != null && instance.getDbId() > 0;
             DatabaseObject databaseObject = converter.convert(instance, true);
             Set<DatabaseObject> newInstances = service.grepNewInstances(databaseObject);
             // Keep the old dbIds
@@ -231,19 +232,29 @@ public class CurationController {
                 }
             }
 
-            // Commit instance so that species relationships are assigned
-            // Also the new instances can get its dbId assigned
-            DatabaseObject stored = service.commit(databaseObject);
-            this.stableIdentifierGenerator.setStableIdentifier(stored);
-
-            if (newInstances != null && !newInstances.isEmpty()) {
-                for (DatabaseObject newInstance : newInstances) {
-                    this.stableIdentifierGenerator.setStableIdentifier(newInstance);
-                    service.commit(newInstance);
-                }
+            // Step 1: Store new instances first so that we can have their correct dbIds
+            if (!isUpdate) 
+                service.commitNewInstanceInShell(databaseObject);
+            for (DatabaseObject newInstance : newInstances) 
+                service.commitNewInstanceInShell(newInstance);
+            // Step 2: Make sure stable identifiers are assigned if needed
+            this.stableIdentifierGenerator.setStableIdentifier(databaseObject);
+            for (DatabaseObject newInstance : newInstances) {
+                this.stableIdentifierGenerator.setStableIdentifier(newInstance);
             }
-            stored = service.commit(stored);
-
+            // Step 3: Commit the stable identifiers
+            // Need to see if the referred StableIdentifer needs to be committed
+            // And commit it first if needed
+            // The reason we do this here is to ensure the StableIdenrifier is updated at the server-side without
+            // the user's intervention due to the fact that the front-end may not have the complete information.
+            if (databaseObject.getStableIdentifier() != null && isUpdate) {
+                if (databaseObject.getModified() == databaseObject.getStableIdentifier().getModified()) 
+                    service.commit(databaseObject.getStableIdentifier());
+            }
+            // Step 4: Now commit the instance itself
+            // All new instances should have been committed here, including their stable identifiers
+            DatabaseObject stored = service.commit(databaseObject);
+                        
             // For the front end, we just need to return a SimpleInstance having attributes that may change
             SimpleInstance rtn = converter.convertInShell(stored);
             if (obj2id != null && obj2id.size() > 0) {

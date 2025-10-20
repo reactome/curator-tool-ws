@@ -143,6 +143,10 @@ public class CurationService {
         return curationRepository.commit(obj);
     }
     
+    public DatabaseObject commitNewInstanceInShell(DatabaseObject obj) throws Exception {
+        return curationRepository.storeShell(obj);
+    }
+    
     public List<CurationAttribute> getAttributes(String clsName) throws Exception {
         if (clsName2Attributes == null) {
             logger.error("clsName2Attributes is not initialized.");
@@ -466,6 +470,10 @@ public class CurationService {
                 }
             } 
         }
+    }
+    
+    public String querySpeciesAbbreviation(Long speciesDbId) {
+        return curationRepository.querySpeciesAbbreviation(speciesDbId);
     }
     
     /**
