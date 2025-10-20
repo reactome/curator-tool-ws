@@ -456,7 +456,9 @@ public class CurationService {
                         valueObj = stoichiometryObject.getObject();
                     }
 
-                    if (valueObj == null || valueObj.getDbId() > 0 || newInstances.contains(valueObj))
+                    if (valueObj == null || 
+                       (valueObj.getDbId() != null && valueObj.getDbId() > 0) || 
+                       newInstances.contains(valueObj))
                         continue; // do nothing
 
                     newInstances.add(valueObj);

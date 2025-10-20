@@ -554,48 +554,6 @@ class RESTfulAPITests {
     }
     
     /**
-     * Store a new complex with new references and a new reaction with new inputs/outputs.
-     * These two new instances have some overlapped negative DB_IDs. This check is to make sure
-     * these overlapped DB_IDs are not shared during deserialization. Newly stored instances 
-     * should have their own set of positive DB_IDs in the database.
-     * @throws Exception
-     */
-    @Test
-    public void testStoreComplexAndReaction() throws Exception {
-        assertNotNull(mockMvc);
-        
-        String url = BASE_URL + "storeDatabaseObject";
-        logger.info("URL: " + url);
-        
-        ObjectMapper mapper = CurationWSTestHelper.createObjectMapper();
-        
-        Complex complex = CurationWSTestHelper.createComplexWithNewComplexAndSubunit();
-        String complexJSON = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(complex);
-        logger.info("Complex in JSON:\n" + complexJSON);
-        
-        Reaction reaction = CurationWSTestHelper.createReaction();
-        String reactionJSON = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(reaction);
-        logger.info("Reaction in JSON:\n" + reactionJSON);
-        
-//        // Store
-//        String dbId = mockMvc.perform(post(url).contentType(MediaType.APPLICATION_JSON)
-//                           .content(complexJSON))
-//                           .andExpect(status().isOk())
-//                           .andReturn()
-//                           .getResponse()
-//                           .getContentAsString();
-//        logger.info("Done saving a new Complex: " + dbId);
-//        
-//        dbId = mockMvc.perform(post(url).contentType(MediaType.APPLICATION_JSON)
-//                .content(reactionJSON))
-//                .andExpect(status().isOk())
-//                .andReturn()
-//                .getResponse()
-//                .getContentAsString();
-//        logger.info("Done saving a new Reaction: " + dbId);
-    }
-    
-    /**
      * Test the store method using SimpleInstance.
      * @throws Exception
      */
@@ -641,12 +599,14 @@ class RESTfulAPITests {
         assertNotNull(mockMvc);
         Complex complex = CurationWSTestHelper.createComplexWithNewComplexAndSubunit();
         SimpleInstance instance = converter.convert(complex);
+        instance.setDefaultPersonId(140537L);
         ObjectMapper mapper = CurationWSTestHelper.createObjectMapper();
         String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(instance);
         logger.info("Complex in JSON:\n" + json);
         String url = BASE_URL + "commit";
         logger.info("URL: " + url);
-        String dbId = mockMvc.perform(post(url).contentType(MediaType.APPLICATION_JSON)
+        String jwt = getJWT();
+        String dbId = mockMvc.perform(post(url).header("Authorization", "Bearer " + jwt).contentType(MediaType.APPLICATION_JSON)
                            .content(json))
                            .andExpect(status().isOk())
                            .andReturn()

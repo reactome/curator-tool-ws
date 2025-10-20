@@ -220,11 +220,19 @@ public class CurationController {
             Map<DatabaseObject, Long> obj2id = null;
             if (newInstances != null && newInstances.size() > 0) {
                 obj2id = new HashMap<>();
-                for (DatabaseObject obj : newInstances)
+                for (DatabaseObject obj : newInstances) {
+                    // The front-end should not care about the InstanceEdit
+                    // instance created here to track the creation or modification.
+                    // Therefore, this new InstanceEdit is not returned here.
+                    // Also it has not negative dbId. Its dbid is null.
+                    if (obj.getDbId() == null)
+                        continue; // Means a new instance created in this commit
                     obj2id.put(obj, obj.getDbId());
+                }
             }
 
             // Commit instance so that species relationships are assigned
+            // Also the new instances can get its dbId assigned
             DatabaseObject stored = service.commit(databaseObject);
             this.stableIdentifierGenerator.setStableIdentifier(stored);
 
