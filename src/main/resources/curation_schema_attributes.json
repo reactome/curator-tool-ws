@@ -1503,47 +1503,6 @@
     "category" : "NOMANUALEDIT",
     "name" : "stId"
   } ],
-  "_UpdateTracker" : [ {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "dbId"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "updatedInstance"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "displayName"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "created"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "_release"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "action"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "modified"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "modifiedList"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "stId"
-  } ],
   "FrontPage" : [ {
     "definingType" : "UNDEFINED",
     "category" : "MANDATORY",
@@ -2500,6 +2459,59 @@
     "category" : "OPTIONAL",
     "name" : "revised"
   } ],
+  "Deleted" : [ {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "reason"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "dbId"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "displayName"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "deletedInstance"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modifiedList"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "curatorComment"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "replacementInstances"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "replacementInstanceDbIds"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "deletedInstanceDbId"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stId"
+  } ],
   "GroupModifiedResidue" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -2711,43 +2723,6 @@
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
     "name" : "isSequenceChanged"
-  } ],
-  "_Release" : [ {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "dbId"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "MANDATORY",
-    "name" : "releaseDate"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "displayName"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "created"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "modified"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "modifiedList"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "MANDATORY",
-    "name" : "releaseNumber"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "stId"
   } ],
   "NonsenseMutation" : [ {
     "definingType" : "UNDEFINED",
@@ -4373,59 +4348,6 @@
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
     "name" : "comment"
-  } ],
-  "_Deleted" : [ {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "reason"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "dbId"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "displayName"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "created"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "deletedInstance"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "modified"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "modifiedList"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "curatorComment"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "replacementInstances"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "replacementInstanceDB_IDs"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "deletedInstanceDB_ID"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "stId"
   } ],
   "InstanceEdit" : [ {
     "definingType" : "UNDEFINED",
@@ -6086,6 +6008,55 @@
     "category" : "NOMANUALEDIT",
     "name" : "stId"
   } ],
+  "DeletedInstance" : [ {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "dbId"
+  }, {
+    "definingType" : "ALL_DEFINING",
+    "category" : "NOMANUALEDIT",
+    "name" : "species"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "displayName"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "definingType" : "ALL_DEFINING",
+    "category" : "NOMANUALEDIT",
+    "name" : "name"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modifiedList"
+  }, {
+    "definingType" : "ALL_DEFINING",
+    "category" : "NOMANUALEDIT",
+    "name" : "deletedStableIdentifier"
+  }, {
+    "definingType" : "ALL_DEFINING",
+    "category" : "NOMANUALEDIT",
+    "name" : "class"
+  }, {
+    "definingType" : "ALL_DEFINING",
+    "category" : "NOMANUALEDIT",
+    "name" : "deletedInstanceDbId"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stId"
+  } ],
   "FragmentInsertionModification" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -6391,6 +6362,47 @@
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
     "name" : "otherIdentifier"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stId"
+  } ],
+  "UpdateTracker" : [ {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "dbId"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "updatedInstance"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "displayName"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "_release"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "action"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modifiedList"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -6735,6 +6747,43 @@
     "category" : "OPTIONAL",
     "name" : "internalReviewed"
   } ],
+  "Release" : [ {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "dbId"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "releaseDate"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "displayName"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modifiedList"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "releaseNumber"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stId"
+  } ],
   "CrosslinkedResidue" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -6884,55 +6933,6 @@
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
     "name" : "revised"
-  } ],
-  "_DeletedInstance" : [ {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "dbId"
-  }, {
-    "definingType" : "ALL_DEFINING",
-    "category" : "NOMANUALEDIT",
-    "name" : "species"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "displayName"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "created"
-  }, {
-    "definingType" : "ALL_DEFINING",
-    "category" : "NOMANUALEDIT",
-    "name" : "name"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "modified"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "modifiedList"
-  }, {
-    "definingType" : "ALL_DEFINING",
-    "category" : "NOMANUALEDIT",
-    "name" : "deletedStableIdentifier"
-  }, {
-    "definingType" : "ALL_DEFINING",
-    "category" : "NOMANUALEDIT",
-    "name" : "class"
-  }, {
-    "definingType" : "ALL_DEFINING",
-    "category" : "NOMANUALEDIT",
-    "name" : "deletedInstanceDB_ID"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "stId"
   } ],
   "DatabaseIdentifier" : [ {
     "definingType" : "ALL_DEFINING",

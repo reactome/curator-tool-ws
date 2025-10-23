@@ -217,6 +217,9 @@ public class CurationController {
             boolean isUpdate = instance.getDbId() != null && instance.getDbId() > 0;
             DatabaseObject databaseObject = converter.convert(instance, true);
             Set<DatabaseObject> newInstances = service.grepNewInstances(databaseObject);
+            // Make sure itself is not included in newInstances
+            if (newInstances.contains(databaseObject))
+                newInstances.remove(databaseObject);
             // Keep the old dbIds
             Map<DatabaseObject, Long> obj2id = null;
             if (newInstances != null && newInstances.size() > 0) {
@@ -235,8 +238,9 @@ public class CurationController {
             // Step 1: Store new instances first so that we can have their correct dbIds
             if (!isUpdate) 
                 service.commitNewInstanceInShell(databaseObject);
-            for (DatabaseObject newInstance : newInstances) 
+            for (DatabaseObject newInstance : newInstances) {
                 service.commitNewInstanceInShell(newInstance);
+            }
             // Step 2: Make sure stable identifiers are assigned if needed
             this.stableIdentifierGenerator.setStableIdentifier(databaseObject);
             for (DatabaseObject newInstance : newInstances) {
