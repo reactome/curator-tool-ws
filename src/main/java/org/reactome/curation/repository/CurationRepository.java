@@ -16,7 +16,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang.WordUtils;
-import org.gk.model.InstanceNotFoundException;
 import org.gk.model.ReactomeJavaConstants;
 import org.neo4j.cypherdsl.core.Condition;
 import org.neo4j.cypherdsl.core.Cypher;
@@ -33,6 +32,7 @@ import org.reactome.curation.model.CuratorToolWSUtils;
 import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.SimpleInstance;
+import org.reactome.server.graph.domain.annotations.ReactomeTransient;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.domain.model.InstanceEdit;
 import org.reactome.server.graph.domain.model.Species;
@@ -102,6 +102,11 @@ public class CurationRepository {
         Class<?> _class = cls;
         while (!_class.equals(Object.class)) {
             for (Field field : _class.getDeclaredFields()) {
+                // Escape field labeled as ReactomeTransient. These fields should not be stored
+                // They are used more likely for performance purpose only.
+                if (field.getAnnotation(ReactomeTransient.class) != null) {
+                    continue;
+                }
                 if (field.getAnnotation(Relationship.class) != null) {
                     field2rel.put(field.getName(), field.getAnnotation(Relationship.class));
                 }
@@ -239,19 +244,19 @@ public class CurationRepository {
      */
     @Transactional
     public DatabaseObject store(DatabaseObject obj) throws Exception {
-        // Only instance that has not been in the database can be stored
-        if (obj.getDbId() != null && neo4jTemplate.existsById(obj.getDbId(), obj.getClass())) {
-            throw new IllegalStateException(obj + " is in the database and cannot be stored. Call update instead.");
-        }
-        // Get all get methods
+        // Step 1: Store a shell first if the object is new
+        if (obj.getDbId() == null || obj.getDbId() < 0) 
+            obj = storeShell(obj); // Assign a new dbId and create a node for the object.
+        // Step 2: Get all fields and their values
         Map<String, Object> field2value = DatabaseObjectUtils.getAllFields(obj, false); // Use "false" to avoid empty
                                                                                         // fields
+        // Step 3: Check if any referred object has been deleted
         // Make sure existing DatabaseObject referred by the passed obj still exists to
         // avoid overwriting other curators' editing
         DatabaseObject deleted = findAnyDeletedValue(field2value);
         if (deleted != null)
             throw new DatabaseObjectNotFoundException(deleted);
-        // First save this object
+        // Step 4: Make sure all referred objects (new) are stored first
         Map<String, Relationship> field2rel = getField2rel(obj.getClass());
         // Recursive calling to store all new instances
         for (String field : field2value.keySet()) {
@@ -266,38 +271,12 @@ public class CurationRepository {
             } else
                 storeValueObj(value);
         }
-        // Now we can start to store
-        if (obj.getDbId() == null || obj.getDbId() < 0)
-            obj.setDbId(nextDbId());
-        // TODO: To be updated to use the values directly. Right now, some system-level
-        // attributes annotated
-        // with ReactomeTransient are also saved! That is not good!
-        // To do save, we create a DatabaseObject without relationships first
-        DatabaseObject proxyNode = obj.getClass().getConstructor().newInstance();
-        for (String field : field2value.keySet()) {
-            if (field2rel.containsKey(field))
-                continue; // Defer this for the time being
-            // Escape schemaClass
-            if (field.equals("schemaClass")) // This is inferred from the class name. So there is no need to copy!
-                continue;
-            Object value = field2value.get(field);
-            Method method = CuratorToolWSUtils.getSetMethod(field, value, obj);
-            if (method == null)
-                throw new IllegalStateException(
-                        "Cannot find method to set " + field + " in class, " + obj.getClass().getSimpleName());
-            method.invoke(proxyNode, value);
-        }
-        // Don't forget to copy the dbId there. It is not in the above loop.
-        proxyNode.setDbId(obj.getDbId());
-        neo4jTemplate.save(proxyNode);
-        // Working on relationships
+        // Step 5: Store the node properties first
+        storeNodeProperties(obj, field2value, field2rel);
+        
+        // Step 6: Working on relationships
         Node objNode = Cypher.node(getNodeLabel(obj)).named(getNodeName(obj)).withProperties("dbId",
                 Cypher.literalOf(obj.getDbId()));
-        // Save the schemaClass here since it is escaped. But we need it!
-        var setPropStat = Cypher.match(objNode)
-                .set(objNode.property("schemaClass").to(Cypher.literalOf(proxyNode.getSchemaClass())));
-        neo4jClient.query(setPropStat.build().getCypher()).run();
-
         OngoingReading stat = Cypher.match(objNode);
         List<org.neo4j.cypherdsl.core.Relationship> relationships = new ArrayList<>();
         for (String field : field2value.keySet()) {
@@ -314,7 +293,8 @@ public class CurationRepository {
                     var tmp = list.get(i);
                     stat = handleValueObj(objNode, tmp, rel, i, relationships, stat);
                 }
-            } else {
+            } 
+            else {
                 stat = handleValueObj(objNode, value, rel, null, relationships, stat);
             }
         }
@@ -332,6 +312,52 @@ public class CurationRepository {
             neo4jClient.query(update.build().getCypher()).run(); // Nothing should be returned
         }
         return obj;
+    }
+    
+    /**
+     * A helper method to store node properties only without relationships.
+     * @param obj
+     * @param field2value
+     * @param field2rel
+     * @throws Exception
+     */
+    private void storeNodeProperties(DatabaseObject obj,
+                                     Map<String, Object> field2value,
+                                     Map<String, Relationship> field2rel) throws Exception {
+        StringBuilder sb = new StringBuilder();
+        sb.append("MATCH (n:").append(getNodeLabel(obj))
+          .append(" {dbId: $dbId}) ");
+
+        // Build SET clauses for all primitive (non-relationship) fields
+        List<String> setClauses = new ArrayList<>();
+        Map<String, Object> params = new HashMap<>();
+        params.put("dbId", obj.getDbId());
+
+        for (Map.Entry<String, Object> entry : field2value.entrySet()) {
+            String field = entry.getKey();
+            Object value = entry.getValue();
+            if (value == null)
+                continue; // skip null values
+
+            if (field2rel.containsKey(field))
+                continue; // skip relationship fields
+
+            // Add parameterized property assignment
+            setClauses.add("n." + field + " = $" + field);
+            params.put(field, value);
+        }
+
+        // If there are properties to set
+        if (!setClauses.isEmpty()) {
+            sb.append("SET ").append(String.join(", ", setClauses)).append(" ");
+        }
+
+        sb.append("RETURN n");
+
+        // Execute the Cypher query
+        neo4jClient.query(sb.toString())
+            .bindAll(params)
+            .run();
     }
     
     /**
@@ -491,7 +517,7 @@ public class CurationRepository {
      * Find all instances for the given dbIds. The returned instances are fully loaded.
      * @param dbIds
      * @return
-     * @deprecated: Don't call this method. This is highly efficient and may cause out of memory issue.
+     * @deprecated: Don't call this method. This is highly inefficient and may cause out of memory issue.
      */
     @Deprecated
     public List<DatabaseObject> findInstances(List<Long> dbIds) {
@@ -1249,11 +1275,67 @@ public class CurationRepository {
      */
     @Transactional
     public DatabaseObject update(DatabaseObject obj) throws Exception {
-        boolean deleted = delete(obj, null);
-        if (!deleted)
+        // Make sure there is a node for this object first
+        if (!existsById(obj.getDbId())) {
             throw new IllegalStateException(
-                    "Cannot delete the object first to update: " + obj.getDisplayName() + " [" + obj.getDbId() + "]");
+                    "Cannot update an object that does not exist in the database: " + obj.getDisplayName() + " ["
+                            + obj.getDbId() + "]");
+        }
+        // Reset the node first to keep referrals
+        resetNode(obj);
+        // Then store the object again
         return store(obj);
+    }
+    
+    /**
+     * This method is used to delete all attribute relationships of an object but
+     * still keep the object node itself and relationships to other objects by other
+     * objects (i.e. referrals). Furthermore, all primitive attributes will be reset to
+     * null except dbId. Call this method before storing an updated object so that the referrals
+     * to this object are kept. This method is basically an opposite operation to store().
+     * @param obj
+     */
+    public void resetNode(DatabaseObject obj) {
+        // Get all attribute relationships
+        Map<String, Relationship> field2rel = getField2rel(obj.getClass());
+        
+        // Step 1: Build Cypher to delete all relationships and reset primitive attributes
+        StringBuilder sb = new StringBuilder();
+        sb.append("MATCH (n:").append(getNodeLabel(obj)).append(" {dbId: $dbId}) ");
+        int i = 0;
+        for (String field : field2rel.keySet()) {
+            // We will try to delete an relationship as long as it is defined in the model
+            // even though it may not exist in the database for this object
+            // By doing this, we don't need to load the object first to find out which relationship exists
+            Relationship rel = field2rel.get(field);
+            String alias = "r" + (++i);
+            // Use OPTIONAL MATCH to avoid any problem if there is no such relationship just in case
+            if (rel.direction() == Relationship.Direction.OUTGOING) {
+                sb.append(String.format("OPTIONAL MATCH (n)-[%s:%s]->() ", alias, rel.type()));
+            } else if (rel.direction() == Relationship.Direction.INCOMING) {
+                sb.append(String.format("OPTIONAL MATCH ()-[%s:%s]->(n) ", alias, rel.type()));
+            }
+        }
+        
+        // Add DELETE clause if relationships exist
+        if (i > 0) {
+            sb.append("DELETE ");
+            for (int j = 1; j <= i; j++) {
+                if (j > 1) sb.append(", ");
+                sb.append("r" + j);
+            }
+            sb.append(" WITH n ");
+        }
+
+        // Add reset of node properties except dbId
+        sb.append("SET n = { dbId: n.dbId } RETURN n");
+        logger.debug("Reset node Cypher: " + sb.toString());
+//        System.out.println("Reset node Cypher: " + sb.toString());
+
+        // Execute single Cypher query
+        neo4jClient.query(sb.toString())
+            .bind(obj.getDbId()).to("dbId")
+            .run();
     }
 
     /**

@@ -242,6 +242,9 @@ public class CurationController {
                 service.commitNewInstanceInShell(newInstance);
             }
             // Step 2: Make sure stable identifiers are assigned if needed
+            // We need to do this before the final commit so that the StableIdentifier 
+            // instances can be committed together (Note: New StableIdentifier instances
+            // have null dbId here).
             this.stableIdentifierGenerator.setStableIdentifier(databaseObject);
             for (DatabaseObject newInstance : newInstances) {
                 this.stableIdentifierGenerator.setStableIdentifier(newInstance);
@@ -252,12 +255,17 @@ public class CurationController {
             // The reason we do this here is to ensure the StableIdenrifier is updated at the server-side without
             // the user's intervention due to the fact that the front-end may not have the complete information.
             if (databaseObject.getStableIdentifier() != null && isUpdate) {
+                // Means the existing StableIdentifier has been modified
                 if (databaseObject.getModified() == databaseObject.getStableIdentifier().getModified()) 
                     service.commit(databaseObject.getStableIdentifier());
             }
             // Step 4: Now commit the instance itself
-            // All new instances should have been committed here, including their stable identifiers
+            // All new instances will not here due to step 2.
             DatabaseObject stored = service.commit(databaseObject);
+            // Step 5: Commit all other new instances too. 
+            for (DatabaseObject newInstance : newInstances) {
+                service.commit(newInstance);
+            }
                         
             // For the front end, we just need to return a SimpleInstance having attributes that may change
             SimpleInstance rtn = converter.convertInShell(stored);

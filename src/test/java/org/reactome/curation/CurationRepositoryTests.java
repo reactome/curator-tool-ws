@@ -17,6 +17,7 @@ import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.model.UserInstances;
 import org.reactome.curation.repository.CurationFileRepository;
 import org.reactome.curation.repository.CurationRepository;
+import org.reactome.server.graph.domain.model.CandidateSet;
 import org.reactome.server.graph.domain.model.Complex;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.domain.model.LiteratureReference;
@@ -115,6 +116,17 @@ class CurationRepositoryTests {
         SimpleInstance instance = repository.findInstance(displayName, clsNames);
         logger.info("Found instance for " + displayName + "...");
         logger.info(instance.toString());
+    }
+    
+    /**
+     * To test this method, make sure to change the reset method from private to public.
+     * @throws Exception
+     */
+    @Test
+    public void testReset() throws Exception {
+        DatabaseObject obj = new CandidateSet();
+        obj.setDbId(5632097L);
+        repository.resetNode(obj);
     }
 
     /**

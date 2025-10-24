@@ -616,6 +616,28 @@ class RESTfulAPITests {
     }
     
     @Test
+    public void testUpdateInstance() throws Exception {
+        assertNotNull(mockMvc);
+        
+        Complex complex = CurationWSTestHelper.createComplexWithNewComplexAndSubunit();
+        SimpleInstance instance = converter.convert(complex);
+        instance.setDefaultPersonId(140537L);
+        ObjectMapper mapper = CurationWSTestHelper.createObjectMapper();
+        String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(instance);
+        logger.info("Complex in JSON:\n" + json);
+        String url = BASE_URL + "commit";
+        logger.info("URL: " + url);
+        String jwt = getJWT();
+        String dbId = mockMvc.perform(post(url).header("Authorization", "Bearer " + jwt).contentType(MediaType.APPLICATION_JSON)
+                           .content(json))
+                           .andExpect(status().isOk())
+                           .andReturn()
+                           .getResponse()
+                           .getContentAsString();
+        logger.info("Done updating a Complex: " + dbId);
+    }
+    
+    @Test
     public void testUpdateModifiedResidue() throws Exception {
         assertNotNull(mockMvc);
         
