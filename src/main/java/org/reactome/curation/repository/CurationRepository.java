@@ -160,6 +160,7 @@ public class CurationRepository {
             deletedInstance.setClazz(obj.getClassName());
             deletedInstance.setDeletedStId(obj.getStId());
             deletedInstance.setName(obj.getDisplayName());
+            deletedInstance.setCreated(ie); // Don't forget to set created.
             // Check species is there by checking the method
             Map<String, Object> field2value = DatabaseObjectUtils.getAllFields(obj, true);
             if (field2value.containsKey(ReactomeJavaConstants.species)) {
@@ -178,6 +179,7 @@ public class CurationRepository {
             deletedInstances.add(deletedInstance);
         }
         deleted.setDeletedInstance(deletedInstances);
+        deleted.setCreated(ie); // Don't forget to set created.
         // Step 2: Store the Deleted object (cascade to store all DeletedInstance)
         store(deleted);
         // Step 3: Delete all instances whose dbIds are in the toBeDeleted list
@@ -205,7 +207,8 @@ public class CurationRepository {
             referrers = getReferrers(obj.getDbId());
             if (referrers != null && !referrers.isEmpty()) {
                 // Better to add first in case something is wrong during deletion
-                ie = (InstanceEdit) store(ie); // The cast should be safe
+                if (ie.getDbId() == null || ie.getDbId() < 0)
+                    ie = (InstanceEdit) store(ie); // The cast should be safe
                 Node ieNode = Cypher.node(getNodeLabel(ie))
                         .withProperties("dbId", Cypher.literalOf(ie.getDbId()))
                         .named(getNodeName(ie));
