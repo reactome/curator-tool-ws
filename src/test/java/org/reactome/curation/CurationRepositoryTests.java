@@ -26,6 +26,7 @@ import org.reactome.server.graph.domain.model.Publication;
 import org.reactome.server.graph.domain.model.Reaction;
 import org.reactome.server.graph.domain.model.SimpleEntity;
 import org.reactome.server.graph.domain.model.Summation;
+import org.reactome.server.graph.domain.model.Taxon;
 import org.reactome.server.graph.repository.AdvancedDatabaseObjectRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -127,6 +128,15 @@ class CurationRepositoryTests {
         DatabaseObject obj = new CandidateSet();
         obj.setDbId(5632097L);
         repository.resetNode(obj);
+    }
+    
+    @Test
+    public void testQueryInstanceTaxons() throws Exception {
+        DatabaseObject obj = new Complex();
+        obj.setDbId(9907837L);
+        List<Taxon> taxons = repository.queryInstanceTaxon(obj);
+        for (Taxon taxon : taxons)
+            System.out.println(taxon);
     }
 
     /**

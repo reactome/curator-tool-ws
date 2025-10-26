@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -31,6 +30,7 @@ import org.reactome.curation.repository.CurationRepository;
 import org.reactome.curation.repository.PathwayDiagramRepository;
 //import org.reactome.server.graph.aop.LazyFetchAspect;
 import org.reactome.server.graph.domain.model.DatabaseObject;
+import org.reactome.server.graph.domain.model.Deleted;
 import org.reactome.server.graph.domain.model.InstanceEdit;
 import org.reactome.server.graph.domain.model.Species;
 import org.reactome.server.graph.repository.AdvancedDatabaseObjectRepository;
@@ -322,7 +322,7 @@ public class CurationService {
     }
     
     /**
-     * Find instances for a list of dbIds. The returned DataaseObjects are fully loaded.
+     * Find instances for a list of dbIds. The returned DatabaseObjects are fully loaded.
      * @param dbIds
      * @return
      */
@@ -360,58 +360,26 @@ public class CurationService {
         return curationRepository.getEventTree(speciesName);
     }
 
-    public Map<String, List<Map<String, Object>>> getHierarchicalPlotData(Long dbId) {
-        return curationRepository.getHierarchicalPlotData(dbId);
-    }
-
-    
     public SimpleInstance fetchReactionWithParticipants(Long dbId) {
         return curationRepository.fetchReactionWithParticipants(dbId);
     }
 
-    /**
-     * A placeholder for a QA check in order to prototype the interaction with the front-end
-     * @param dbId
-     * @param checkType
-     * @param editedAttributeNames
-     * @param editedAttributeValues
-     * @return A list of modified attributes that have no value (such values come in as "null" in the API call)
-     */
-    public List<List<String>> getTestQACheckReport(
-            Long dbId,
-            String checkType,
-            List<String> editedAttributeNames,
-            List<String> editedAttributeValues) {
-        List<List<String>> ret = new ArrayList<>();
-        int i = 0;
-        for (String attr : editedAttributeNames) {
-            String val = editedAttributeValues.get(i);
-            if (checkType.equals("NonNullCheck")) {
-                if (val.equals("null")) {
-                    if (ret.isEmpty()) {
-                        ret.add(Arrays.asList("dbId", "Attribute Name", "Attribute Value"));
-                    }
-                    ret.add(Arrays.asList(dbId.toString(), attr, val));
-                }
-            } else if (checkType.equals("NegativeValueCheck")) {
-                try {
-                    if (Integer.parseInt(val) < 0) {
-                        if (ret.isEmpty()) {
-                            ret.add(Arrays.asList("dbId", "Attribute Name", "Attribute Value"));
-                        }
-                        ret.add(Arrays.asList(dbId.toString(), attr, val));
-                    }
-                } catch (NumberFormatException e) {
-                    // quiesce
-                }
-            }
-            i++;
-        }
-        return ret;
-    }
-
     public Boolean delete(DatabaseObject obj, InstanceEdit ie) throws Exception {
         return curationRepository.delete(obj, ie);
+    }
+    
+    public Deleted deleteByDeleted(Deleted deleted, InstanceEdit ie) throws Exception {
+        // Make sure the deleted objects are fully loaded
+        List<Integer> deletedDbIds = deleted.getDeletedInstanceDbId();
+        List<DatabaseObject> toBeDeleted = new ArrayList<>();
+        if (deletedDbIds != null && deletedDbIds.size() > 0) {
+            for (Integer dbId : deletedDbIds) {
+                DatabaseObject obj = findById(dbId.longValue());
+                if (obj != null)
+                    toBeDeleted.add(obj);
+            }           
+        }
+        return curationRepository.deleteByDeleted(deleted, toBeDeleted, ie);
     }
 
     public Collection<CuratorToolReferrerList> getReferrers(Long dbId) throws Exception {

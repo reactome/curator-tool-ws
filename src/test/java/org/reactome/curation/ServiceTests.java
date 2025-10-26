@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -14,6 +15,7 @@ import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.service.CurationService;
 import org.reactome.server.graph.domain.model.Complex;
 import org.reactome.server.graph.domain.model.DatabaseObject;
+import org.reactome.server.graph.domain.model.Deleted;
 import org.reactome.server.graph.domain.model.Event;
 import org.reactome.server.graph.domain.model.Figure;
 import org.reactome.server.graph.domain.model.InstanceEdit;

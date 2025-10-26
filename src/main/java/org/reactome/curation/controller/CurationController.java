@@ -2,7 +2,6 @@ package org.reactome.curation.controller;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,6 +26,7 @@ import org.reactome.curation.qa.QAService;
 import org.reactome.curation.qa.model.QAReport;
 import org.reactome.curation.service.CurationService;
 import org.reactome.server.graph.domain.model.DatabaseObject;
+import org.reactome.server.graph.domain.model.Deleted;
 import org.reactome.server.graph.domain.model.InstanceEdit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -294,8 +294,6 @@ public class CurationController {
     public SimpleInstance delete(@RequestBody SimpleInstance instance) {
         try {
             DatabaseObject obj = converter.convert(instance);
-            // Need to add an IE to the modified slot of the referrers
-            Collection<CuratorToolReferrerList> referrers = getReferrers(obj.getDbId());
             InstanceEdit ie = converter.createInstanceEdit(instance);
             if (service.delete(obj, ie)) {
                 SimpleInstance ieInst = converter.convert(ie);
@@ -305,6 +303,26 @@ public class CurationController {
         }
         catch(Exception e) {
             logger.error("CurationController.delete: " + e.getMessage(), e);
+            throw new IllegalStateException(e.getMessage());
+        }
+    }
+    
+    /**
+     * Delete one or more than one instances by parsing the Deleted object from the front end.
+     * @param instance
+     * @return
+     */
+    @PostMapping("deleteByDeleted")
+    public SimpleInstance deleteByDeleted(@RequestBody SimpleInstance instance) {
+        try {
+            // Instance should be Deleted. Otherwise, let an exception be thrown.
+            Deleted obj = (Deleted) converter.convert(instance);
+            InstanceEdit ie = converter.createInstanceEdit(instance);
+            Deleted rtn = service.deleteByDeleted(obj, ie);
+            return converter.convert(rtn);
+        }
+        catch(Exception e) {
+            logger.error("CurationController.deleteByDeleted: " + e.getMessage(), e);
             throw new IllegalStateException(e.getMessage());
         }
     }
@@ -508,19 +526,6 @@ public class CurationController {
     @GetMapping("fetchReactionWithParticipants/{dbId}")
     public SimpleInstance fetchReactionWithParticipants(@PathVariable("dbId") Long dbId) {
         return service.fetchReactionWithParticipants(dbId);
-    }
-
-    @GetMapping("getTestQACheckReport/{dbId}")
-    public List<List<String>> getTestQACheckReport(
-            @PathVariable("dbId") Long dbId,
-            @RequestParam("checkType") String checkType,
-            @RequestParam("editedAttributeNames") String editedAttributeNames,
-            @RequestParam("editedAttributeValues") String editedAttributeValues
-    ) {
-        return service.getTestQACheckReport(dbId,
-                checkType,
-                Arrays.asList(editedAttributeNames.split(",")),
-                Arrays.asList(editedAttributeValues.split(",")));
     }
 
     /**

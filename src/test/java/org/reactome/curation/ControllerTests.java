@@ -3,6 +3,7 @@ package org.reactome.curation;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -15,6 +16,7 @@ import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.server.graph.domain.model.Complex;
 import org.reactome.server.graph.domain.model.DatabaseObject;
+import org.reactome.server.graph.domain.model.Deleted;
 import org.reactome.server.graph.domain.model.Figure;
 import org.reactome.server.graph.domain.model.InstanceEdit;
 import org.reactome.server.graph.domain.model.LiteratureReference;
@@ -38,6 +40,29 @@ class ControllerTests {
 
     @Test
     void contextLoads() {
+    }
+    
+    @SuppressWarnings("deprecation")
+    @Test
+    public void testDeleteByDeletedInstance() throws Exception {
+        Deleted deleted = new Deleted();
+        deleted.setDbId(null);
+        List<Integer> ids = Arrays.asList(
+                9957297,
+                9957316,
+                9957322,
+                9957326,
+                9957330,
+                9957334,
+                9957339,
+                9957344,
+                9957349,
+                9957386
+            );
+        deleted.setDeletedInstanceDbId(ids);
+        SimpleInstance instance = converter.convert(deleted);
+        instance.setDefaultPersonId(CurationWSTestHelper.DEFAULT_PERSON_ID);
+        controller.deleteByDeleted(instance);
     }
 
     @Test

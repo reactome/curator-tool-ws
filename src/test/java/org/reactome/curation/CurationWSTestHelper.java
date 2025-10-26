@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.reactome.curation.config.DatabaseObjectTypeResolverBuilder;
 import org.reactome.server.graph.domain.model.Complex;
 import org.reactome.server.graph.domain.model.EntityWithAccessionedSequence;
 import org.reactome.server.graph.domain.model.LiteratureReference;
@@ -15,12 +14,10 @@ import org.reactome.server.graph.domain.model.Reaction;
 import org.reactome.server.graph.domain.model.SimpleEntity;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping;
-import com.fasterxml.jackson.databind.jsontype.TypeResolverBuilder;
 
 public class CurationWSTestHelper {
+    public static final Long DEFAULT_PERSON_ID = 140537L;
     
     public static Reaction createReaction() {
         Long dbId = -1L;
