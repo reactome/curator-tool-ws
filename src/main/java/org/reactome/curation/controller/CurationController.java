@@ -16,9 +16,9 @@ import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
 import org.reactome.curation.exceptions.InstanceChangedException;
 import org.reactome.curation.exceptions.InstanceDeletionException;
 import org.reactome.curation.model.CurationAttribute;
-import org.reactome.curation.model.CuratorToolReferrerList;
 import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
+import org.reactome.curation.model.NamedReferrerList;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.model.SimpleSchemaClass;
 import org.reactome.curation.model.UserInstances;
@@ -534,8 +534,8 @@ public class CurationController {
      * @return
      */
     @GetMapping("getReferrers/{dbId}")
-    public Collection<CuratorToolReferrerList> getReferrers(@PathVariable("dbId") Long dbId) throws Exception {
-        Collection<CuratorToolReferrerList> referrers =  service.getReferrers(dbId);
+    public Collection<NamedReferrerList> getReferrers(@PathVariable("dbId") Long dbId) throws Exception {
+        Collection<NamedReferrerList> referrers =  service.getReferrers(dbId);
         return referrers;
     }
 

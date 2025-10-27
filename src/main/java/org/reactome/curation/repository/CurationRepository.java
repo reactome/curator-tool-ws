@@ -24,9 +24,9 @@ import org.neo4j.cypherdsl.core.StatementBuilder.OngoingUpdate;
 import org.neo4j.cypherdsl.core.StatementBuilder.OrderableOngoingReadingAndWithWithoutWhere;
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
 import org.reactome.curation.model.CuratorToolReferrer;
-import org.reactome.curation.model.CuratorToolReferrerList;
 import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
+import org.reactome.curation.model.NamedReferrerList;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.server.graph.domain.annotations.ReactomeTransient;
 import org.reactome.server.graph.domain.model.DatabaseObject;
@@ -202,7 +202,7 @@ public class CurationRepository {
             throw new DatabaseObjectNotFoundException(obj);
         }
 
-        Collection<CuratorToolReferrerList> referrers = null;
+        Collection<NamedReferrerList> referrers = null;
         if (ie != null) {
             referrers = getReferrers(obj.getDbId());
             if (referrers != null && !referrers.isEmpty()) {
@@ -212,7 +212,7 @@ public class CurationRepository {
                 Node ieNode = Cypher.node(getNodeLabel(ie))
                         .withProperties("dbId", Cypher.literalOf(ie.getDbId()))
                         .named(getNodeName(ie));
-                for (CuratorToolReferrerList referList: referrers) {
+                for (NamedReferrerList referList: referrers) {
                     for (SimpleInstance referrer : referList.getReferrers()) {
                         Node referrerNode = Cypher.node(getNodeLabel(referrer))
                                 .withProperties("dbId", Cypher.literalOf(referrer.getDbId()))
@@ -1386,7 +1386,7 @@ public class CurationRepository {
         return referrals;
     }
 
-    public Collection<CuratorToolReferrerList> getReferrers(Long dbId) throws ClassNotFoundException {
+    public Collection<NamedReferrerList> getReferrers(Long dbId) throws ClassNotFoundException {
         var instanceNode = Cypher.node(ReactomeJavaConstants.DatabaseObject).named("ref").withProperties("dbId", Cypher.literalOf(dbId));
         var attributeNode = Cypher.node("DatabaseObject").named("inst");
 
@@ -1396,17 +1396,17 @@ public class CurationRepository {
         var rel1 = instanceNode.relationshipFrom(attributeNode).named("r_");
         Collection<CuratorToolReferrer> incomingReferences = this.getReferralsTo(instanceNode, rel1);
 
-        Collection<CuratorToolReferrerList> finalReferrals = new ArrayList<>();
+        Collection<NamedReferrerList> finalReferrals = new ArrayList<>();
         finalReferrals.addAll(this.checkReferrers(outgoingReferences, Relationship.Direction.INCOMING));
         finalReferrals.addAll(this.checkReferrers(incomingReferences, Relationship.Direction.OUTGOING));
 
         return finalReferrals;
     }
 
-    private Collection<CuratorToolReferrerList> checkReferrers(Collection<CuratorToolReferrer> references,
+    private Collection<NamedReferrerList> checkReferrers(Collection<CuratorToolReferrer> references,
                                                                Relationship.Direction direction) throws ClassNotFoundException {
         Map<String, List<SimpleInstance>> referrers = new HashMap<>();
-        Collection<CuratorToolReferrerList> listRefs = new ArrayList<>();
+        Collection<NamedReferrerList> listRefs = new ArrayList<>();
         for (CuratorToolReferrer ref : references) {
             String clsName = DatabaseObject.class.getPackageName() + '.' + ref.getSimpleInstance().getSchemaClassName();
             Class<?> cls = Class.forName(clsName);
@@ -1428,7 +1428,7 @@ public class CurationRepository {
         }
         for(String key : referrers.keySet()){
             List<SimpleInstance> insts = referrers.get(key);
-            CuratorToolReferrerList curatorToolReferrerList = new CuratorToolReferrerList();
+            NamedReferrerList curatorToolReferrerList = new NamedReferrerList();
             curatorToolReferrerList.setAttributeName(key);
             curatorToolReferrerList.setReferrers(insts);
             listRefs.add(curatorToolReferrerList);

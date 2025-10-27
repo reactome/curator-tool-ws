@@ -10,9 +10,9 @@ import java.util.stream.Stream;
 
 import org.gk.model.ReactomeJavaConstants;
 import org.junit.jupiter.api.Test;
-import org.reactome.curation.model.CuratorToolReferrerList;
 import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
+import org.reactome.curation.model.NamedReferrerList;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.model.UserInstances;
 import org.reactome.curation.repository.CurationFileRepository;
@@ -342,8 +342,8 @@ class CurationRepositoryTests {
         //Long dbId = 9815366L; // Instance Edit
         Long dbId = 179837L; // Physical Entity (EGFR)
         //Long dbId = 179837L;
-        Collection<CuratorToolReferrerList> instances = repository.getReferrers(dbId);
-        for(CuratorToolReferrerList ref : instances){
+        Collection<NamedReferrerList> instances = repository.getReferrers(dbId);
+        for(NamedReferrerList ref : instances){
             System.out.println("referrers " + ref.getAttributeName()  + ": " );
             for(SimpleInstance obj : ref.getReferrers()) {
                 System.out.println(obj.getDisplayName());

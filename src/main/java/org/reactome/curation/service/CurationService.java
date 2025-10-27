@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 import org.gk.model.ReactomeJavaConstants;
 import org.reactome.curation.config.CuratorToolEnv;
 import org.reactome.curation.model.CurationAttribute;
-import org.reactome.curation.model.CuratorToolReferrerList;
+import org.reactome.curation.model.NamedReferrerList;
 import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.SimpleInstance;
@@ -382,7 +382,7 @@ public class CurationService {
         return curationRepository.deleteByDeleted(deleted, toBeDeleted, ie);
     }
 
-    public Collection<CuratorToolReferrerList> getReferrers(Long dbId) throws Exception {
+    public Collection<NamedReferrerList> getReferrers(Long dbId) throws Exception {
         return curationRepository.getReferrers(dbId);
     }
     
