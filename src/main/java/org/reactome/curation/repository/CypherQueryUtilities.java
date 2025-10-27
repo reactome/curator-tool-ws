@@ -12,6 +12,7 @@ import org.gk.model.ReactomeJavaConstants;
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.server.graph.domain.model.DatabaseObject;
+import org.reactome.server.graph.domain.model.InstanceEdit;
 import org.reactome.server.graph.domain.model.Species;
 import org.reactome.server.graph.domain.model.Taxon;
 import org.springframework.data.neo4j.core.Neo4jClient;
@@ -167,5 +168,59 @@ public class CypherQueryUtilities {
         });
         return speciesList;
     }   
+    
+    /**
+     * A helper method to add an InstanceEdit to an Instance's modified and modifiedList attributes.
+     * Here is what need to be done:
+     * 1). Delete the existing modified relationship if there is one.
+     * 2). Create a new modified relationship to the passed InstanceEdit.
+     * 3). Create a new modifiedList relationship to the passed InstanceEdit with rank = maxRank + 1.
+     * @param instance
+     * @param ieNode
+     * @param ie
+     */
+    public void addModifiedIE(SimpleInstance instance, 
+                               InstanceEdit ie,
+                               Neo4jClient neo4jClient) {
+        String cypher = ""
+                + "MATCH (inst:" + getNodeLabel(instance) + " {dbId: $instanceDbId}) "
+                + "OPTIONAL MATCH (inst)<-[r_mod:modified]-(:InstanceEdit) "
+                + "DELETE r_mod "
+                + "WITH inst "
+                + "MATCH (ie:" + getNodeLabel(ie) + " {dbId: $ieDbId}) "
+                + "CREATE (inst)<-[:modified]-(ie) "
+                + "WITH inst, ie "
+                + "OPTIONAL MATCH (inst)<-[prevRel:modifiedList]-(:InstanceEdit) "
+                + "WITH inst, ie, coalesce(max(prevRel.rank), 0) AS maxRank "
+                + "CREATE (inst)<-[:modifiedList {rank: maxRank + 1}]-(ie) "
+                + "RETURN inst, ie";
+
+        neo4jClient.query(cypher)
+                   .bind(instance.getDbId()).to("instanceDbId")
+                   .bind(ie.getDbId()).to("ieDbId")
+                   .run();
+    }
+    
+    public String getNodeLabel(DatabaseObject obj) {
+        // This is a hack for convenience in case a SimpleInstance is used
+        // for attribute values
+        String clsName = null;
+        if (obj instanceof SimpleInstance)
+            clsName = DatabaseObject.class.getSimpleName();
+        else
+            clsName = obj.getClass().getSimpleName();
+        int index = clsName.lastIndexOf(".");
+        return clsName.substring(index + 1);
+    }
+
+    /**
+     * A utility to create a unique name for a node
+     *
+     * @param obj
+     * @return
+     */
+    public String getNodeName(DatabaseObject obj) {
+        return "obj_" + obj.getDbId();
+    }
 
 }

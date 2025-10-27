@@ -23,7 +23,7 @@ import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReadingWithoutWhere;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingUpdate;
 import org.neo4j.cypherdsl.core.StatementBuilder.OrderableOngoingReadingAndWithWithoutWhere;
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
-import org.reactome.curation.model.CuratorToolReferrer;
+import org.reactome.curation.model.Referrer;
 import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.NamedReferrerList;
@@ -202,38 +202,15 @@ public class CurationRepository {
             throw new DatabaseObjectNotFoundException(obj);
         }
 
-        Collection<NamedReferrerList> referrers = null;
         if (ie != null) {
-            referrers = getReferrers(obj.getDbId());
+            Collection<NamedReferrerList> referrers = getReferrers(obj.getDbId());
             if (referrers != null && !referrers.isEmpty()) {
                 // Better to add first in case something is wrong during deletion
                 if (ie.getDbId() == null || ie.getDbId() < 0)
                     ie = (InstanceEdit) store(ie); // The cast should be safe
-                Node ieNode = Cypher.node(getNodeLabel(ie))
-                        .withProperties("dbId", Cypher.literalOf(ie.getDbId()))
-                        .named(getNodeName(ie));
                 for (NamedReferrerList referList: referrers) {
                     for (SimpleInstance referrer : referList.getReferrers()) {
-                        Node referrerNode = Cypher.node(getNodeLabel(referrer))
-                                .withProperties("dbId", Cypher.literalOf(referrer.getDbId()))
-                                .named(getNodeName(referrer));
-
-                        // TODO: This will be changed. For the time being, delete any existing modified rel
-                        // Since we'd like to use ie's class name, the following cypher query should 
-                        // work to remove any modified relationship.
-                        // Match the existing ie node by dbId and referrer node
-                        Node allIENodes = Cypher.node(getNodeLabel(ie));
-
-                        var query = Cypher.match(referrerNode.relationshipFrom(allIENodes, "modified").named("r"))
-                                .delete("r")
-                                .build();
-
-                        neo4jClient.query(query.getCypher()).run();
-
-                        var stat = Cypher.match(ieNode);
-                        stat = stat.match(referrerNode);
-                        var relationship = referrerNode.relationshipFrom(ieNode, "modified");
-                        neo4jClient.query(stat.create(relationship).build().getCypher()).run();
+                        this.queryUtilities.addModifiedIE(referrer, ie, neo4jClient);
                     }
                 }
             }
@@ -249,7 +226,6 @@ public class CurationRepository {
         // as long as no exception is thrown.
         return true;
     }
-
 
     /**
      * Store the DatabaseObject's shell representation (dbId and displayName only) so that we can
@@ -488,15 +464,7 @@ public class CurationRepository {
     }
 
     private String getNodeLabel(DatabaseObject obj) {
-        // This is a hack for convenience in case a SimpleInstance is used
-        // for attribute values
-        String clsName = null;
-        if (obj instanceof SimpleInstance)
-            clsName = DatabaseObject.class.getSimpleName();
-        else
-            clsName = obj.getClass().getSimpleName();
-        int index = clsName.lastIndexOf(".");
-        return clsName.substring(index + 1);
+        return this.queryUtilities.getNodeLabel(obj);
     }
 
     /**
@@ -506,7 +474,7 @@ public class CurationRepository {
      * @return
      */
     private String getNodeName(DatabaseObject obj) {
-        return "obj_" + obj.getDbId();
+        return this.queryUtilities.getNodeName(obj);
     }
 
     /**
@@ -1356,18 +1324,20 @@ public class CurationRepository {
         return ret;
     }
 
-    private Collection<CuratorToolReferrer> getReferralsTo(Node instanceNode, org.neo4j.cypherdsl.core.Relationship rel) {
+    private Collection<Referrer> getReferralsTo(Node instanceNode, org.neo4j.cypherdsl.core.Relationship rel) {
         var query = Cypher.match(instanceNode);
 
         var queryBuilder = query.optionalMatch(rel)
-                .returning(Cypher.name("inst").property("dbId"),
-                        Cypher.name("inst").property("displayName"), Cypher.name("inst").property("schemaClass"),
-                        Functions.type(rel).as("rel"))
+                .returning(Cypher.name("inst").property("dbId"), // inst is the referred instance (i.e. the instance referring to the query instance)
+                           Cypher.name("inst").property("displayName"), 
+                           Cypher.name("inst").property("schemaClass"),
+                           Functions.type(rel).as("rel"))
                 .orderBy(Cypher.name("inst").property("displayName")).limit(1000).build();
-        Collection<Map<String, Object>> allOutgoing = neo4jClient.query(queryBuilder.getCypher()).fetch().all();
+        // Support both incoming and outgoing relationships
+        Collection<Map<String, Object>> relationships = neo4jClient.query(queryBuilder.getCypher()).fetch().all();
 
-        ArrayList<CuratorToolReferrer> referrals = new ArrayList<>();
-        for (Map<String, Object> map : allOutgoing) {
+        ArrayList<Referrer> referrals = new ArrayList<>();
+        for (Map<String, Object> map : relationships) {
             // This should not occur. However, just in case
             if (map.get("inst.dbId") == null) {
                 logger.error("Return result with dbId = null: " + rel.toString());
@@ -1378,9 +1348,9 @@ public class CurationRepository {
                 continue;
             }
             SimpleInstance inst = constructInstance(map, map.get("inst.schemaClass").toString());
-            String className = map.get("rel") + "";
+            String attributeName = map.get("rel") + "";
 
-            CuratorToolReferrer ref = new CuratorToolReferrer(className, inst);
+            Referrer ref = new Referrer(attributeName, inst);
             referrals.add(ref);
         }
         return referrals;
@@ -1391,37 +1361,39 @@ public class CurationRepository {
         var attributeNode = Cypher.node("DatabaseObject").named("inst");
 
         var rel = instanceNode.relationshipTo(attributeNode).named("r_");
-        Collection<CuratorToolReferrer> outgoingReferences = this.getReferralsTo(instanceNode, rel);
+        Collection<Referrer> outgoingReferences = this.getReferralsTo(instanceNode, rel);
 
         var rel1 = instanceNode.relationshipFrom(attributeNode).named("r_");
-        Collection<CuratorToolReferrer> incomingReferences = this.getReferralsTo(instanceNode, rel1);
+        Collection<Referrer> incomingReferences = this.getReferralsTo(instanceNode, rel1);
 
         Collection<NamedReferrerList> finalReferrals = new ArrayList<>();
+        // Incoming relationships from other instances to the query instance. This is opposite to the direction
+        // for relationship query.
         finalReferrals.addAll(this.checkReferrers(outgoingReferences, Relationship.Direction.INCOMING));
         finalReferrals.addAll(this.checkReferrers(incomingReferences, Relationship.Direction.OUTGOING));
 
         return finalReferrals;
     }
 
-    private Collection<NamedReferrerList> checkReferrers(Collection<CuratorToolReferrer> references,
-                                                               Relationship.Direction direction) throws ClassNotFoundException {
+    private Collection<NamedReferrerList> checkReferrers(Collection<Referrer> references,
+                                                         Relationship.Direction direction) throws ClassNotFoundException {
         Map<String, List<SimpleInstance>> referrers = new HashMap<>();
         Collection<NamedReferrerList> listRefs = new ArrayList<>();
-        for (CuratorToolReferrer ref : references) {
+        for (Referrer ref : references) {
             String clsName = DatabaseObject.class.getPackageName() + '.' + ref.getSimpleInstance().getSchemaClassName();
             Class<?> cls = Class.forName(clsName);
             Map<String, Relationship> field2relRefObj = this.getField2rel(cls);
-            Relationship relationshipFromRef = field2relRefObj.get(ref.getClassName());
+            Relationship relationshipFromRef = field2relRefObj.get(ref.getAttributeName());
             if(relationshipFromRef != null) {
                 if (relationshipFromRef.direction().equals(direction)) {
-                    if(referrers.containsKey(ref.getClassName()))
+                    if(referrers.containsKey(ref.getAttributeName()))
                     {
-                        referrers.get(ref.getClassName()).add(ref.getSimpleInstance());
+                        referrers.get(ref.getAttributeName()).add(ref.getSimpleInstance());
                     }
                     else {
                         List<SimpleInstance> insts = new ArrayList<>();
                         insts.add(ref.getSimpleInstance());
-                        referrers.put(ref.getClassName(), insts);
+                        referrers.put(ref.getAttributeName(), insts);
                     }
                 }
             }
