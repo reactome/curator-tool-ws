@@ -2461,7 +2461,7 @@
   } ],
   "Deleted" : [ {
     "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
+    "category" : "MANDATORY",
     "name" : "reason"
   }, {
     "definingType" : "UNDEFINED",
@@ -2489,18 +2489,18 @@
     "name" : "modifiedList"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
+    "category" : "OPTIONAL",
     "name" : "curatorComment"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
+    "category" : "OPTIONAL",
     "name" : "replacementInstances"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
     "name" : "replacementInstanceDbIds"
   }, {
-    "definingType" : "UNDEFINED",
+    "definingType" : "ALL_DEFINING",
     "category" : "NOMANUALEDIT",
     "name" : "deletedInstanceDbId"
   }, {

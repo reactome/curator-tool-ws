@@ -179,6 +179,22 @@ public class CuratorToolExporter {
                 curationAtt.setName(attName);
                 curationAtt.setCategory(CurationAttribute.Category.getCategory(att.getCategory()));
                 curationAtt.setDefiningType(CurationAttribute.DefiningType.getDefiningType(att.getDefiningType()));
+                
+                // Some manual fixes for Deleted class
+                if (cls.getName().equals(ReactomeJavaConstants._Deleted)) { // The class name is still based on MySQL data model
+                    // But attribute names have been changed to use the Graph data model's names
+                    if (attName.equals("deletedInstanceDbId")) {
+                        curationAtt.setDefiningType(CurationAttribute.DefiningType.ALL_DEFINING);
+                    }
+                    else if (attName.equals("reason")) {
+                       curationAtt.setCategory(CurationAttribute.Category.MANDATORY);
+                   }
+                    else if (attName.equals("curatorComment") ||
+                             attName.equals("replacementInstances")) {
+                        curationAtt.setCategory(CurationAttribute.Category.OPTIONAL);
+                    }
+                }
+                
                 curationAttributes.add(curationAtt);
                 // Need to duplicate the modified to the modfiedList
                 if (att.getName().equals(ReactomeJavaConstants.modified)) {
