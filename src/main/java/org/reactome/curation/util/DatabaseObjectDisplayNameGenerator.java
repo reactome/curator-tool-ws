@@ -8,6 +8,13 @@ import org.reactome.server.graph.domain.model.Taxon;
 
 public class DatabaseObjectDisplayNameGenerator {
     
+    /**
+     * Ported from InstanceDisplayNameGenerator.generateDeletedInstanceName() in the Java desktop app.
+     * @param instance
+     * @return
+     * @throws InvalidAttributeException
+     * @throws Exception
+     */
     public static String generateDeletedInstanceName(DeletedInstance instance) throws InvalidAttributeException, Exception {
         StringBuilder displayName = new StringBuilder();
         displayName.append("Deleted Instance - [");

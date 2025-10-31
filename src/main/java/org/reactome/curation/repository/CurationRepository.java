@@ -28,6 +28,7 @@ import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.NamedReferrerList;
 import org.reactome.curation.model.SimpleInstance;
+import org.reactome.curation.util.DatabaseObjectDisplayNameGenerator;
 import org.reactome.server.graph.domain.annotations.ReactomeTransient;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.domain.model.Deleted;
@@ -175,7 +176,8 @@ public class CurationRepository {
                 }
             }
             // Display name
-            deletedInstance.setDisplayName(obj.getDisplayName());
+            String displayName = DatabaseObjectDisplayNameGenerator.generateDeletedInstanceName(deletedInstance);
+            deletedInstance.setDisplayName(displayName);
             deletedInstances.add(deletedInstance);
         }
         deleted.setDeletedInstance(deletedInstances);

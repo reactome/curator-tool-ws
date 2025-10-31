@@ -157,7 +157,6 @@ public class CurationController {
         }
     }
     
-    @PostMapping("findByDbIds")
     /**
      * 
      * @param dbIds
@@ -165,6 +164,7 @@ public class CurationController {
      * @deprecated: Don't call this method. This is highly efficient and may cause out of memory issue.
      */
     @Deprecated
+    @PostMapping("findByDbIds")
     public List<SimpleInstance> findByDbIds(@RequestBody List<Long> dbIds) {
         try {
             List<DatabaseObject> objs = service.findInstancesByIds(dbIds);
