@@ -25,6 +25,7 @@ import org.reactome.curation.model.UserInstances;
 import org.reactome.curation.qa.QAService;
 import org.reactome.curation.qa.model.QAReport;
 import org.reactome.curation.service.CurationService;
+import org.reactome.curation.service.PathwayDiagramService;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.domain.model.Deleted;
 import org.reactome.server.graph.domain.model.InstanceEdit;
@@ -66,6 +67,8 @@ public class CurationController {
     private QAService qaService;
     @Autowired
     private StableIdentifierGenerator stableIdentifierGenerator;
+    @Autowired
+    private PathwayDiagramService diagramService;
     
     /**
      * This method basically provides as a delegate to load the pathway JSON files.
@@ -75,12 +78,9 @@ public class CurationController {
     @GetMapping("diagram/{fileName}")
     public JsonNode loadDiagram(@PathVariable("fileName") String fileName) {
         try {
-            String jsonContent = service.loadDiagramJson(fileName);
             // To ensure the returned text is well formated JSON text for the front-end,
             // we will use JsonNode as a proxy for the JSON text.
-            ObjectMapper objectMapper = getObjectMapper();
-            JsonNode jsonNode = objectMapper.readTree(jsonContent); 
-            return jsonNode;
+            return diagramService.loadDiagramJson(fileName);
         }
         catch(IOException e) {
             logger.error("CurationController.loadDiagram: " + e.getMessage(), e);
@@ -91,12 +91,9 @@ public class CurationController {
     @GetMapping("getCyNetwork/{pathwayId}")
     public JsonNode loadCytoscapeNetwork(@PathVariable("pathwayId") Long pathwayId) {
         try {
-            String text = service.loadCytosapeNetwork(pathwayId);
             // To ensure the returned text is well formated JSON text for the front-end,
             // we will use JsonNode as a proxy for the JSON text.
-            ObjectMapper objectMapper = getObjectMapper();
-            JsonNode jsonNode = objectMapper.readTree(text); 
-            return jsonNode;
+            return diagramService.loadCytosapeNetwork(pathwayId);
         }
         catch(IOException e) {
             logger.error("CurationController.loadCytoscapeNetwork: " + e.getMessage(), e);
@@ -106,7 +103,7 @@ public class CurationController {
     
     @GetMapping("hasCyNetwork/{pathwayId}")
     public Boolean hasCytoscapeNetwork(@PathVariable("pathwayId") Long pathwayId) throws IOException {
-        return service.hasCytoscapeNetwork(pathwayId);
+        return diagramService.hasCytoscapeNetwork(pathwayId);
     }
     
     //NB: This method has not been listed in the test!
@@ -114,13 +111,10 @@ public class CurationController {
     public Boolean saveCytoscapeNetwork(@PathVariable("pathwayId") Long pathwayId,
                                      @RequestBody JsonNode networkJson) {
         try {
-            // Convert JsonNode to a String first
-            ObjectMapper mapper = getObjectMapper();
-            String jsonText = mapper.writeValueAsString(networkJson);
-            service.saveCytoscapeNetwork(pathwayId, jsonText);
+            diagramService.saveCytoscapeNetwork(pathwayId, networkJson);
             return Boolean.TRUE;
         }
-        catch(IOException e) {
+        catch(Exception e) {
             logger.error("CurationController.saveCytoscapeNetwork: " + e.getMessage(), e);
 //            throw new IllegalStateException(e.getMessage());
             return Boolean.FALSE;

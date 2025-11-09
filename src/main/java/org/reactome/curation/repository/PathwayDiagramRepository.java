@@ -50,9 +50,14 @@ public class PathwayDiagramRepository {
         return file.exists();
     }
     
-    public void saveCytoscapeNewtork(Long pathwayId, String networkJson) throws IOException {
+    public void saveCytoscapeNetwork(Long pathwayId, String networkJson) throws IOException {
         logger.debug("Saving cytoscape network for " + pathwayId + "...");
         File file = new File(toolEnv.getDiagramCytoscapeDir(), pathwayId + ".json");
+        writeJSON(networkJson, file);
+    }
+
+
+    private void writeJSON(String networkJson, File file) throws IOException {
         FileWriter fileWriter = new FileWriter(file);
         BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
         bufferedWriter.write(networkJson);
@@ -60,5 +65,8 @@ public class PathwayDiagramRepository {
         fileWriter.close();
     }
     
+    public String getDiagramGraphDir() {
+        return toolEnv.getDiagramGraphDir();
+    }    
 
 }

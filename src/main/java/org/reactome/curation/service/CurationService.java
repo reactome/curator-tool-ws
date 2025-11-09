@@ -76,9 +76,6 @@ public class CurationService {
     // For file-based repository
     @Autowired
     private CurationFileRepository fileRepository;
-    // To handle pathway daigrams
-    @Autowired
-    private PathwayDiagramRepository diagramRepository;
     
     @Autowired
     private CuratorToolEnv toolEnv;
@@ -113,22 +110,6 @@ public class CurationService {
             clsName2attName2Att.put(clsName, attName2Att);
         }
         return clsName2attName2Att;
-    }
-    
-    public String loadDiagramJson(String fileName) throws IOException {
-        return this.diagramRepository.loadDiagramJson(fileName);
-    }
-    
-    public String loadCytosapeNetwork(Long pathwayId) throws IOException {
-        return diagramRepository.loadCytoscapeNetwork(pathwayId);
-    }
-    
-    public Boolean hasCytoscapeNetwork(Long pathwayId) throws IOException {
-        return diagramRepository.hasCytoscapeNetwork(pathwayId);
-    }
-    
-    public void saveCytoscapeNetwork(Long pathwayId, String json) throws IOException {
-        this.diagramRepository.saveCytoscapeNewtork(pathwayId, json);
     }
     
     public boolean existsById(Long dbId) {

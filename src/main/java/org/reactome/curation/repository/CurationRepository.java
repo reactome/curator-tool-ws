@@ -878,6 +878,18 @@ public class CurationRepository {
             }
         });
     }
+    
+    public Map<String, Long> fetchCompartmentNamesAndDbIds() {
+        String query = "MATCH (c:Compartment) RETURN c.dbId AS dbId, c.displayName AS name";
+        Collection<Map<String, Object>> results = neo4jClient.query(query).fetch().all();
+        Map<String, Long> compartmentMap = new HashMap<>();
+        for (Map<String, Object> row : results) {
+            Long dbId = Long.parseLong(row.get("dbId").toString());
+            String name = row.get("name") != null ? row.get("name").toString() : "";
+            compartmentMap.put(name, dbId);
+        }
+        return compartmentMap;
+    }
 
     /**
      * Note that in each returned instance a match attribute is set to true if

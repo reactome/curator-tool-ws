@@ -31,8 +31,11 @@ import org.gk.render.RenderableRNA;
 import org.gk.render.RenderableRNADrug;
 import org.gk.render.RenderableReaction;
 import org.gk.render.RenderableRegistry;
+import org.reactome.curation.config.Neo4jConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -41,11 +44,23 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * This class is responsible for converting Cytoscape.js JSON representations of biological pathways to the Reactome Diagram XML format.
  */
 @SuppressWarnings("unchecked")
+@Component
 public class CytoscapJSToRenderableDiagramConverter {
+
     private static final Logger logger = LoggerFactory.getLogger(CytoscapJSToRenderableDiagramConverter.class);
     // Use to check if two points are the same
     private static final double TOLERANCE = 1.5d;
     private Map<String, Long> compartmentNameToIdMap = null;
+    // When a diagram is loaded into cytoscape-based angular diagram, it is scaled by 2 for some reason
+    // See the code here: https://github.com/reactome/ngx-reactome-base/blob/7c8af600fb9ac56fd3681e6518124ff5e8d5afa4/projects/ngx-reactome-diagram/src/lib/services/diagram.service.ts#L25
+    // Therefore, we need to reduce it
+    private final double SCALE = 2.0d;
+    // There is this pre-defined compartment offset for text label in compartments
+    // https://github.com/reactome/ngx-reactome-base/blob/7c8af600fb9ac56fd3681e6518124ff5e8d5afa4/projects/ngx-reactome-diagram/src/lib/services/diagram.service.ts#L156
+    private final int COMPARTMENT_SHIFT = 35;
+    
+    @Autowired
+    private ObjectMapper objectMapper;
 
     public CytoscapJSToRenderableDiagramConverter() {
     }
@@ -54,17 +69,30 @@ public class CytoscapJSToRenderableDiagramConverter {
         this.compartmentNameToIdMap = map;
     }
     
+    public Map<String, Long> getCompartmentNameToIdMap() {
+        return this.compartmentNameToIdMap;
+    }
+    
     public RenderablePathway convert(InputStream cyJsonInputStream, Long diagramDbId) throws Exception {
         if (this.compartmentNameToIdMap == null || this.compartmentNameToIdMap.isEmpty()) {
             throw new IllegalStateException("Compartment name to ID map is not set.");
         }
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode root = mapper.readTree(cyJsonInputStream);
-        
+        if (objectMapper == null) {
+            logger.info("ObjectMapper is not set via Spring. Creating a new one.");
+            objectMapper = new ObjectMapper();
+        }
+        JsonNode root = objectMapper.readTree(cyJsonInputStream);
+        return this.convert(root, diagramDbId);
+    }
+    
+    public RenderablePathway convert(JsonNode cyJson, Long diagramDbId) throws Exception {
+        if (this.compartmentNameToIdMap == null || this.compartmentNameToIdMap.isEmpty()) {
+            throw new IllegalStateException("Compartment name to ID map is not set.");
+        }
         RenderablePathway diagram = new RenderablePathway();
         diagram.setReactomeDiagramId(diagramDbId);
         diagram.setHideCompartmentInNode(true);
-        convert(root, diagram);
+        convert(cyJson, diagram);
         return diagram;
     }
 
@@ -87,6 +115,7 @@ public class CytoscapJSToRenderableDiagramConverter {
                 JsonNode data = node.path("data");
                 String id = data.path("id").asText();
                 String reactomeId = data.path("reactomeId").asText("");
+                String displayName = data.path("displayName").asText("");
                 String classes = node.path("classes").asText("");
                 
                 // The following types of nodes are not handled for now
@@ -122,6 +151,7 @@ public class CytoscapJSToRenderableDiagramConverter {
 
                 renderable.setReactomeId(Long.parseLong(reactomeId));
                 renderable.setID(Integer.parseInt(id));
+                renderable.setDisplayName(displayName);
                 idToRenderable.put(renderable.getID(), renderable);
                 String label = data.path("label").asText("");
                 String type = data.path("type").asText("");
@@ -194,6 +224,80 @@ public class CytoscapJSToRenderableDiagramConverter {
         for (JsonNode flowLine : flowLines) {
             FlowLine line = convertFlowLine(flowLine, idToRenderable);
             diagram.addComponent(line);
+        }
+        scale(diagram);
+    }
+    
+    private void scale(RenderablePathway diagram) {
+        for (Object r : diagram.getComponents()) {
+            if (r instanceof Node) {
+                Node node = (Node) r;
+                scaleNode(node);
+                if (r instanceof RenderableCompartment)
+                    // Something special
+                    scaleRectangle(((RenderableCompartment)node).getInsets());
+            }
+            else if (r instanceof HyperEdge) {
+                HyperEdge edge = (HyperEdge) r;
+                // Scale backbone points
+                List<Point> backbone = edge.getBackbonePoints();
+                scalePoints(backbone);
+                List<List<Point>> inputPoints = edge.getInputPoints();
+                scaleListOfPoints(inputPoints);
+                List<List<Point>> outputPoints = edge.getOutputPoints();
+                scaleListOfPoints(outputPoints);
+                List<List<Point>> helperPoints = edge.getHelperPoints();
+                scaleListOfPoints(helperPoints);
+                List<List<Point>> activatorPoints = edge.getActivatorPoints();
+                scaleListOfPoints(activatorPoints);
+                List<List<Point>> inhibitorPoints = edge.getInhibitorPoints();
+                scaleListOfPoints(inhibitorPoints);
+            }
+        }
+    }
+    
+    private void scaleRectangle(Rectangle rect) {
+        if (rect == null)
+            return;
+        rect.x /= SCALE;
+        rect.y /= SCALE;
+        rect.width /= SCALE;
+        rect.height /= SCALE;
+    }
+    
+    private void scalePoint(Point point) {
+        if (point == null)
+            return;
+        point.x /= SCALE;
+        point.y /= SCALE;
+    }
+
+    private void scaleNode(Node node) {
+        scalePoint(node.getPosition());
+        scaleRectangle(node.getBounds());
+        Rectangle rect = node.getTextBounds();
+        if (rect == null)
+            return;
+        // There is a predefined offset in the type script code.
+        if (node instanceof RenderableCompartment) {
+            rect.x -= COMPARTMENT_SHIFT;
+            rect.y -= COMPARTMENT_SHIFT;
+        }
+        scaleRectangle(rect);
+    }
+
+    private void scalePoints(List<Point> backbone) {
+        if (backbone != null) {
+            for (Point p : backbone) {
+                scalePoint(p);
+            }
+        }
+    }
+    
+    private void scaleListOfPoints(List<List<Point>> listOfPoints) {
+        if (listOfPoints != null) {
+            for (List<Point> points : listOfPoints)
+                scalePoints(points);
         }
     }
     
@@ -343,7 +447,16 @@ public class CytoscapJSToRenderableDiagramConverter {
         String classes = reactionNode.path("classes").asText("");
         if (!classes.isEmpty()) {
             String type = classes.split(" ")[0].replace(" ", "_");
-            ((RenderableReaction) hyperEdge).setReactionType(ReactionType.valueOf(type.toUpperCase()));
+            type = type.toUpperCase();
+            // Apparently something has been changed during transition
+            if (type.equals("UNCERTAIN"))
+                type = "UNCERTAIN_PROCESS";
+            else if (type.equals("OMITTED"))
+                type = "OMITTED_PROCESS";
+            final String type1 = type;
+            boolean exists = Arrays.stream(ReactionType.values()).anyMatch(t -> t.name().equals(type1));
+            if (exists)
+                ((RenderableReaction) hyperEdge).setReactionType(ReactionType.valueOf(type));
         }
         return hyperEdge;
     }
@@ -463,10 +576,13 @@ public class CytoscapJSToRenderableDiagramConverter {
         switch (type) {
             case "activator": 
                 hyperEdge.setActivatorPoints(helperPoints);
+                break;
             case "catalyst" :
                 hyperEdge.setHelperPoints(helperPoints);
+                break;
             case "inhibitor" :
                 hyperEdge.setInhibitorPoints(helperPoints);
+                break;
         }
 
         for (JsonNode e : edges) {
@@ -475,9 +591,15 @@ public class CytoscapJSToRenderableDiagramConverter {
             Node node = (src instanceof Node) ? (Node) src : null;
 
             switch (type) {
-                case "activator" : hyperEdge.addActivator(node);
-                case "catalyst" : hyperEdge.addHelper(node);
-                case "inhibitor" : hyperEdge.addInhibitor(node);
+                case "activator" : 
+                    hyperEdge.addActivator(node);
+                    break;
+                case "catalyst" : 
+                    hyperEdge.addHelper(node);
+                    break;
+                case "inhibitor" : 
+                    hyperEdge.addInhibitor(node);
+                    break;
             }
 
             if (src == null)
@@ -670,6 +792,7 @@ public class CytoscapJSToRenderableDiagramConverter {
             compartments.add(compartment);
             compartment.setReactomeId(compartmentDbId);
             compartment.setID(compartmentId);
+            compartment.setDisplayName(displayName);
 
             double x = outerNode.path("position").path("x").asDouble();
             double y = outerNode.path("position").path("y").asDouble();
