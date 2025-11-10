@@ -75,7 +75,7 @@
         <dependency>
             <groupId>org.reactome.server.diagram</groupId>
             <artifactId>diagram-converter</artifactId>
-            <version>3.0.7-SNAPSHOT</version>
+            <version>3.0.7.CT</version>
         </dependency>
 		<!-- JWT Security -->
 		<dependency>
