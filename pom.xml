@@ -71,6 +71,11 @@
             <groupId>org.reactome.base</groupId>
             <artifactId>reactome-base</artifactId>
             <version>2.2.2-SNAPSHOT</version>
+		</dependency>
+        <dependency>
+            <groupId>org.reactome.server.diagram</groupId>
+            <artifactId>diagram-converter</artifactId>
+            <version>3.0.7-SNAPSHOT</version>
         </dependency>
 		<!-- JWT Security -->
 		<dependency>
