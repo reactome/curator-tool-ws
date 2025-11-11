@@ -20,6 +20,8 @@ import org.gk.schema.SchemaAttribute;
 import org.gk.schema.SchemaClass;
 import org.junit.Test;
 import org.reactome.curation.model.CurationAttribute;
+import org.reactome.curation.model.CurationAttribute.Category;
+import org.reactome.curation.model.CurationAttribute.DefiningType;
 import org.reactome.curation.model.SimpleSchemaClass;
 import org.reactome.server.graph.domain.model.TopLevelPathway;
 import org.reflections.Reflections;
@@ -211,6 +213,13 @@ public class CuratorToolExporter {
                     stIdAtt.setDefiningType(curationAtt.getDefiningType());
                     curationAttributes.add(stIdAtt);
                 }
+            }
+            if (cls.isa(ReactomeJavaConstants.Pathway)) {
+                CurationAttribute hasDiagramAtt = new CurationAttribute();
+                hasDiagramAtt.setName("hasDiagram");
+                hasDiagramAtt.setCategory(Category.OPTIONAL);
+                hasDiagramAtt.setDefiningType(DefiningType.NONE_DEFINING);
+                curationAttributes.add(hasDiagramAtt);
             }
             String clsName = cls.getName();
             if (clsName.startsWith("_"))

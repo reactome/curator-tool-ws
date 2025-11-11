@@ -11,6 +11,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.gk.graphEditor.PathwayEditor;
+import org.gk.pathwaylayout.PathwayDiagramGeneratorViaAT;
+import org.gk.persistence.DiagramGKBReader;
+import org.gk.persistence.DiagramGKBWriter;
 import org.gk.render.FlowLine;
 import org.gk.render.HyperEdge;
 import org.gk.render.Node;
@@ -31,7 +35,6 @@ import org.gk.render.RenderableRNA;
 import org.gk.render.RenderableRNADrug;
 import org.gk.render.RenderableReaction;
 import org.gk.render.RenderableRegistry;
-import org.reactome.curation.config.Neo4jConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,8 +64,20 @@ public class CytoscapJSToRenderableDiagramConverter {
     
     @Autowired
     private ObjectMapper objectMapper;
+    
+    // Used to validate the pathway diagram to make sure connection is correct
+    private DiagramGKBWriter diagramWriter;
+    private DiagramGKBReader diagramReader;
+    private PathwayEditor pathwayEditor;
+    private PathwayDiagramGeneratorViaAT editorHelper;
 
     public CytoscapJSToRenderableDiagramConverter() {
+        diagramWriter = new DiagramGKBWriter();
+        diagramWriter.setNeedRegistryCheck(false);
+        diagramWriter.setNeedDisplayName(true);
+        diagramReader = new DiagramGKBReader();
+        pathwayEditor = new PathwayEditor();
+        editorHelper = new PathwayDiagramGeneratorViaAT();
     }
     
     public void setCompartmentNameToIdMap(Map<String, Long> map) {
@@ -93,9 +108,9 @@ public class CytoscapJSToRenderableDiagramConverter {
         diagram.setReactomeDiagramId(diagramDbId);
         diagram.setHideCompartmentInNode(true);
         convert(cyJson, diagram);
-        return diagram;
+        return validateDiagram(diagram);
     }
-
+    
     private void convert(JsonNode cytoscapeNode, RenderablePathway diagram) throws Exception {
         // Implement the logic to convert Cytoscape.js JSON nodes to RenderablePathway elements
         // Elements block has nodes + edges
@@ -120,8 +135,9 @@ public class CytoscapJSToRenderableDiagramConverter {
                 
                 // The following types of nodes are not handled for now
                 if (classes.contains("reaction")) {
+                    String reactionId = data.path("reactionId").asText("");
                     // Just store it for now
-                    if (!reactomeId.isEmpty()) {
+                    if (!reactomeId.isEmpty() && id != null && !id.isEmpty() && id.equals(reactionId)) {
                         reactionIdToNode.put(Long.parseLong(reactomeId), node);
                     }
                     else
@@ -228,6 +244,15 @@ public class CytoscapJSToRenderableDiagramConverter {
         scale(diagram);
     }
     
+    private RenderablePathway validateDiagram(RenderablePathway diagram) throws Exception {
+        String diagramXML = diagramWriter.generateXMLString(diagram);
+        // Read it back so that we can validate it
+        RenderablePathway rtn = diagramReader.openDiagram(diagramXML);
+        pathwayEditor.setRenderable(rtn);
+        editorHelper.paintOnImage(pathwayEditor);
+        return rtn;
+    }
+    
     private void scale(RenderablePathway diagram) {
         for (Object r : diagram.getComponents()) {
             if (r instanceof Node) {
@@ -253,7 +278,7 @@ public class CytoscapJSToRenderableDiagramConverter {
                 List<List<Point>> inhibitorPoints = edge.getInhibitorPoints();
                 scaleListOfPoints(inhibitorPoints);
             }
-        }
+        }        
     }
     
     private void scaleRectangle(Rectangle rect) {

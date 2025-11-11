@@ -1,18 +1,10 @@
 package org.reactome.curation.service;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
 
-import org.gk.gkEditor.ZoomablePathwayEditor;
-import org.gk.graphEditor.PathwayEditor;
-import org.gk.model.GKInstance;
-import org.gk.pathwaylayout.PathwayDiagramGeneratorViaAT;
-import org.gk.persistence.DiagramGKBReader;
 import org.gk.persistence.DiagramGKBWriter;
-import org.gk.persistence.GKBWriter;
-import org.gk.persistence.Project;
 import org.gk.render.RenderablePathway;
 import org.reactome.curation.repository.PathwayDiagramRepository;
 import org.reactome.curation.util.CytoscapJSToRenderableDiagramConverter;
