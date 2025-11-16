@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -108,7 +109,8 @@ public class CytoscapJSToRenderableDiagramConverter {
         diagram.setReactomeDiagramId(diagramDbId);
         diagram.setHideCompartmentInNode(true);
         convert(cyJson, diagram);
-        return validateDiagram(diagram);
+        diagram = validateDiagram(diagram);
+        return diagram;
     }
     
     private void convert(JsonNode cytoscapeNode, RenderablePathway diagram) throws Exception {
@@ -236,7 +238,7 @@ public class CytoscapJSToRenderableDiagramConverter {
             HyperEdge edge = convertEdges(edgesForReaction, reactionNode, idToRenderable);
             diagram.addComponent(edge);
         }
-        // Now handle flowlines
+        // Now handle flow lines
         for (JsonNode flowLine : flowLines) {
             FlowLine line = convertFlowLine(flowLine, idToRenderable);
             diagram.addComponent(line);
@@ -568,8 +570,15 @@ public class CytoscapJSToRenderableDiagramConverter {
                 }
             }
 
-            if (isInput) hyperEdge.setInputPoints(groupedPoints);
-            else hyperEdge.setOutputPoints(groupedPoints);
+            if (isInput) 
+                hyperEdge.setInputPoints(groupedPoints);
+            else {
+                // Output points should be saved from output to reaction node
+                for (List<Point> pts : groupedPoints) {
+                    Collections.reverse(pts);
+                }
+                hyperEdge.setOutputPoints(groupedPoints);
+            }
 
             for (JsonNode e : ioEdges) {
                 Integer nodeId = e.path("data").path(isInput ? "source" : "target").asInt();

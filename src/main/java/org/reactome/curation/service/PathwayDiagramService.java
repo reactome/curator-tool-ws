@@ -1,6 +1,7 @@
 package org.reactome.curation.service;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -33,6 +34,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 @Service
 public class PathwayDiagramService {
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(PathwayDiagramService.class);
     
     @Autowired
     private CurationService curationService;
@@ -44,6 +46,8 @@ public class PathwayDiagramService {
     private AdvancedDatabaseObjectService ados;
     @Autowired
     private ObjectMapper mapper;
+    @Autowired
+    private PathwayDiagramOverlayer diagramOverlayer;
     
     // Other objects needed for conversion
     private DiagramGKBWriter diagramWriter;
@@ -82,18 +86,25 @@ public class PathwayDiagramService {
     public void exportPathwayDiagramJSON(Long pathwayDiagramId, JsonNode cytoscapeJSON) throws Exception {
         this.initGraphConvertObjects();
         RenderablePathway diagram = converter.convert(cytoscapeJSON, pathwayDiagramId);
+        diagram.setReactomeDiagramId(pathwayDiagramId); // Just in case this is not set
         // Step 1: Check if there is any need to create an overlay
         PathwayDiagram pathwayDiagram = (PathwayDiagram) curationService.findById(pathwayDiagramId);
         List<Pathway> representedPathways = pathwayDiagram.getRepresentedPathway();
         // Step 2: If this is just a normal diagram (only one representedPathway), save it directly
         if (representedPathways.size() == 1) {
-            String diagramXML = diagramWriter.generateXMLString(diagram);
             Pathway pathway = representedPathways.get(0);
-            generateDiagramJSON(diagramXML, pathway);
+            generateDiagramJSON(diagram, pathway);
             return;
         }
-//        curationService.get
-        // Step 3: If overlaying is needed, create a new diagram for each disease and save them
+        else if (representedPathways.size() > 1) {
+            // Need to perform pathway diagram overlay.
+            Map<Pathway, RenderablePathway> pathway2diagram = diagramOverlayer.overlayDiagrams(diagram,
+                                                                                               representedPathways);
+            for (Pathway pathway : pathway2diagram.keySet()) {
+                RenderablePathway pDiagram = pathway2diagram.get(pathway);
+                generateDiagramJSON(pDiagram, pathway);
+            }
+        }
     }
     
     private void initGraphConvertObjects() {
@@ -112,8 +123,9 @@ public class PathwayDiagramService {
         }
     }
     
-    private void generateDiagramJSON(String xml, 
+    private void generateDiagramJSON(RenderablePathway pathwayDiagram, 
                                      Pathway pathway) throws Exception {
+        String xml = diagramWriter.generateXMLString(pathwayDiagram);
         // Generate XML first: This is the native XML contains both normal and disease layout information
         Process process = processFactory.createProcess(xml, pathway.getDbId() + "");
         // This is a hack to use PathwayDiagram instead of Pathway.

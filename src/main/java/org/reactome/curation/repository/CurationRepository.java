@@ -23,10 +23,10 @@ import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReadingWithoutWhere;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingUpdate;
 import org.neo4j.cypherdsl.core.StatementBuilder.OrderableOngoingReadingAndWithWithoutWhere;
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
-import org.reactome.curation.model.Referrer;
 import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.NamedReferrerList;
+import org.reactome.curation.model.Referrer;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.util.DatabaseObjectDisplayNameGenerator;
 import org.reactome.server.graph.domain.annotations.ReactomeTransient;
@@ -633,6 +633,39 @@ public class CurationRepository {
             return null;
         SimpleInstance inst = constructInstance(result.get(), ReactomeJavaConstants.PathwayDiagram);
         return inst;
+    }
+    
+    /**
+     * Fetch normal pathway ids (non-disease pathways) represented by a given pathway diagram.
+     * @param pdDiagramId
+     * @return
+     */
+    public Collection<Long> fetchNormalPathwayIdsForDiagram(Integer pdDiagramId) {
+        String cypher =
+                "MATCH (pd:PathwayDiagram {dbId: $dbId})-[:representedPathway]->(p:Pathway) " +
+                "WHERE NOT (p)-[:disease]->() " +
+                "RETURN p.dbId AS dbId";
+        Collection<Long> pathwayIds = neo4jClient.query(cypher)
+                .bind(pdDiagramId).to("dbId")
+                .fetchAs(Long.class)
+                .all();
+        return pathwayIds;
+    }
+    
+    /**
+     * Fetch reaction ids for a given pathway id.
+     * @param pathwayId
+     * @return
+     */
+    public Collection<Long> fetchPathwayReactionIds(Long pathwayId) {
+        String cypher =
+                "MATCH (p:Pathway {dbId: $dbId})-[:hasEvent*]->(r:ReactionLikeEvent) " +
+                "RETURN DISTINCT r.dbId AS dbId";
+        Collection<Long> reactionIds = neo4jClient.query(cypher)
+                .bind(pathwayId).to("dbId")
+                .fetchAs(Long.class)
+                .all();
+        return reactionIds;
     }
 
     /**

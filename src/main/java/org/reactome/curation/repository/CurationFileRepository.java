@@ -1,10 +1,7 @@
 package org.reactome.curation.repository;
 
 import java.io.File;
-import java.util.Collections;
-import java.util.List;
 
-import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.model.UserInstances;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
