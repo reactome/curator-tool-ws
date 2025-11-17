@@ -652,6 +652,18 @@ public class CurationRepository {
         return pathwayIds;
     }
     
+    public Map<Long, String> fetchSchemaClasses(List<Long> dbIds) {
+        String cypher = "MATCH (d:DatabaseObject) WHERE d.dbId IN $ids RETURN d.dbId as dbId, d.schemaClass as schemaClass";
+        Collection<Map<String, Object>> results = neo4jClient.query(cypher).bind(dbIds).to("ids").fetch().all();
+        Map<Long, String> id2SchemaClass = new HashMap<>();
+        for (Map<String, Object> map : results) {
+            Long dbId = Long.parseLong(map.get("dbId").toString());
+            String clsName = map.get("schemaClass").toString();
+            id2SchemaClass.put(dbId, clsName);
+        }
+        return id2SchemaClass;
+    }
+    
     /**
      * Fetch reaction ids for a given pathway id.
      * @param pathwayId

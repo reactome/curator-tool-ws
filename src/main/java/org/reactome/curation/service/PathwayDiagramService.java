@@ -1,12 +1,23 @@
 package org.reactome.curation.service;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Collection;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.gk.persistence.DiagramGKBWriter;
+import org.gk.render.Node;
+import org.gk.render.Renderable;
 import org.gk.render.RenderablePathway;
+import org.gk.render.RenderablePropertyNames;
+import org.jdom.Element;
+import org.jdom.output.Format;
+import org.jdom.output.XMLOutputter;
 import org.reactome.curation.repository.PathwayDiagramRepository;
 import org.reactome.curation.util.CytoscapJSToRenderableDiagramConverter;
 import org.reactome.server.diagram.converter.graph.DiagramGraphFactory;
@@ -26,6 +37,8 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import lombok.NoArgsConstructor;
 
 /**
  * This class is intended to handle operations related to pathway diagrams. Most of functions in this
@@ -56,7 +69,7 @@ public class PathwayDiagramService {
     private TrivialChemicals trivialChemicals;
     
     public PathwayDiagramService() {
-        diagramWriter = new DiagramGKBWriter();
+        diagramWriter = new DiagramGKBJSONWriter();
         diagramWriter.setNeedRegistryCheck(false);
         diagramWriter.setNeedDisplayName(true);
     }   
@@ -125,7 +138,39 @@ public class PathwayDiagramService {
     
     private void generateDiagramJSON(RenderablePathway pathwayDiagram, 
                                      Pathway pathway) throws Exception {
+        fillInSchemaClassNames(pathwayDiagram);
+        String isDisease = (String) pathwayDiagram.getAttributeValue("isDisease");
+        if (isDisease != null && isDisease.equalsIgnoreCase("true")) {
+            generateDiseaseDiagramJSON(pathwayDiagram, pathway);
+            return;
+        }
+        // For normal pathway diagram
         String xml = diagramWriter.generateXMLString(pathwayDiagram);
+        _generateDiagramJSON(pathway, xml);
+    }
+    
+    @SuppressWarnings("unchecked")
+    private void fillInSchemaClassNames(RenderablePathway diagram) {
+        Set<Long> dbIds = new HashSet<>();
+        for (Renderable r : (List<Renderable>) diagram.getComponents()) {
+            Long dbId = r.getReactomeId();
+            if (dbId == null)
+                continue;
+            dbIds.add(dbId);
+        }
+        if (dbIds.size() == 0)
+            return; // Nothing to do.
+        Map<Long, String> id2schemaClass = curationService.getCurationRepository().fetchSchemaClasses(new ArrayList<>(dbIds));
+        for (Renderable r : (List<Renderable>) diagram.getComponents()) {
+            Long dbId = r.getReactomeId();
+            if (dbId == null)
+                continue;
+            String clsName = id2schemaClass.get(dbId);
+            r.setAttributeValue(RenderablePropertyNames.SCHEMA_CLASS, clsName);
+        }
+    }
+
+    private void _generateDiagramJSON(Pathway pathway, String xml) {
         // Generate XML first: This is the native XML contains both normal and disease layout information
         Process process = processFactory.createProcess(xml, pathway.getDbId() + "");
         // This is a hack to use PathwayDiagram instead of Pathway.
@@ -143,6 +188,76 @@ public class PathwayDiagramService {
         String outputDir = this.diagramRepository.getDiagramGraphDir();
         JsonWriter.serialiseGraph(graph, outputDir);
         JsonWriter.serialiseDiagram(diagram, outputDir);
+    }
+    
+    @SuppressWarnings("unchecked")
+    private void generateDiseaseDiagramJSON(RenderablePathway pathwayDiagram, 
+                                            Pathway pathway) throws Exception {
+        Element rootElm = diagramWriter.createRootElement(pathwayDiagram);
+        // Add a label to show this is a disease pathway diagram
+        rootElm.setAttribute("isDisease", Boolean.TRUE + "");
+        rootElm.setAttribute("forNormalDraw", Boolean.FALSE + "");
+        // Append some new information
+        List<Renderable> normalComps = (List<Renderable>) pathwayDiagram.getAttributeValue("normalComponents");
+        appendElement("normalComponents", 
+                      rootElm, 
+                      normalComps);
+        List<Renderable> diseaseComps = (List<Renderable>) pathwayDiagram.getAttributeValue("diseaseComponents");
+        appendElement("diseaseComponents",
+                      rootElm,
+                      diseaseComps);
+        List<Node> crossedObjects = (List<Node>) pathwayDiagram.getAttributeValue("crossedComponents");
+        appendElement("crossedComponents",
+                      rootElm, 
+                      crossedObjects);
+        List<Renderable> overlaidComps = (List<Renderable>) pathwayDiagram.getAttributeValue("overlaidComponents");
+        appendElement("overlaidComponents", 
+                rootElm, 
+                overlaidComps);
+        List<Node> lofNodes = (List<Node>) pathwayDiagram.getAttributeValue("lofNodes");
+        appendElement("lofNodes", rootElm, lofNodes);
+        // Need to output
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        XMLOutputter outputter = new XMLOutputter(Format.getPrettyFormat());
+        outputter.output(rootElm, bos);
+        _generateDiagramJSON(pathway, bos.toString());
+    }
+    
+    private void appendElement(String elmName,
+                               Element root,
+                               List<? extends Renderable> comps) {
+        String text = generateTextForListOfComponents(comps);
+        if (text == null)
+            return;
+        Element elm = new Element(elmName);
+        elm.setText(text);
+        root.addContent(elm);
+    }
+    
+    private String generateTextForListOfComponents(List<? extends Renderable> comps) {
+        if (comps == null || comps.size() == 0)
+            return null;
+        StringBuilder builder = new StringBuilder();
+        for (Iterator<? extends Renderable> it = comps.iterator(); it.hasNext();) {
+            Renderable r = it.next();
+            builder.append(r.getID());
+            if (it.hasNext())
+                builder.append(",");
+        }
+        return builder.toString();
+    }
+    
+    @NoArgsConstructor
+    private class DiagramGKBJSONWriter extends DiagramGKBWriter {
+        @Override
+        protected Element createElementForRenderable(Renderable r) {
+            Element elm = super.createElementForRenderable(r);
+            String schemaClass = (String) r.getAttributeValue(RenderablePropertyNames.SCHEMA_CLASS);
+            if (schemaClass != null)
+                elm.setAttribute(RenderablePropertyNames.SCHEMA_CLASS, schemaClass);
+            return elm;
+        }
+        
     }
 
 }

@@ -210,7 +210,8 @@ public class CytoscapJSToRenderableDiagramConverter {
                 String id = data.path("id").asText();
                 String reactomeId = data.path("reactomeId").asText("");
                 if (reactomeId.isEmpty()) {
-                    logger.error("Skipping edge without reactomeId: " + id);
+                    logger.warn("Edge without reactomeId. Treat it as FlowLine: " + id);
+                    flowLines.add(edge);
                     continue; // Skip edges without reactomeId
                 }
                 Long reactionDbId = Long.parseLong(reactomeId);

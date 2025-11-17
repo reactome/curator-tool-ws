@@ -1,5 +1,6 @@
 package org.reactome.curation.service;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -19,7 +20,6 @@ import org.gk.render.RenderableCompartment;
 import org.gk.render.RenderablePathway;
 import org.reactome.curation.repository.CurationRepository;
 import org.reactome.server.graph.domain.model.Pathway;
-import org.reactome.server.graph.domain.model.PathwayDiagram;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -69,7 +69,8 @@ public class PathwayDiagramOverlayer {
             else {
                 // Disease pathway
                 RenderablePathway diseaseDiagram = cloneDiagram(pdDiagram);
-//                overlaidDiagrams.add(diseaseDiagram);
+                overlayDiseaseDiagram(diseaseDiagram, pathway.getDbId(), normalPathwayId);
+                pathway2diagram.put(pathway, diseaseDiagram);
             }
         }
         return pathway2diagram;
@@ -94,13 +95,17 @@ public class PathwayDiagramOverlayer {
                 continue;
             // Pathway nodes and other nodes without reactome id (e.g. notes)
             // should be for normal pathway only and also all compartment for the time being
-            if (r instanceof ProcessNode || r.getReactomeId() == null || r instanceof RenderableCompartment)
+            if (r instanceof ProcessNode || r.getReactomeId() == null || r instanceof RenderableCompartment) {
                 normal.add(r);
+                continue;
+            }
             // Check if it is linked to any normal reactions
             List<HyperEdge> edges = ((Node)r).getConnectedReactions();
             for (HyperEdge edge : edges) {
-                if (normalReactionIds.contains(edge.getReactomeId()))
+                if (normalReactionIds.contains(edge.getReactomeId())) {
                     normal.add(r);
+                    break;
+                }
             }
         }
         // Check edges
@@ -121,60 +126,56 @@ public class PathwayDiagramOverlayer {
         }
         return normal;
     }
-
     
-    /**
-     * Split objects into normal and disease components
-     */
-    private void splitObjects(RenderablePathway diagram,
-                              List<Pathway> patwhays,
-                              Long normalPathwayId) {
-        Collection<Long> normalReactionIds = curationRepository.fetchPathwayReactionIds(normalPathwayId); 
-//        normalIds = new HashSet<Long>();
-//        diseaseIds = new HashSet<Long>();
-//            GKInstance diseasePathway = null;
-//            GKInstance normalPathway = null;
-//            GKInstance disease = (GKInstance) pathway.getAttributeValue(ReactomeJavaConstants.disease);
-//            if (disease == null && contains(pathway, pathways)) {
-//                normalPathway = pathway;
-//            }
-//            else {
-//                diseasePathway = pathway;
-//                // There should be a normal pathway contained by a disease pathway
-//                normalPathway = findNormalPathway(diseasePathway, pdInst);
-//            }
-//            if (normalPathway != null) {
-//                // Get all disease related objects
-//                Set<GKInstance> normalEvents = InstanceUtilities.grepPathwayEventComponents(normalPathway);
-//                for (GKInstance inst : normalEvents)
-//                    normalIds.add(inst.getDBID());
-//                Set<GKInstance> normalEntities = InstanceUtilities.grepPathwayParticipants(normalPathway);
-//                for (GKInstance inst : normalEntities)
-//                    normalIds.add(inst.getDBID());
-//                if (diseasePathway != null) {
-//                    Set<GKInstance> allEvents = InstanceUtilities.grepPathwayEventComponents(diseasePathway);
-//                    allEvents.removeAll(normalEvents);
-//                    for (GKInstance inst : allEvents) {
-//                        diseaseIds.add(inst.getDBID());
-//                        // Want to make sure disease pathways are connected to objects
-//                        if (inst.getSchemClass().isa(ReactomeJavaConstants.ReactionlikeEvent)) {
-//                            Set<GKInstance> rxtEntities = InstanceUtilities.getReactionParticipants(inst);
-//                            for (GKInstance rxtEntity : rxtEntities) {
-//                                diseaseIds.add(rxtEntity.getDBID());
-//                            }
-//                        }
-//                    }
-////                    Set<GKInstance> allEntities = InstanceUtilities.grepPathwayParticipants(diseasePathway);
-////                    allEntities.removeAll(normalEntities);
-////                    for (GKInstance inst : allEntities)
-////                        diseaseIds.add(inst.getDBID());
-//                }
-//            }
-//            splitComponents();
-//        }
-//        catch(Exception e) {
-//            e.printStackTrace();
-//        }
+    private void overlayDiseaseDiagram(RenderablePathway diagram,
+                                       Long diseasePathwayId,
+                                       Long normalPathwayId) {
+        diagram.setAttributeValue("isDisease", Boolean.TRUE);
+        Set<Renderable> normalComponents = getNormalComponents(diagram, normalPathwayId);
+        diagram.setAttributeValue("normalComponents", new ArrayList<>(normalComponents));
+        // Perform overlay
+        Collection<Long> diseaseReactionIds = curationRepository.fetchPathwayReactionIds(diseasePathwayId);
+        // There are four types of components in a disease pathway
+        List<Renderable> diseaseComps = new ArrayList<>();
+        List<Node> crossedComps = new ArrayList<>();
+        List<Renderable> overlaidComps = new ArrayList<>();
+        List<Node> lofNodes = new ArrayList<>();
+        // Get reactions and their connected nodes first
+        for (Renderable r : (List<Renderable>) diagram.getComponents()) {
+            if (!(r instanceof HyperEdge))
+                continue;
+            Long reactomeId = r.getReactomeId();
+            if (reactomeId == null)
+                continue;
+            if (diseaseReactionIds.contains(reactomeId)) {
+                diseaseComps.add(r);
+                List<Node> connectedNodes = ((HyperEdge)r).getConnectedNodes();
+                diseaseComps.addAll(connectedNodes);
+            }
+        }
+        // Check FlowLines next
+        for (Renderable r : (List<Renderable>) diagram.getComponents()) {
+            if (!(r instanceof FlowLine))
+                continue;
+            FlowLine flowLine = (FlowLine) r;
+            Node input = flowLine.getInputNode(0);
+            Node output = flowLine.getOutputNode(0);
+            // Following the original logic in DiseasePatwhayImageEditor, we will
+            // add a flowline between a disease node and a ProcessNode 
+            if (diseaseComps.contains(input) && output instanceof ProcessNode) {
+                diseaseComps.add(r);
+            }
+            else if (diseaseComps.contains(output) && input instanceof ProcessNode) {
+                diseaseComps.add(r);
+            }
+        }
+        if (diseaseComps.size() > 0)
+            diagram.setAttributeValue("diseaseComponents", diseaseComps);
+        if (crossedComps.size() > 0)
+            diagram.setAttributeValue("crossedComponents", crossedComps);
+        if (overlaidComps.size() > 0)
+             diagram.setAttributeValue("overlaidComponents", overlaidComps);
+        if (lofNodes.size() > 0)
+            diagram.setAttributeValue("lofNodes", lofNodes);
     }
-
 }
