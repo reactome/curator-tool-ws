@@ -1,6 +1,5 @@
 package org.reactome.curation.service;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -19,6 +18,7 @@ import org.gk.render.Renderable;
 import org.gk.render.RenderableCompartment;
 import org.gk.render.RenderablePathway;
 import org.reactome.curation.repository.CurationRepository;
+import org.reactome.curation.util.CytoscapJSToRenderableDiagramConverter;
 import org.reactome.server.graph.domain.model.Pathway;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -33,6 +33,10 @@ public class PathwayDiagramOverlayer {
     private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(PathwayDiagramOverlayer.class);
     @Autowired
     private CurationRepository curationRepository;
+    @Autowired
+    private CurationService curationService;
+    @Autowired
+    private CytoscapJSToRenderableDiagramConverter diagramConverter;
     // Use to clone diagrams
     private DiagramGKBWriter diagramWriter;
     private DiagramGKBReader diagramReader;
@@ -53,12 +57,13 @@ public class PathwayDiagramOverlayer {
             throw new IllegalStateException("There should be exactly one normal pathway for diagram " + pdDiagram);
         }
         Long normalPathwayId = normalPathwayIds.iterator().next();
+        Collection<Long> normalReactionIds = curationRepository.fetchPathwayReactionIds(normalPathwayId); 
         Map<Pathway, RenderablePathway> pathway2diagram = new HashMap<>();
         for (Pathway pathway : representedPathways) {
             if (pathway.getDbId().equals(normalPathwayId)) {
                 // This is the normal pathway
                 RenderablePathway normalDiagram = cloneDiagram(pdDiagram);
-                Set<Renderable> normalComponents = getNormalComponents(normalDiagram, normalPathwayId);
+                Set<Renderable> normalComponents = getNormalComponents(normalDiagram, normalReactionIds);
                 for (Iterator<Renderable> it = normalDiagram.getComponents().iterator(); it.hasNext();) {
                     Renderable r = it.next();
                     if (!normalComponents.contains(r))
@@ -69,12 +74,33 @@ public class PathwayDiagramOverlayer {
             else {
                 // Disease pathway
                 RenderablePathway diseaseDiagram = cloneDiagram(pdDiagram);
-                overlayDiseaseDiagram(diseaseDiagram, pathway.getDbId(), normalPathwayId);
+                DiagramOverlayHelper helper = getOverlayHelper(diseaseDiagram, 
+                                                                pathway.getDbId(),
+                                                               normalReactionIds);
+                helper.overlayDiseaseDiagram();
                 pathway2diagram.put(pathway, diseaseDiagram);
             }
         }
         return pathway2diagram;
     }
+    
+    private DiagramOverlayHelper getOverlayHelper(RenderablePathway diseaseDiagram,
+                                                  Long diseasePathwayId,
+                                                  Collection<Long> normalReactionIds) {
+        DiagramOverlayHelper helper = new DiagramOverlayHelper();
+        helper.setPathwayDiagram(diseaseDiagram);
+        helper.setDiseasePathwayId(diseasePathwayId);
+        // Since we are using a different cloned RenderablePathway diagram, we 
+        // have to collected normal components from scratch and cannot really 
+        // re-use the previous ones collected from another cloned diagram.
+        Set<Renderable> normalComponents = getNormalComponents(diseaseDiagram, normalReactionIds);
+        helper.setNormalComponents(normalComponents);
+        helper.setCurationRepository(curationRepository);
+        helper.setCurationService(curationService);
+        helper.setPathwayEditor(diagramConverter.getPathwayEditor());
+        return helper;
+    }
+   
     
     private RenderablePathway cloneDiagram(RenderablePathway diagram) throws Exception{
         String diagramXML = diagramWriter.generateXMLString(diagram);
@@ -84,11 +110,10 @@ public class PathwayDiagramOverlayer {
     }
     
     private Set<Renderable> getNormalComponents(RenderablePathway diagram,
-                                                Long normalPathwayId) {
+                                                Collection<Long> normalReactionIds) {
         Set<Renderable> normal = new HashSet<>();
         if (diagram.getComponents() == null || diagram.getComponents().size() == 0)
             return normal;
-        Collection<Long> normalReactionIds = curationRepository.fetchPathwayReactionIds(normalPathwayId); 
         // Check nodes
         for (Renderable r : (List<Renderable>) diagram.getComponents()) {
             if (!(r instanceof Node))
@@ -125,57 +150,5 @@ public class PathwayDiagramOverlayer {
             }
         }
         return normal;
-    }
-    
-    private void overlayDiseaseDiagram(RenderablePathway diagram,
-                                       Long diseasePathwayId,
-                                       Long normalPathwayId) {
-        diagram.setAttributeValue("isDisease", Boolean.TRUE);
-        Set<Renderable> normalComponents = getNormalComponents(diagram, normalPathwayId);
-        diagram.setAttributeValue("normalComponents", new ArrayList<>(normalComponents));
-        // Perform overlay
-        Collection<Long> diseaseReactionIds = curationRepository.fetchPathwayReactionIds(diseasePathwayId);
-        // There are four types of components in a disease pathway
-        List<Renderable> diseaseComps = new ArrayList<>();
-        List<Node> crossedComps = new ArrayList<>();
-        List<Renderable> overlaidComps = new ArrayList<>();
-        List<Node> lofNodes = new ArrayList<>();
-        // Get reactions and their connected nodes first
-        for (Renderable r : (List<Renderable>) diagram.getComponents()) {
-            if (!(r instanceof HyperEdge))
-                continue;
-            Long reactomeId = r.getReactomeId();
-            if (reactomeId == null)
-                continue;
-            if (diseaseReactionIds.contains(reactomeId)) {
-                diseaseComps.add(r);
-                List<Node> connectedNodes = ((HyperEdge)r).getConnectedNodes();
-                diseaseComps.addAll(connectedNodes);
-            }
-        }
-        // Check FlowLines next
-        for (Renderable r : (List<Renderable>) diagram.getComponents()) {
-            if (!(r instanceof FlowLine))
-                continue;
-            FlowLine flowLine = (FlowLine) r;
-            Node input = flowLine.getInputNode(0);
-            Node output = flowLine.getOutputNode(0);
-            // Following the original logic in DiseasePatwhayImageEditor, we will
-            // add a flowline between a disease node and a ProcessNode 
-            if (diseaseComps.contains(input) && output instanceof ProcessNode) {
-                diseaseComps.add(r);
-            }
-            else if (diseaseComps.contains(output) && input instanceof ProcessNode) {
-                diseaseComps.add(r);
-            }
-        }
-        if (diseaseComps.size() > 0)
-            diagram.setAttributeValue("diseaseComponents", diseaseComps);
-        if (crossedComps.size() > 0)
-            diagram.setAttributeValue("crossedComponents", crossedComps);
-        if (overlaidComps.size() > 0)
-             diagram.setAttributeValue("overlaidComponents", overlaidComps);
-        if (lofNodes.size() > 0)
-            diagram.setAttributeValue("lofNodes", lofNodes);
     }
 }

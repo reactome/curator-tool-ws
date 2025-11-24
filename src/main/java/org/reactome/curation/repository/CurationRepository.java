@@ -62,6 +62,7 @@ import lombok.Data;
  */
 @Repository
 @Data
+@SuppressWarnings("unchecked")
 public class CurationRepository {
     private static final Logger logger = LoggerFactory.getLogger(CurationRepository.class);
     // To be used to set the relationship properties
@@ -1364,25 +1365,6 @@ public class CurationRepository {
         queryUtilities.createDbIdIndex(this.neo4jClient);
     }
 
-    /**
-     * This method is needed to prevent Jackson returning (from API end points)
-     * Object id instead of the full object - in the case when that Object occurs in
-     * multiple places in the returned JSON
-     *
-     * @param si
-     * @return cloned si
-     */
-    private SimpleInstance cloneSimpleInstance(SimpleInstance si) {
-        SimpleInstance ret = new SimpleInstance();
-        ret.setDbId(si.getDbId());
-        ret.setDisplayName(si.getDisplayName());
-        ret.setSchemaClassName(si.getSchemaClassName());
-        for (String attr : si.getAttributes().keySet()) {
-            ret.setAttribute(attr, si.getAttribute(attr));
-        }
-        return ret;
-    }
-
     private Collection<Referrer> getReferralsTo(Node instanceNode, org.neo4j.cypherdsl.core.Relationship rel) {
         var query = Cypher.match(instanceNode);
 
@@ -1473,5 +1455,21 @@ public class CurationRepository {
     
     public List<Taxon> queryInstanceTaxon(DatabaseObject obj) {
         return this.queryUtilities.queryInstanceTaxon(obj, neo4jClient);
+    }
+    
+    public boolean complexOrSetHasDrug(Long dbId) {
+        return this.queryUtilities.complexOrSetHasDrug(dbId, neo4jClient);
+    }
+    
+    public Collection<Long> getReferenceEntityDbIdsForPEId(Long dbId) {
+        if (dbId == null)
+            return Collections.EMPTY_SET;
+        return queryUtilities.getReferenceEntityDbIdsForPEId(dbId, neo4jClient);
+    }
+    
+    public Collection<Long> getMemberIdsForEntitySet(Long setId) {
+        if (setId == null)
+            return Collections.EMPTY_SET;
+        return queryUtilities.getMemberDbIdsForEntitySet(setId, neo4jClient);
     }
 }

@@ -81,6 +81,10 @@ public class CytoscapJSToRenderableDiagramConverter {
         editorHelper = new PathwayDiagramGeneratorViaAT();
     }
     
+    public PathwayEditor getPathwayEditor() {
+        return this.pathwayEditor;
+    }
+    
     public void setCompartmentNameToIdMap(Map<String, Long> map) {
         this.compartmentNameToIdMap = map;
     }

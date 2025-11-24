@@ -29,6 +29,70 @@ public class CypherQueryUtilities {
     private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(CypherQueryUtilities.class);
     
     /**
+     * Get the dbIds of all contained members via hasMember or hasCandidate for an EntitySet
+     * specified by its dbId.
+     * @param dbId
+     * @param neo4jClient
+     * @return
+     */
+    public Collection<Long> getMemberDbIdsForEntitySet(Long dbId, Neo4jClient neo4jClient) {
+        // Use 1.. to exlcude set itself.
+        String cypher =
+                "MATCH (set:EntitySet {dbId: $dbId}) " +
+                        "OPTIONAL MATCH (set)-[:hasMember|hasCandidate*1..]->(member:PhysicalEntity) " +
+                        "RETURN DISTINCT member.dbId AS memberId";
+
+        return neo4jClient.query(cypher)
+                .bind(dbId).to("dbId")
+                .fetchAs(Long.class)
+                .mappedBy((typeSystem, record) -> record.get("memberId").asLong())
+                .all();
+    }
+    
+    /**
+     * Collection dbIds of ReferenceEntities referred by a PhysicalEntity that is specified by its dbId.
+     * @param dbId
+     * @param neo4jClient
+     * @return
+     */
+    public Collection<Long> getReferenceEntityDbIdsForPEId(Long dbId, Neo4jClient neo4jClient) {
+        // Use 0.. to include pe itself.
+        String cypher =
+                "MATCH (pe:PhysicalEntity {dbId: $dbId}) " +
+                        "OPTIONAL MATCH (pe)-[:hasComponent|hasMember|hasCandidate|repeatedUnit*0..]->(child:PhysicalEntity) " +
+                        "WITH DISTINCT coalesce(child, pe) AS entity " +
+                        "MATCH (entity)-[:referenceEntity]->(ref:ReferenceEntity) " +
+                        "RETURN DISTINCT ref.dbId AS refDbId";
+
+        return neo4jClient.query(cypher)
+                .bind(dbId).to("dbId")
+                .fetchAs(Long.class)
+                .mappedBy((typeSystem, record) -> record.get("refDbId").asLong())
+                .all();
+    }
+    
+    /**
+     * Check if a Complex or EntitySet contains any drug via its reference graph by hasMember, hasCandidate,
+     * and hasComponent.
+     * @param dbId
+     * @param neo4jClient
+     * @return
+     */
+    public boolean complexOrSetHasDrug(long dbId, Neo4jClient neo4jClient) {
+        String cypher =
+                "MATCH (d:DatabaseObject {dbId: $dbId}) " +
+                "WHERE d:Complex OR d:EntitySet " +
+                "OPTIONAL MATCH (d)-[:hasMember|hasCandidate|hasComponent*1..]->(drug:Drug) " +
+                "RETURN COUNT(drug) > 0 AS hasDrug";
+
+        return neo4jClient.query(cypher)
+                .bind(dbId).to("dbId")
+                .fetchAs(Boolean.class)
+                .one()
+                .orElse(false);
+    }
+    
+    /**
      * Use this method to create index for DatabaseObject's DB_ID.
      */
     public void createDbIdIndex(Neo4jClient neo4jClient) {

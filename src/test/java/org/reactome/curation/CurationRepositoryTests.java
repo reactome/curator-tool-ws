@@ -1,5 +1,6 @@
 package org.reactome.curation;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
@@ -27,7 +28,6 @@ import org.reactome.server.graph.domain.model.Reaction;
 import org.reactome.server.graph.domain.model.SimpleEntity;
 import org.reactome.server.graph.domain.model.Summation;
 import org.reactome.server.graph.domain.model.Taxon;
-import org.reactome.server.graph.repository.AdvancedDatabaseObjectRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,9 +44,45 @@ class CurationRepositoryTests {
 
     @Autowired
     private CurationRepository repository;
-    @Autowired
-    private AdvancedDatabaseObjectRepository queryRepo;
     
+    @Test
+    void contextLoads() {
+    }
+    
+    @Test
+    public void testGetReferenceEntityIdsforPEId() {
+        assertNotNull(repository);
+        // This is a complex
+        Long dbId = 6794288L;
+        Collection<Long> refIds = repository.getReferenceEntityDbIdsForPEId(dbId);
+        logger.info(dbId + " has total referenceEntities: " + refIds.size());
+        // EntitySet
+        dbId = 500062L;
+        refIds = repository.getReferenceEntityDbIdsForPEId(dbId);
+        logger.info(dbId + " has total referenceEntities: " + refIds.size());
+        // EWAS
+        dbId = 5272096L;
+        refIds = repository.getReferenceEntityDbIdsForPEId(dbId);
+        logger.info(dbId + " has total referenceEntities: " + refIds.size());
+        // Not a PE. Nothing should be returned
+        dbId = 9827477L;
+        refIds = repository.getReferenceEntityDbIdsForPEId(dbId);
+        logger.info(dbId + " has total referenceEntities: " + refIds.size());
+    }
+    
+    
+    @Test
+    public void testComplexOrSetHasDrug() throws Exception {
+        assertNotNull(repository);
+        // This EntitySet has drug
+        Long dbId = 9659678L;
+        boolean hasDrug = repository.complexOrSetHasDrug(dbId);
+        logger.info(dbId + " has drug: " + hasDrug);
+        // This complex doesn't have a drug
+        dbId = 629600L;
+        hasDrug = repository.complexOrSetHasDrug(dbId);
+        logger.info(dbId + " has drug: " + hasDrug);
+    }
 
     //TODO: To test store, we need the following use cases
     //1). Summation having more than one LiteratureReferences to check order
