@@ -38,6 +38,7 @@ public class SimpleInstance extends DatabaseObject {
 
 //    private Long dbId;
 //    private String displayName;
+    private boolean isStructureModified;
     private String schemaClassName;
     private Map<String, Object> attributes;
     private List<String> modifiedAttributes; // Names of attributes that have been updated.
@@ -48,6 +49,15 @@ public class SimpleInstance extends DatabaseObject {
     
     public Map<Long, Long> getNewInstOld2NewId() {
         return newInstOld2NewId;
+    }
+
+    public boolean getIsStructureModified() {
+        return isStructureModified;
+    }
+
+
+    public void setIsStructureModified(boolean structureModified) {
+        isStructureModified = structureModified;
     }
 
     public void setNewInstOld2NewId(Map<Long, Long> newInstOld2NewId) {
@@ -180,6 +190,9 @@ class SimpleInstanceDeserializer extends JsonDeserializer<SimpleInstance> {
                 } 
                 else if ("defaultPersonId".equals(fieldName)) {
                     instance.setDefaultPersonId(fieldValue.asLong());
+                }
+                else if ("isStructureModified".equals(fieldName)) {
+                    instance.setIsStructureModified(fieldValue.asBoolean());
                 }
                 else if ("modifiedAttributes".equals(fieldName)) {
                     // This should be an array
