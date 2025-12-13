@@ -51,13 +51,12 @@ public class SimpleInstance extends DatabaseObject {
         return newInstOld2NewId;
     }
 
-    public boolean getIsStructureModified() {
+    public boolean isStructureModified() {
         return isStructureModified;
     }
 
-
-    public void setIsStructureModified(boolean structureModified) {
-        isStructureModified = structureModified;
+    public void setStructureModified(boolean isStructureModified) {
+        this.isStructureModified = isStructureModified;
     }
 
     public void setNewInstOld2NewId(Map<Long, Long> newInstOld2NewId) {
@@ -192,7 +191,7 @@ class SimpleInstanceDeserializer extends JsonDeserializer<SimpleInstance> {
                     instance.setDefaultPersonId(fieldValue.asLong());
                 }
                 else if ("isStructureModified".equals(fieldName)) {
-                    instance.setIsStructureModified(fieldValue.asBoolean());
+                    instance.setStructureModified(fieldValue.asBoolean());
                 }
                 else if ("modifiedAttributes".equals(fieldName)) {
                     // This should be an array
