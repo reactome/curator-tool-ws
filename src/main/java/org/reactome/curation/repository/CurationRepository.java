@@ -23,6 +23,7 @@ import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReadingWithoutWhere;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingUpdate;
 import org.neo4j.cypherdsl.core.StatementBuilder.OrderableOngoingReadingAndWithWithoutWhere;
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
+import org.reactome.curation.model.CuratorToolWSUtils;
 import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.NamedReferrerList;
@@ -214,6 +215,10 @@ public class CurationRepository {
                 for (NamedReferrerList referList: referrers) {
                     for (SimpleInstance referrer : referList.getReferrers()) {
                         this.queryUtilities.addModifiedIE(referrer, ie, neo4jClient);
+                        // Check if structureModified slot needs to be updated too
+                        if (CuratorToolWSUtils.getStructureRelatedAttributes().contains(referList.getAttributeName())) {
+                            this.queryUtilities.downgradeReviewStatusWithStructureChange(referrer, ie, neo4jClient);
+                        }
                     }
                 }
             }

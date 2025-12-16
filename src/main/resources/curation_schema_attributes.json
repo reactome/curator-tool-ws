@@ -159,6 +159,10 @@
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
     "name" : "doi"
+  }, {
+    "definingType" : "NONE_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "hasDiagram"
   } ],
   "NegativePrecedingEvent" : [ {
     "definingType" : "UNDEFINED",
@@ -3621,6 +3625,10 @@
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
     "name" : "doi"
+  }, {
+    "definingType" : "NONE_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "hasDiagram"
   } ],
   "PsiMod" : [ {
     "definingType" : "ALL_DEFINING",
@@ -4283,6 +4291,10 @@
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
     "name" : "doi"
+  }, {
+    "definingType" : "NONE_DEFINING",
+    "category" : "OPTIONAL",
+    "name" : "hasDiagram"
   } ],
   "LiteratureReference" : [ {
     "definingType" : "UNDEFINED",

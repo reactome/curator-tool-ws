@@ -1,9 +1,10 @@
 package org.reactome.curation.model;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
+import org.gk.model.ReactomeJavaConstants;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 
 /**
@@ -12,6 +13,15 @@ import org.reactome.server.graph.domain.model.DatabaseObject;
  *
  */
 public class CuratorToolWSUtils {
+    
+    public static List<String> getStructureRelatedAttributes() {
+        return Arrays.asList(
+                ReactomeJavaConstants.hasEvent,
+                ReactomeJavaConstants.catalystActivity,
+                ReactomeJavaConstants.input,
+                ReactomeJavaConstants.output
+        );
+    }
     
     /**
      * Find the set method for an attribute in the DatabaseObjet class.

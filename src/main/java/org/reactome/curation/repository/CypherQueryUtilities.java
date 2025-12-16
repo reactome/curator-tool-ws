@@ -27,7 +27,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class CypherQueryUtilities {
     private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(CypherQueryUtilities.class);
-    
+
     /**
      * Get the dbIds of all contained members via hasMember or hasCandidate for an EntitySet
      * specified by its dbId.
@@ -48,7 +48,7 @@ public class CypherQueryUtilities {
                 .mappedBy((typeSystem, record) -> record.get("memberId").asLong())
                 .all();
     }
-    
+
     /**
      * Collection dbIds of ReferenceEntities referred by a PhysicalEntity that is specified by its dbId.
      * @param dbId
@@ -70,7 +70,7 @@ public class CypherQueryUtilities {
                 .mappedBy((typeSystem, record) -> record.get("refDbId").asLong())
                 .all();
     }
-    
+
     /**
      * Check if a Complex or EntitySet contains any drug via its reference graph by hasMember, hasCandidate,
      * and hasComponent.
@@ -81,9 +81,9 @@ public class CypherQueryUtilities {
     public boolean complexOrSetHasDrug(long dbId, Neo4jClient neo4jClient) {
         String cypher =
                 "MATCH (d:DatabaseObject {dbId: $dbId}) " +
-                "WHERE d:Complex OR d:EntitySet " +
-                "OPTIONAL MATCH (d)-[:hasMember|hasCandidate|hasComponent*1..]->(drug:Drug) " +
-                "RETURN COUNT(drug) > 0 AS hasDrug";
+                        "WHERE d:Complex OR d:EntitySet " +
+                        "OPTIONAL MATCH (d)-[:hasMember|hasCandidate|hasComponent*1..]->(drug:Drug) " +
+                        "RETURN COUNT(drug) > 0 AS hasDrug";
 
         return neo4jClient.query(cypher)
                 .bind(dbId).to("dbId")
@@ -91,7 +91,7 @@ public class CypherQueryUtilities {
                 .one()
                 .orElse(false);
     }
-    
+
     /**
      * Use this method to create index for DatabaseObject's DB_ID.
      */
@@ -99,20 +99,20 @@ public class CypherQueryUtilities {
         // This should be called once so the query is kept here
         String query = "CREATE INDEX db_id_index IF NOT EXISTS FOR (n:DatabaseObject) ON (n.dbId)";
         neo4jClient.query(query).run(); // Nothing is needed but still need to get something. Otherwise Cypher is not
-                                        // sent.
+        // sent.
         // Create another index for _displayName for named based search (e.g. contains)
         query = "CREATE TEXT INDEX databaseobject_text_index_displayname IF "
                 + "NOT EXISTS FOR (n:DatabaseObject) ON (n.displayName)";
         neo4jClient.query(query).run();
-//        // Create range index for order by displayName
-//        query = "CREATE RANGE INDEX databaseobject_range_index_displayname IF NOT EXISTS for (n:DatabaseObject) on (n.displayName)";
-//        neo4jClient.query(query).run();
+        //        // Create range index for order by displayName
+        //        query = "CREATE RANGE INDEX databaseobject_range_index_displayname IF NOT EXISTS for (n:DatabaseObject) on (n.displayName)";
+        //        neo4jClient.query(query).run();
         // For node lookup: by creating this index, we limit the search! (try profile in
         // cypher!).
         query = "CREATE LOOKUP INDEX node_label_lookup_index IF NOT EXISTS FOR (n) ON EACH labels(n)";
         neo4jClient.query(query).run();
     }
-    
+
     /**
      * Query species abbreviation for a given species dbId.
      * 
@@ -133,7 +133,7 @@ public class CypherQueryUtilities {
             throw new DatabaseObjectNotFoundException(speciesDbId);  
         return (String) result.get().get("abbreviation");
     }
-    
+
     /**
      * This is basically a shortcut of attribute-based search for a pathway diagram. The implementation 
      * may call listInstances(). However, we'd like to support a pathway id based search here. 
@@ -152,7 +152,7 @@ public class CypherQueryUtilities {
         SimpleInstance inst = constructInstance(result.get(), ReactomeJavaConstants.PathwayDiagram);
         return inst;
     }
-    
+
     SimpleInstance constructInstance(Map<String, Object> map, String className) {
         SimpleInstance inst = new SimpleInstance();
         inst.setDbId(Long.parseLong(map.get("inst.dbId").toString()));
@@ -170,18 +170,18 @@ public class CypherQueryUtilities {
             inst.setAttribute("refSchemaClass", refSchemaClass.toString());
         return inst;
     }
-    
+
     public Set<Species> grepSpecies(Long dbId, String followAttributes, String schemaClass, Neo4jClient neo4jClient) {
         String query = String.format("MATCH (container:%s {dbId: %d})\n"
-                        + "OPTIONAL MATCH (container)-[:species]->(s:Species)\n" + "WITH container, s AS containerSpecies\n"
-                        + "OPTIONAL MATCH (container)-[r:%s*]->(pe:PhysicalEntity)\n"
-                        + "WITH container, containerSpecies, r, COLLECT(pe) AS containeds\n"
-                        + "UNWIND containeds AS pe\n"
-                        + "UNWIND r AS role\n"
-                        + "OPTIONAL MATCH (pe)-[:species]->(species:Species)\n"
-                        + "WITH container, containerSpecies, COLLECT(DISTINCT species) AS cSpecies, role, pe\n"
-                        + "UNWIND cSpecies as containedSpecies\n"
-                        + "RETURN containedSpecies.dbId, containedSpecies.displayName",
+                + "OPTIONAL MATCH (container)-[:species]->(s:Species)\n" + "WITH container, s AS containerSpecies\n"
+                + "OPTIONAL MATCH (container)-[r:%s*]->(pe:PhysicalEntity)\n"
+                + "WITH container, containerSpecies, r, COLLECT(pe) AS containeds\n"
+                + "UNWIND containeds AS pe\n"
+                + "UNWIND r AS role\n"
+                + "OPTIONAL MATCH (pe)-[:species]->(species:Species)\n"
+                + "WITH container, containerSpecies, COLLECT(DISTINCT species) AS cSpecies, role, pe\n"
+                + "UNWIND cSpecies as containedSpecies\n"
+                + "RETURN containedSpecies.dbId, containedSpecies.displayName",
                 schemaClass, dbId, followAttributes);
 
         Set<Species> speciesSet = new HashSet<>();
@@ -197,7 +197,7 @@ public class CypherQueryUtilities {
         }
         return speciesSet;
     }
-    
+
     /**
      * Query species for a given DatabaseObject.
      * 
@@ -232,7 +232,7 @@ public class CypherQueryUtilities {
         });
         return speciesList;
     }   
-    
+
     /**
      * A helper method to add an InstanceEdit to an Instance's modified and modifiedList attributes.
      * Here is what need to be done:
@@ -244,8 +244,8 @@ public class CypherQueryUtilities {
      * @param ie
      */
     public void addModifiedIE(SimpleInstance instance, 
-                               InstanceEdit ie,
-                               Neo4jClient neo4jClient) {
+                              InstanceEdit ie,
+                              Neo4jClient neo4jClient) {
         String cypher = ""
                 + "MATCH (inst:" + getNodeLabel(instance) + " {dbId: $instanceDbId}) "
                 + "OPTIONAL MATCH (inst)<-[r_mod:modified]-(:InstanceEdit) "
@@ -255,16 +255,56 @@ public class CypherQueryUtilities {
                 + "CREATE (inst)<-[:modified]-(ie) "
                 + "WITH inst, ie "
                 + "OPTIONAL MATCH (inst)<-[prevRel:modifiedList]-(:InstanceEdit) "
-                + "WITH inst, ie, coalesce(max(prevRel.rank), 0) AS maxRank "
-                + "CREATE (inst)<-[:modifiedList {rank: maxRank + 1}]-(ie) "
+                + "WITH inst, ie, coalesce(max(prevRel.order), 0) AS maxOrder "
+                + "CREATE (inst)<-[:modifiedList {order: maxOrder + 1}]-(ie) "
                 + "RETURN inst, ie";
 
         neo4jClient.query(cypher)
-                   .bind(instance.getDbId()).to("instanceDbId")
-                   .bind(ie.getDbId()).to("ieDbId")
-                   .run();
+        .bind(instance.getDbId()).to("instanceDbId")
+        .bind(ie.getDbId()).to("ieDbId")
+        .run();
     }
-    
+
+    /**
+     * Add an existing InstanceEdit to an Event via its structureModified relationship.
+     * @param dbObj
+     * @param ie
+     * @param neo4jClient
+     */
+    public void downgradeReviewStatusWithStructureChange(DatabaseObject dbObj,
+                                                         InstanceEdit ie,
+                                                         Neo4jClient neo4jClient) {
+        String cypher =
+                "OPTIONAL MATCH (e:Event {dbId: $eventDbId}) " +
+                        "WITH e WHERE e IS NOT NULL " +
+                        "OPTIONAL MATCH (e)-[r:reviewStatus]->(rs:ReviewStatus) " +
+                        "OPTIONAL MATCH (e)-[pr:previousReviewStatus]->(:ReviewStatus) " +
+                        "WITH e, r, rs, pr, " +
+                        "  CASE " +
+                        "    WHEN rs.displayName = 'three stars' THEN 'one star' " +
+                        "    WHEN rs.displayName IN ['four stars','five stars'] THEN 'two stars' " +
+                        "    ELSE rs.displayName " +
+                        "  END AS newRsName " +
+                        "OPTIONAL MATCH (newRs:ReviewStatus {displayName: newRsName}) " +
+                        "FOREACH (_ IN CASE " +
+                        "    WHEN rs IS NOT NULL AND rs.displayName <> newRsName THEN [1] " +
+                        "    ELSE [] END | " +
+                        "    DELETE pr, r " +
+                        "    MERGE (e)-[:previousReviewStatus]->(rs) " +
+                        "    MERGE (e)-[:reviewStatus]->(newRs) " +
+                        ") " +
+                        "WITH e " + // Bridge variable after FOREACH
+                        "MATCH (ie:InstanceEdit {dbId: $ieDbId}) " +
+                        "OPTIONAL MATCH (e)<-[sm:structureModified]-(:InstanceEdit) " +
+                        "WITH e, ie, coalesce(max(sm.order), 0) AS maxOrder " +
+                        "CREATE (e)<-[:structureModified {order: maxOrder + 1}]-(ie)";
+
+        neo4jClient.query(cypher)
+        .bind(dbObj.getDbId()).to("eventDbId")
+        .bind(ie.getDbId()).to("ieDbId")
+        .run();
+    }
+
     public String getNodeLabel(DatabaseObject obj) {
         // This is a hack for convenience in case a SimpleInstance is used
         // for attribute values
