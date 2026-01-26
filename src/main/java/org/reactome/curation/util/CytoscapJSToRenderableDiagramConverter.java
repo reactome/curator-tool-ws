@@ -246,7 +246,8 @@ public class CytoscapJSToRenderableDiagramConverter {
         // Now handle flow lines
         for (JsonNode flowLine : flowLines) {
             FlowLine line = convertFlowLine(flowLine, idToRenderable);
-            diagram.addComponent(line);
+            if (line != null)
+                diagram.addComponent(line);
         }
         scale(diagram);
     }
@@ -416,6 +417,10 @@ public class CytoscapJSToRenderableDiagramConverter {
     private FlowLine convertFlowLine(JsonNode flowLine,
                                      Map<Integer, Renderable> idToRenderable) {
         List<Point> points = positionsFromRelativeToAbsolute(flowLine, null, idToRenderable);
+        if (points == null || points.size() == 0) {
+            logger.error("Cannot convert flowline: " + flowLine);
+            return null;
+        }
         FlowLine line = new FlowLine();
         line.setBackbonePoints(points);
         // Need to add input and output
@@ -688,11 +693,17 @@ public class CytoscapJSToRenderableDiagramConverter {
             sourcePos = new Point((int)x, (int)y);
         }
         else {
-            Renderable sourceNode = id2node.get(Integer.parseInt(sourceId));
-            if (sourceNode != null)
-                sourcePos = new Point(sourceNode.getPosition());
-            else
-                logger.error("Cannot find source node for edge with id: " + edge.path("data").path("id").asText());
+            try {
+                Integer sourceNodeId = Integer.parseInt(sourceId);
+                Renderable sourceNode = id2node.get(sourceNodeId);
+                if (sourceNode != null)
+                    sourcePos = new Point(sourceNode.getPosition());
+                else
+                    logger.error("Cannot find source node for edge with id: " + edge.path("data").path("id").asText());
+            }
+            catch (NumberFormatException e) { // This is a quick-dirty fix. Need to figure out the real issue later.
+                logger.error("Invalid source node id: " + sourceId + " for edge with id: " + edge.path("data").path("id").asText());
+            }
         }
 
         Point targetPos = null;
@@ -702,12 +713,20 @@ public class CytoscapJSToRenderableDiagramConverter {
             targetPos = new Point((int)x, (int)y);
         }
         else {
-            Renderable targetNode = id2node.get(Integer.parseInt(targetId));
-            if (targetNode != null)
-                targetPos = new Point(targetNode.getPosition());
-            else
-                logger.error("Cannot find target node for edge with id: " + edge.path("data").path("id").asText());
+            try {
+                Renderable targetNode = id2node.get(Integer.parseInt(targetId));
+                if (targetNode != null)
+                    targetPos = new Point(targetNode.getPosition());
+                else
+                    logger.error("Cannot find target node for edge with id: " + edge.path("data").path("id").asText());
+            }
+            catch (NumberFormatException e) { // This is a quick-dirty fix. Need to figure out the real issue later.
+                logger.error("Invalid target node id: " + targetId + " for edge with id: " + edge.path("data").path("id").asText());
+            }
         }
+        
+        if (sourcePos == null || targetPos == null)
+            return null;
         
         List<Point> points = new ArrayList<>();
         points.add(sourcePos);
