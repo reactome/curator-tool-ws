@@ -592,11 +592,23 @@ public class CytoscapJSToRenderableDiagramConverter {
 
             for (JsonNode e : ioEdges) {
                 Integer nodeId = e.path("data").path(isInput ? "source" : "target").asInt();
+                Integer stoi = e.path("data").path("stoichiometry").asInt(1);
                 Renderable node = idToRenderable.get(nodeId);
                 if (node != null) {
-                    if (isInput) hyperEdge.addInput((Node) node);
-                    else hyperEdge.addOutput((Node) node);
-                } else {
+                    if (isInput) {
+                        hyperEdge.addInput((Node) node);
+                        if (stoi != 1 && hyperEdge instanceof RenderableReaction) {
+                            ((RenderableReaction) hyperEdge).setInputStoichiometry((Node) node, stoi);
+                        }
+                    }
+                    else {
+                        hyperEdge.addOutput((Node) node);
+                        if (stoi != 1 && hyperEdge instanceof RenderableReaction) {
+                            ((RenderableReaction) hyperEdge).setOutputStoichiometry((Node) node, stoi);
+                        }
+                    }
+                } 
+                else {
                     logger.error("Cannot find {} node for edge id: {}", isInput ? "source" : "target", e.path("data").path("id").asText());
                 }
             }
