@@ -396,12 +396,12 @@ class RESTfulAPITests {
         
         String jwt = getJWT();
         
-//        List<Long> dbIds = List.of(73894L, 9612973L, 162582L);
+        List<Long> dbIds = List.of(73894L, 9612973L, 162582L);
         
-        List<Long> dbIds = Arrays.asList(
-                400710L, 613449L, 5691543L, 8987656L, 9917590L, 2L, 9926675L, 8992654L,
-                423310L, 1995863L, 1042053L, 1300696L, 2265580L, 9715482L, 1551960L, 435478L
-            );
+//        List<Long> dbIds = Arrays.asList(
+//                400710L, 613449L, 5691543L, 8987656L, 9917590L, 2L, 9926675L, 8992654L,
+//                423310L, 1995863L, 1042053L, 1300696L, 2265580L, 9715482L, 1551960L, 435478L
+//            );
         
         // The URL should start with "/" to make it true
         String url = BASE_URL + "findByDbIds/";
