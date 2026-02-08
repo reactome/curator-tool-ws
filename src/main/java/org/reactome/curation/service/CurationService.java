@@ -30,7 +30,7 @@ import org.reactome.curation.repository.CurationRepository;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.domain.model.Deleted;
 import org.reactome.server.graph.domain.model.InstanceEdit;
-import org.reactome.server.graph.domain.model.Species;
+import org.reactome.server.graph.domain.model.Taxon;
 import org.reactome.server.graph.repository.AdvancedDatabaseObjectRepository;
 import org.reactome.server.graph.service.helper.AttributeClass;
 import org.reactome.server.graph.service.helper.AttributeProperties;
@@ -444,7 +444,7 @@ public class CurationService {
         return !Objects.equals(ieDbId, storedIeDbId);
     }
 
-    public Set<Species> grepSpecies(Long dbId, String followAttributes, String schemaClass) {
+    public Set<Taxon> grepSpecies(Long dbId, String followAttributes, String schemaClass) {
         return this.curationRepository.grepSpecies(dbId, followAttributes, schemaClass);
     }
 }

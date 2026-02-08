@@ -160,15 +160,15 @@ public class StableIdentifierGenerator {
     private String getSpeciesForSTID(DatabaseObject inst) throws Exception {
         String species = NUL_SPECIES;
 
-        if (Event.class.isAssignableFrom(inst.getClass()))
+        if (inst instanceof Event)
             species = getSpeciesFromEvent((Event) inst);
-        else if (PhysicalEntity.class.isAssignableFrom(inst.getClass()))
+        else if (inst instanceof PhysicalEntity)
             species = getSpeciesFromPhysicalEntity(inst);
         return species;
     }
 
     private String getSpeciesFromPhysicalEntity(DatabaseObject physicalEntity) throws Exception {
-        Set<Species> speciesSet = getSpeciesFromPE(physicalEntity);
+        Set<Taxon> speciesSet = getSpeciesFromPE(physicalEntity);
         if (speciesSet.size() == 0)
             return ALL_SPECIES;
         else if (speciesSet.size() > 1)
@@ -193,13 +193,23 @@ public class StableIdentifierGenerator {
         return getSpeciesAbbreviation(species);
     }
 
-    private Set<Species> getSpeciesFromPE(DatabaseObject pe) throws Exception {
-
+    @SuppressWarnings("unchecked")
+    private Set<Taxon> getSpeciesFromPE(DatabaseObject pe) throws Exception {
+        // The following code is based on the assumption that the passed object and its referred objects
+        // have been stored in the database. However, this assumption most likely is not true when a new
+        // instance is being created with references that are not stored in the database. TODO: We may 
+        // need to revisit the code here. 
         Method method = pe.getClass().getMethod("getSpecies");
         try {
-            ArrayList<Species> species = (ArrayList<Species>) method.invoke(pe);
-            if (species != null && !species.isEmpty())
-                return new HashSet<>(species);
+            // If species is defined at the PE level and it is not empty, we will use it.
+            // Otherwise, we may try to get species from its components, members or repeated unit.
+            Object result = method.invoke(pe);
+            if (result instanceof Taxon)
+                return Collections.singleton((Taxon) result);
+            if (result instanceof List) {
+                return new HashSet<>((List<Taxon>) result);
+            }
+            // Three cases of nothing is defined at the PE level.
             if (Complex.class.isAssignableFrom(pe.getClass()))
                 return this.grepAllSpeciesInPE(pe, "hasComponent", "Complex");
             if (EntitySet.class.isAssignableFrom(pe.getClass()))
@@ -210,17 +220,17 @@ public class StableIdentifierGenerator {
         catch (InvocationTargetException | NoSuchMethodException e) {
             logger.error("An error occurred while invoking " + pe.getDisplayName() + " with method " + method.getName());
         }
-        return null;
+        return Collections.emptySet();
     }
 
-    private Set<Species> grepAllSpeciesInPE(DatabaseObject pe, String followRelationship, String schemaClass) throws Exception {
+    private Set<Taxon> grepAllSpeciesInPE(DatabaseObject pe, String followRelationship, String schemaClass) throws Exception {
         return this.curationService.grepSpecies(pe.getDbId(), followRelationship, schemaClass);
     }
 
 
     private String getSpeciesAbbreviation(DatabaseObject species) throws Exception {
-        if (!Species.class.isAssignableFrom(species.getClass())) {
-            throw new IllegalArgumentException("Instance " + species.getDbId() + " is not a species instance");
+        if (!(species instanceof Taxon)) {
+            throw new IllegalArgumentException("Instance " + species.getDbId() + " is not a Taxon instance");
         }
         if (species.isLoaded) // Usually it is not the case
             return ((Species) species).getAbbreviation();

@@ -122,7 +122,7 @@ public class CypherQueryUtilities {
      */
     public String querySpeciesAbbreviation(Long speciesDbId, Neo4jClient neo4jClient) {
         String query = "" +
-                "MATCH (s:Species) " +
+                "MATCH (s:Taxon) " +
                 "WHERE s.dbId = $dbId " +
                 "RETURN s.abbreviation AS abbreviation " +
                 "LIMIT 1";
@@ -171,26 +171,26 @@ public class CypherQueryUtilities {
         return inst;
     }
 
-    public Set<Species> grepSpecies(Long dbId, String followAttributes, String schemaClass, Neo4jClient neo4jClient) {
+    public Set<Taxon> grepSpecies(Long dbId, String followAttributes, String schemaClass, Neo4jClient neo4jClient) {
         String query = String.format("MATCH (container:%s {dbId: %d})\n"
-                + "OPTIONAL MATCH (container)-[:species]->(s:Species)\n" + "WITH container, s AS containerSpecies\n"
+                + "OPTIONAL MATCH (container)-[:species]->(s:Taxon)\n" + "WITH container, s AS containerSpecies\n"
                 + "OPTIONAL MATCH (container)-[r:%s*]->(pe:PhysicalEntity)\n"
                 + "WITH container, containerSpecies, r, COLLECT(pe) AS containeds\n"
                 + "UNWIND containeds AS pe\n"
                 + "UNWIND r AS role\n"
-                + "OPTIONAL MATCH (pe)-[:species]->(species:Species)\n"
+                + "OPTIONAL MATCH (pe)-[:species]->(species:Taxon)\n"
                 + "WITH container, containerSpecies, COLLECT(DISTINCT species) AS cSpecies, role, pe\n"
                 + "UNWIND cSpecies as containedSpecies\n"
                 + "RETURN containedSpecies.dbId, containedSpecies.displayName",
                 schemaClass, dbId, followAttributes);
 
-        Set<Species> speciesSet = new HashSet<>();
+        Set<Taxon> speciesSet = new HashSet<>();
         Collection<Map<String, Object>> all = neo4jClient.query(query).fetch().all();
         for (Map<String, Object> map : all) {
             String containedSpeciesDisplayName = (String) map.get("containedSpecies.displayName");
             Long containedSpeciesDbId = (Long) map.get("containedSpecies.dbId");
             // Create a simple instance to model the species and add to map
-            Species species = new Species();
+            Taxon species = new Taxon();
             species.setDbId(containedSpeciesDbId);
             species.setDisplayName(containedSpeciesDisplayName);
             speciesSet.add(species);

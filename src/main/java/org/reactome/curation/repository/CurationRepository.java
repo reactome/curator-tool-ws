@@ -35,7 +35,6 @@ import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.domain.model.Deleted;
 import org.reactome.server.graph.domain.model.DeletedInstance;
 import org.reactome.server.graph.domain.model.InstanceEdit;
-import org.reactome.server.graph.domain.model.Species;
 import org.reactome.server.graph.domain.model.Taxon;
 import org.reactome.server.graph.service.helper.StoichiometryObject;
 import org.reactome.server.graph.service.util.DatabaseObjectUtils;
@@ -1454,7 +1453,7 @@ public class CurationRepository {
         return listRefs;
     }
 
-    public Set<Species> grepSpecies(Long dbId, String followAttributes, String schemaClass) {
+    public Set<Taxon> grepSpecies(Long dbId, String followAttributes, String schemaClass) {
         return this.queryUtilities.grepSpecies(dbId, followAttributes, schemaClass, neo4jClient);
     }
     
