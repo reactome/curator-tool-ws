@@ -174,10 +174,10 @@ public class CuratorToolExporter {
                     // This is a special case for Interaction classes
                     attName = "identifier";
                 }
-                else if (attName.equals(ReactomeJavaConstants.referenceEntity)) {
-                    // This is a special case for ReferenceEntity
-                    attName = "referenceEntityList";
-                }
+//                else if (attName.equals(ReactomeJavaConstants.referenceEntity)) {
+//                    // This is a special case for ReferenceEntity
+//                    attName = "referenceEntityList";
+//                }
                 curationAtt.setName(attName);
                 curationAtt.setCategory(CurationAttribute.Category.getCategory(att.getCategory()));
                 curationAtt.setDefiningType(CurationAttribute.DefiningType.getDefiningType(att.getDefiningType()));

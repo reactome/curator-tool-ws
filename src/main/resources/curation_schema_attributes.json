@@ -1016,7 +1016,7 @@
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "MANDATORY",
-    "name" : "referenceEntityList"
+    "name" : "referenceEntity"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -2020,7 +2020,7 @@
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "MANDATORY",
-    "name" : "referenceEntityList"
+    "name" : "referenceEntity"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -3399,7 +3399,7 @@
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "MANDATORY",
-    "name" : "referenceEntityList"
+    "name" : "referenceEntity"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -5435,7 +5435,7 @@
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "MANDATORY",
-    "name" : "referenceEntityList"
+    "name" : "referenceEntity"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -5814,7 +5814,7 @@
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "MANDATORY",
-    "name" : "referenceEntityList"
+    "name" : "referenceEntity"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -6884,7 +6884,7 @@
   }, {
     "definingType" : "ALL_DEFINING",
     "category" : "MANDATORY",
-    "name" : "referenceEntityList"
+    "name" : "referenceEntity"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
