@@ -703,6 +703,7 @@ public class DiagramOverlayHelper {
         // Need to convert to attachments
         List<NodeAttachment> features = new ArrayList<NodeAttachment>();
         for (AbstractModifiedResidue amr : modifiedResidues) {
+            // Only translational modification is supported for now. We can add more types later if needed.
             if (!(amr instanceof TranslationalModification))
                 continue;
             TranslationalModification modifiedResidue = (TranslationalModification) amr;

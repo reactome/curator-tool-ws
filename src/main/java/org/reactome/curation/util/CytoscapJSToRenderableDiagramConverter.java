@@ -370,7 +370,7 @@ public class CytoscapJSToRenderableDiagramConverter {
     private void handleModifications(List<JsonNode> modifications, Map<Integer, Renderable> id2Renderable) {
         for (JsonNode modification : modifications) {
             Long modDbId = modification.path("data").path("reactomeId").asLong();
-            Integer nodeId = modification.path("data").path("nodeId").asInt();
+            Integer nodeId = modification.path("data").path("nodeReactomeId").asInt();
             Renderable renderable = id2Renderable.get(nodeId);
             if (renderable == null) {
                 logger.error("Cannot find node for modification with dbId: " + modDbId + " and nodeId: " + nodeId);
