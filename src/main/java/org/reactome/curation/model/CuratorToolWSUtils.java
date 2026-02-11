@@ -52,5 +52,15 @@ public class CuratorToolWSUtils {
         }
         return null; // Not found
     }
+    
+    public static Method getGetMethod(String attributeName,
+                                      DatabaseObject object) throws Exception {
+        String methodName = "get" + attributeName.substring(0, 1).toUpperCase() + attributeName.substring(1);
+        for (Method method : object.getClass().getMethods()) {
+            if (method.getName().equals(methodName))
+                return method;
+        }
+        return null; // Not found
+    }
 
 }

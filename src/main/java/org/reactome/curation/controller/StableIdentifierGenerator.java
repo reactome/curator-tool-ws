@@ -4,6 +4,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
+import org.reactome.curation.model.CuratorToolWSUtils;
 import org.reactome.curation.service.CurationService;
 import org.reactome.server.graph.domain.model.*;
 import org.slf4j.Logger;
@@ -199,10 +200,12 @@ public class StableIdentifierGenerator {
         // have been stored in the database. However, this assumption most likely is not true when a new
         // instance is being created with references that are not stored in the database. TODO: We may 
         // need to revisit the code here. 
-        Method method = pe.getClass().getMethod("getSpecies");
         try {
             // If species is defined at the PE level and it is not empty, we will use it.
             // Otherwise, we may try to get species from its components, members or repeated unit.
+            Method method = CuratorToolWSUtils.getGetMethod("species", pe);
+            if (method == null)
+                return Collections.emptySet();
             Object result = method.invoke(pe);
             if (result instanceof Taxon)
                 return Collections.singleton((Taxon) result);
@@ -218,7 +221,7 @@ public class StableIdentifierGenerator {
                 return this.grepAllSpeciesInPE(pe, "repeatedUnit", "Polymer");
         }
         catch (InvocationTargetException | NoSuchMethodException e) {
-            logger.error("An error occurred while invoking " + pe.getDisplayName() + " with method " + method.getName());
+            logger.error("An error occurred while invoking " + pe.getDisplayName() + " with method getSpecies.");
         }
         return Collections.emptySet();
     }
