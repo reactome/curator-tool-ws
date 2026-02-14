@@ -963,7 +963,7 @@ public class CurationRepository {
         Map<Long, Map<Long, SimpleInstance>> parentDbId2DbId2SimpleInstance = new HashMap<>();
         String query = "MATCH (p:Event)-[r:hasEvent]->(n:Event) "
                 + "RETURN DISTINCT p.dbId, n.dbId, n.displayName, n.speciesName, "
-                + "n.schemaClass, n.releaseDate, n.hasDiagram, r.order";
+                + "n.schemaClass, n.doRelease, n.releaseDate, n.hasDiagram, r.order";
         // Execute the query
         Collection<Map<String, Object>> all = neo4jClient.query(query).fetch().all();
         // Populate parentDbId2DbId2SimpleInstance with query results
