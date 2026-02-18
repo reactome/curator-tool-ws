@@ -182,6 +182,16 @@ public class CuratorToolExporter {
                 curationAtt.setCategory(CurationAttribute.Category.getCategory(att.getCategory()));
                 curationAtt.setDefiningType(CurationAttribute.DefiningType.getDefiningType(att.getDefiningType()));
                 
+                if (attName.equals(ReactomeJavaConstants.storedATXML)) {
+                    curationAtt.setName("jsonFile"); // Changed to this new name
+//                    curationAtt.setCategory(CurationAttribute.Category.OPTIONAL); // Now it is just a flag. It should be empty usually.
+                }
+                
+                // Disable all manual editing for PathwayDiagram except referencePathway
+                if (cls.getName().equals(ReactomeJavaConstants.PathwayDiagram) && !attName.equals(ReactomeJavaConstants.representedPathway)) {
+                    curationAtt.setCategory(CurationAttribute.Category.NOMANUALEDIT);
+                }
+                
                 // Some manual fixes for Deleted class
                 if (cls.getName().equals(ReactomeJavaConstants._Deleted)) { // The class name is still based on MySQL data model
                     // But attribute names have been changed to use the Graph data model's names

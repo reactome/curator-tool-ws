@@ -2579,7 +2579,7 @@
     "name" : "created"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "REQUIRED",
+    "category" : "NOMANUALEDIT",
     "name" : "width"
   }, {
     "definingType" : "UNDEFINED",
@@ -2591,11 +2591,11 @@
     "name" : "modifiedList"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "REQUIRED",
-    "name" : "storedATXML"
+    "category" : "NOMANUALEDIT",
+    "name" : "jsonFile"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "REQUIRED",
+    "category" : "NOMANUALEDIT",
     "name" : "height"
   }, {
     "definingType" : "UNDEFINED",
