@@ -896,7 +896,9 @@ public class CurationRepository {
         // we have our own query
         String query = String.format(
                 "MATCH (n:TopLevelPathway) %s "
-                        + "RETURN n.dbId, n.displayName, n.schemaClass, n.speciesName, n.doRelease, n.releaseDate, n.hasDiagram",
+                        + "OPTIONAL MATCH (pd:PathwayDiagram)-[:representedPathway]->(n) "
+                        + "RETURN n.dbId, n.displayName, n.schemaClass, n.speciesName, n.doRelease, n.releaseDate, "
+                        + "CASE WHEN pd IS NOT NULL THEN true ELSE false END as `n.hasDiagram`",
                         !speciesName.equalsIgnoreCase("All") ? String.format("WHERE n.speciesName = '%s'", speciesName) : "");
 
         Collection<Map<String, Object>> all = neo4jClient.query(query).fetch().all();
@@ -965,12 +967,13 @@ public class CurationRepository {
      *         corresponding event, related to that parent via a hasEvent
      *         relationship
      */
-    //TODO: _doRelease has not been imported yet. Need to update this back after it is fixed.
     private Map<Long, Map<Long, SimpleInstance>> getAllEvents() {
         Map<Long, Map<Long, SimpleInstance>> parentDbId2DbId2SimpleInstance = new HashMap<>();
         String query = "MATCH (p:Event)-[r:hasEvent]->(n:Event) "
+                + "OPTIONAL MATCH (pd:PathwayDiagram)-[:representedPathway]->(n) "
                 + "RETURN DISTINCT p.dbId, n.dbId, n.displayName, n.speciesName, "
-                + "n.schemaClass, n.doRelease, n.releaseDate, n.hasDiagram, r.order";
+                + "n.schemaClass, n.doRelease, n.releaseDate, "
+                + "CASE WHEN pd IS NOT NULL THEN true ELSE false END as `n.hasDiagram`, r.order";
         // Execute the query
         Collection<Map<String, Object>> all = neo4jClient.query(query).fetch().all();
         // Populate parentDbId2DbId2SimpleInstance with query results
