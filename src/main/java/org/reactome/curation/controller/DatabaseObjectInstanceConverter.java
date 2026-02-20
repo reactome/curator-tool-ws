@@ -197,6 +197,10 @@ public class DatabaseObjectInstanceConverter {
             logger.error("Person dbId is not defined!");
             throw new IllegalArgumentException("personId is null");
         }
+        return createInstanceEdit(personId);
+    }
+
+    public InstanceEdit createInstanceEdit(Long personId) throws InstanceNotFoundException {
         DatabaseObject person = curationService.findById(personId);
         if (person == null) {
             logger.error("Cannot find Person with dbId: " + personId);

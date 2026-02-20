@@ -108,10 +108,26 @@ public class CurationController {
     
     //NB: This method has not been listed in the test!
     @PostMapping("uploadCyNetwork/{pathwayId}")
-    public Boolean saveCytoscapeNetwork(@PathVariable("pathwayId") Long pathwayId,
-                                     @RequestBody JsonNode networkJson) {
+    public Boolean saveCytoscapeNetwork(@PathVariable("pathwayId") Long pathwayDiagramId,
+                                        @RequestBody JsonNode networkJson) {
         try {
-            diagramService.saveCytoscapeNetwork(pathwayId, networkJson);
+            // Create or update PathwayDiagram instance
+            Long dbId = networkJson.get("defaultPersonId").asLong(); 
+            if (dbId == null || dbId <= 0) {
+                logger.error("CurationController.saveCytoscapeNetwork: The defaultPersonId is missing or is not in the database.");
+                return Boolean.FALSE;
+            }
+            // PathwayDiagram instance should be there already.
+            DatabaseObject pdInst = service.findById(pathwayDiagramId);
+            if (pdInst == null) {
+                logger.error("CurationController.saveCytoscapeNetwork: Cannot find the PathwayDiagram instance with dbId: " + pathwayDiagramId);
+                return Boolean.FALSE;
+            }
+            // Need to add IE to track the modification
+            // Call here before save the network to ensure the modification can be tracked.
+            InstanceEdit ie = converter.createInstanceEdit(dbId);
+            diagramService.saveCytoscapeNetwork(pathwayDiagramId, networkJson);
+            service.addModifiedIE(pdInst, ie);
             return Boolean.TRUE;
         }
         catch(Exception e) {

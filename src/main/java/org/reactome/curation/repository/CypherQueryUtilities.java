@@ -243,7 +243,7 @@ public class CypherQueryUtilities {
      * @param ieNode
      * @param ie
      */
-    public void addModifiedIE(SimpleInstance instance, 
+    public void addModifiedIE(DatabaseObject instance, 
                               InstanceEdit ie,
                               Neo4jClient neo4jClient) {
         String cypher = ""

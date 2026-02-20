@@ -233,6 +233,13 @@ public class CurationRepository {
         // as long as no exception is thrown.
         return true;
     }
+    
+    @Transactional
+    public void addModifiedIE(DatabaseObject target, InstanceEdit ie) throws Exception {
+        if (ie.getDbId() == null || ie.getDbId() < 0)
+            ie = (InstanceEdit) store(ie); // The cast should be safe
+        this.queryUtilities.addModifiedIE(target, ie, neo4jClient);
+    }
 
     /**
      * Store the DatabaseObject's shell representation (dbId and displayName only) so that we can

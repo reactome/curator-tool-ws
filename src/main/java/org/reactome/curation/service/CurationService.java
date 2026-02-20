@@ -360,6 +360,10 @@ public class CurationService {
         }
         return curationRepository.deleteByDeleted(deleted, toBeDeleted, ie);
     }
+    
+    public void addModifiedIE(DatabaseObject target, InstanceEdit modifiedIE) throws Exception {
+        curationRepository.addModifiedIE(target, modifiedIE);
+    }
 
     public Collection<NamedReferrerList> getReferrers(Long dbId) throws Exception {
         return curationRepository.getReferrers(dbId);
