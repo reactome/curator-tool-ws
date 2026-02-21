@@ -80,12 +80,20 @@ public class CurationController {
         try {
             // To ensure the returned text is well formated JSON text for the front-end,
             // we will use JsonNode as a proxy for the JSON text.
-            return diagramService.loadDiagramJson(fileName);
+            JsonNode rtn = diagramService.loadDiagramJson(fileName);
+            if (rtn == null)
+                return objectMapper.createObjectNode(); // Just return an empty JSON object
+            return rtn;
         }
         catch(IOException e) {
             logger.error("CurationController.loadDiagram: " + e.getMessage(), e);
             throw new IllegalStateException(e.getMessage());
         }
+    }
+    
+    @GetMapping("hasDiagram/{dbId}")
+    public Boolean hasDiagram(@PathVariable("dbId") Long dbId) throws IOException {
+        return diagramService.hasDiagramJson(dbId);
     }
     
     @GetMapping("getCyNetwork/{pathwayId}")

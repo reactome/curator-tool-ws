@@ -36,6 +36,17 @@ public class PathwayDiagramRepository {
         return text;
     }
     
+    /**
+     * Check if the diagram JSON file exists for a given file name.
+     * @param fileName
+     * @return
+     * @throws IOException
+     */
+    public boolean hasDiagramJson(Long dbId) throws IOException {
+        String fileName = dbId + ".json";
+        File file = new File(toolEnv.getDiagramGraphDir(), fileName);
+        return file.exists();
+    }
     
     public String loadCytoscapeNetwork(Long pathwayId) throws IOException {
         File file = new File(toolEnv.getDiagramCytoscapeDir(), pathwayId + ".json");

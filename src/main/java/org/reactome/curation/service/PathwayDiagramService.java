@@ -75,8 +75,15 @@ public class PathwayDiagramService {
     
     public JsonNode loadDiagramJson(String fileName) throws IOException {
         String text = this.diagramRepository.loadDiagramJson(fileName);
+        if (text == null) {
+            return null;
+        }
         JsonNode jsonNode = mapper.readTree(text);
         return jsonNode;
+    }
+    
+    public boolean hasDiagramJson(Long dbId) throws IOException {
+        return this.diagramRepository.hasDiagramJson(dbId);
     }
     
     public JsonNode loadCytosapeNetwork(Long pathwayId) throws IOException {
