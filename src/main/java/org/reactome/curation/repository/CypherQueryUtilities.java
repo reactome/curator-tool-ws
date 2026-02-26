@@ -163,6 +163,7 @@ public class CypherQueryUtilities {
             inst.setSchemaClassName(schemaClassName.toString());
         else {
             inst.setSchemaClassName(className); // Just in case! This should not happen!
+            // However, it does happen for InstanceEdit class. May need to check the data and update it. For now, just log a warning.
             logger.warn("No schemaClass name in the database for instance with dbId = " + inst.getDbId());
         }
         Object refSchemaClass = map.get("inst.ref.schemaClass");

@@ -2,12 +2,8 @@ package org.reactome.curation.controller;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -16,15 +12,14 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.gk.model.InstanceNotFoundException;
-import org.gk.model.ReactomeJavaConstants;
 import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.model.CuratorToolWSUtils;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.service.CurationService;
+import org.reactome.curation.service.InstanceEditManager;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.domain.model.Event;
 import org.reactome.server.graph.domain.model.InstanceEdit;
-import org.reactome.server.graph.domain.model.Person;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +38,8 @@ public class DatabaseObjectInstanceConverter {
     
     @Autowired
     private CurationService curationService;
+    @Autowired
+    private InstanceEditManager instanceEditManager;
     
     public DatabaseObjectInstanceConverter() {    
     }
@@ -192,38 +189,11 @@ public class DatabaseObjectInstanceConverter {
     }
     
     public InstanceEdit createInstanceEdit(SimpleInstance instance) throws Exception {
-        Long personId = instance.getDefaultPersonId();
-        if (personId == null) {
-            logger.error("Person dbId is not defined!");
-            throw new IllegalArgumentException("personId is null");
-        }
-        return createInstanceEdit(personId);
+        return this.instanceEditManager.createInstanceEdit(instance);
     }
 
     public InstanceEdit createInstanceEdit(Long personId) throws InstanceNotFoundException {
-        DatabaseObject person = curationService.findById(personId);
-        if (person == null) {
-            logger.error("Cannot find Person with dbId: " + personId);
-            throw new InstanceNotFoundException(ReactomeJavaConstants.Person, personId);
-        }
-        InstanceEdit ie = new InstanceEdit();
-        // Need to specify author and datetime
-        ie.setAuthor(Collections.singletonList((Person)person));
-        ie.setDateTime(this.getDateTime());
-        // Generate display name for it
-        // Technically we should have a place to manage this for all instances
-        // However, this work has been moved to the front-end. We just limit it
-        // to InstanceEdit here
-        String displayName = person.getDisplayName() + ", " + ie.getDateTime().split(" ")[0];
-        ie.setDisplayName(displayName);
-        return ie;
-    }
-    
-    private String getDateTime() {
-        // Use GMT to ensure the same time zone for all curators
-        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("GMT"));
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        return now.format(formatter);
+        return this.instanceEditManager.createInstanceEdit(personId);
     }
     
     private DatabaseObject convert(SimpleInstance instance,

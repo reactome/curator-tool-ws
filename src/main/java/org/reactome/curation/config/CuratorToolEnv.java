@@ -40,5 +40,21 @@ public class CuratorToolEnv {
     public String getDiagramCytoscapeDir() {
         return env.getProperty("diagram_cytoscape_dir");
     }
+    
+    /**
+     * InstanceEdit will be reused for a certain period of time for a user.
+     * This is to avoid creating too many InstanceEdit objects for a user in a short period of time. The default value is 60 seconds.
+     * @return
+     */
+    public Integer getInstanceEditDuration() {
+        String value = env.getProperty("instance_edit_duration");
+        if (value == null)
+            return 60; // Default to 60 seconds
+        try {
+            return Integer.valueOf(value);
+        } catch (NumberFormatException e) {
+            return 60;
+        }
+    }
 
 }
