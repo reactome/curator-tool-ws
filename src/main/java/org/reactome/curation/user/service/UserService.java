@@ -77,7 +77,7 @@ public class UserService {
         token.setRevoked(false);
 
         // Cache the user to their refresh token
-        this.user2token.put(userDetails.getId(), token);
+        this.user2token.put(userDetails.getUuId(), token);
         return token;
     }
 
