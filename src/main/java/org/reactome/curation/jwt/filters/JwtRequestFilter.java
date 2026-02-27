@@ -7,9 +7,10 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.reactome.curation.jwt.util.JwtUtil;
+import org.reactome.curation.user.service.JwtService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -20,6 +21,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 public class JwtRequestFilter extends OncePerRequestFilter {
     private static final Logger logger = LoggerFactory.getLogger(JwtRequestFilter.class);
+
+    @Autowired
+    private JwtService jwtService;
+
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, 
@@ -40,7 +45,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             String token = authorizationHeader.substring(7);
             // Just assume the token is generated from us
             try {
-                username = JwtUtil.extractUsername(token);
+                username = jwtService.extractUsername(token);
             }
             catch(Exception e) {
                 logger.error("JwtRequestFilter.doFilterInternal: " + e.getMessage(), e);

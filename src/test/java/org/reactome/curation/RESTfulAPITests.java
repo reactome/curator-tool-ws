@@ -51,7 +51,7 @@ class RESTfulAPITests {
     
     @Test
     public void testListInstancesWithAuthentication() throws Exception {
-        User request = new User("test", "password");
+        User request = new User("test", "password", "id");
         ObjectMapper mapper = CurationWSTestHelper.createObjectMapper();
         String jsonObj = mapper.writeValueAsString(request);
         System.out.println(jsonObj);
@@ -78,7 +78,7 @@ class RESTfulAPITests {
     }
     
     private String getJWT() throws Exception {
-        User request = new User("test", "password");
+        User request = new User("test", "password", "id");
         ObjectMapper mapper = CurationWSTestHelper.createObjectMapper();
         String jsonObj = mapper.writeValueAsString(request);
         System.out.println(jsonObj);
@@ -97,7 +97,7 @@ class RESTfulAPITests {
     
     @Test
     public void testAuthenticate() throws Exception {
-        User request = new User("test", "password");
+        User request = new User("test", "password", "id");
         ObjectMapper mapper = CurationWSTestHelper.createObjectMapper();
         String jsonObj = mapper.writeValueAsString(request);
         System.out.println(jsonObj);
@@ -112,7 +112,7 @@ class RESTfulAPITests {
         System.out.println(formatJSON(json));
         
         // This user should not be validated
-        request = new User("test", "wrong_password");
+        request = new User("test", "wrong_password", "id");
         jsonObj = mapper.writeValueAsString(request);
         System.out.println(jsonObj);
         
@@ -438,7 +438,6 @@ class RESTfulAPITests {
 //                72810L, // NCBI Taxonomy
 //                9707103L, // A figure
 //                72811L, // InstanceEdit
-                9840051L // RegulationReference
         };
         // The URL should start with "/" to make it true
         String url = BASE_URL + "findDatabaseObjectByDbId/";
@@ -505,32 +504,31 @@ class RESTfulAPITests {
         }
     }
     
-    // This test should not be used.
     @Test
     public void testFindByIdInInstance() throws Exception {
-//        assertNotNull(mockMvc);
-//        Long[] dbIds = {
-//                9776999L, // UpdateTracker
-//                141412L, // An EWAS
-//                141429L, // A reaction has the same instance appearing in two slots.
-//                109581L, // Pathway
-//                72810L, // NCBI Taxonomy
-//                9707103L, // A figure
-//                72811L, // InstanceEdit
-//        };
-//        // The URL should start with "/" to make it true
-//        String url = BASE_URL + "findByDbId/";
-//        String jwt = getJWT();
-//        for (Long dbId : dbIds) {
-//            String json = mockMvc.perform(get(url + dbId).header("Authorization", "Bearer " + jwt))
-//                    .andExpect(status().isOk())
-//                    .andReturn()
-//                    .getResponse()
-//                    .getContentAsString();
-//            System.out.println(json);
+        assertNotNull(mockMvc);
+        Long[] dbIds = {
+                9776999L, // UpdateTracker
+                141412L, // An EWAS
+                141429L, // A reaction has the same instance appearing in two slots.
+                109581L, // Pathway
+                72810L, // NCBI Taxonomy
+                9707103L, // A figure
+                72811L, // InstanceEdit
+        };
+        // The URL should start with "/" to make it true
+        String url = BASE_URL + "findByDbId/";
+        String jwt = getJWT();
+        for (Long dbId : dbIds) {
+            String json = mockMvc.perform(get(url + dbId).header("Authorization", "Bearer " + jwt))
+                    .andExpect(status().isOk())
+                    .andReturn()
+                    .getResponse()
+                    .getContentAsString();
+            System.out.println(json);
 //            DatabaseObject obj = curationService.findById(dbId);
 //            System.out.println(obj);
-//        }
+        }
     }
     
     @Test

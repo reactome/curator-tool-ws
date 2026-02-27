@@ -10,6 +10,8 @@ import javax.persistence.Table;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 @NoArgsConstructor
 @Entity
 @Data
@@ -18,11 +20,12 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
     
-    public User(String username, String password) {
+    public User(String username, String password, String uuId) {
         this.username = username;
         this.password = password;
+        this.uuId = uuId;
     }
 
     @Column(unique = true, nullable = false)
@@ -32,5 +35,9 @@ public class User {
     private String password;
     
     @Column(nullable = true)
-    private String role; 
+    private String role;
+
+    @Column(nullable = true)
+    private String uuId;
+
 }
