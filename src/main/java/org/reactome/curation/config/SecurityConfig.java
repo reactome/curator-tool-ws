@@ -1,6 +1,6 @@
 package org.reactome.curation.config;
 
-import org.reactome.curation.jwt.filters.JwtRequestFilter;
+import org.reactome.curation.jwt.controller.JwtRequestFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,7 +23,7 @@ public class SecurityConfig {
         // Have to enable cors here. Otherwise it cannot work!
         http.cors().and().csrf().disable() // We are build a stateless, jwt based app and it should be safe to disable csrf here.
             .authorizeRequests()
-            .antMatchers("/api/authenticate", "/api/register").permitAll()  // Allow unauthenticated access to login and register
+            .antMatchers("/api/authenticate", "/api/refresh", "/api/register").permitAll()  // Allow unauthenticated access to login and register
             .anyRequest().authenticated();
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class); // Add custom JWT filter
         // Turn off the jwt security check for the time being

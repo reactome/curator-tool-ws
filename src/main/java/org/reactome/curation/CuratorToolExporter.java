@@ -174,6 +174,9 @@ public class CuratorToolExporter {
                     // This is a special case for Interaction classes
                     attName = "identifier";
                 }
+                else if (cls.getName().equals("_DeletedInstance") && attName.equals("class")) {
+                    attName = "clazz"; // This is a special case for DeletedInstance class because "class" is a reserved word in Java
+                }
 //                else if (attName.equals(ReactomeJavaConstants.referenceEntity)) {
 //                    // This is a special case for ReferenceEntity
 //                    attName = "referenceEntityList";

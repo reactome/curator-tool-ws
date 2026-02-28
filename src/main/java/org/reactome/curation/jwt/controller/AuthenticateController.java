@@ -1,10 +1,18 @@
 package org.reactome.curation.jwt.controller;
 
-import org.reactome.curation.jwt.util.JwtUtil;
+import java.time.Duration;
+
+import javax.servlet.http.HttpServletResponse;
+
 import org.reactome.curation.user.model.User;
+import org.reactome.curation.user.service.JwtService;
+import org.reactome.curation.user.service.RefreshTokenService;
 import org.reactome.curation.user.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -13,36 +21,90 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("api")
-@CrossOrigin
+@CrossOrigin(origins = "http://localhost:4200", allowCredentials = "true")
 public class AuthenticateController {
-    
+
     @Autowired
     private UserService userService;
-    
-    @PostMapping("/authenticate")
-    public String authenticate(@RequestBody User user) {
-        if (userService.authenticate(user.getUsername(), user.getPassword())) {
-            return JwtUtil.generateToken(user.getUsername());
-        }
-        throw new BadCredentialsException("Invalid username or password");
-        // Somehow I cannot make the following work: circular reference. Therefore, use
-        // our own authentication above. The SecurityContextHolder will be handled by the
-        // jwtfilter - GW
-//        Authentication authentication = authenticationManager.authenticate(
-//                new UsernamePasswordAuthenticationToken(request.getUsername(), 
-//                        request.getPassword())
-//        );
-//        SecurityContextHolder.getContext().setAuthentication(authentication);
-    }
-    
-    // We will not support register from the web for the time being. Registration will be handled locally
-    // by developers using a command line tool.
-//    @PostMapping("/register")
-//    public String register(@RequestBody User user) {
-//        user.setPassword(passwordEncoder.encode(user.getPassword()));
-//        userRepository.save(user);
-//        return "User registered";
-//    }
-    
-}
+    @Autowired
+    private JwtService jwtService;
+    @Autowired
+    private RefreshTokenService refreshTokenService;
 
+    /**
+     * Authenticate user and return both access and refresh tokens.
+     * 
+     * @param user the user credentials
+     * @return AuthenticationResponse containing accessToken, refreshToken, and expiresIn
+     * @throws BadCredentialsException if authentication fails
+     */
+    @PostMapping("/authenticate")
+    public String authenticate(@RequestBody User user,
+                               HttpServletResponse response) {
+        if (!userService.authenticate(user.getUsername(), user.getPassword())) {
+            throw new BadCredentialsException("Invalid username or password");
+        }
+
+        return generateTokens(user.getUsername(), response);
+    }
+
+    private String generateTokens(String userName, HttpServletResponse response) {
+        try {
+            // Generate access token
+            String accessToken = jwtService.generateAccessToken(userName);
+
+            // Generate refresh token and store it in memory
+            String refreshToken = jwtService.generateRefreshToken(userName);
+            refreshTokenService.saveRefreshToken(refreshToken);
+
+            // Set refresh token in HttpOnly cookie
+            ResponseCookie cookie = this.addRefreshToCookie(refreshToken);
+            response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+
+            return accessToken;
+        }
+        catch(Exception e) {
+            throw new BadCredentialsException("Authentication failed: " + e.getMessage());
+        }
+    }
+
+    private ResponseCookie addRefreshToCookie(String token) {
+        return ResponseCookie.from(JwtService.REFRESH_TOKEN_COOKIE_NAME, token)
+                .httpOnly(true)
+                .secure(false)
+                .sameSite("Lax")
+                .path("/api")
+                .maxAge(Duration.ofHours(12))
+                .build();
+    }
+
+    /**
+     * Refresh the access token using a valid refresh token.
+     * 
+     * @param refreshTokenRequest the request containing the refresh token
+     * @return AuthenticationResponse containing a new accessToken and the same refreshToken
+     * @throws BadCredentialsException if the refresh token is invalid or expired
+     */
+    @PostMapping("/refresh")
+    public String refreshToken(@CookieValue(name=JwtService.REFRESH_TOKEN_COOKIE_NAME) String refreshToken,
+                               HttpServletResponse response) {
+        if (refreshToken == null || refreshToken.trim().isEmpty()) {
+            throw new BadCredentialsException("Refresh token is required");
+        }
+
+        // Verify the refresh token is valid
+        if (!refreshTokenService.findByToken(refreshToken).isPresent()) {
+            throw new BadCredentialsException("Invalid or expired refresh token");
+        }
+        try {
+            // Extract username from refresh token
+            String username = jwtService.extractUsername(refreshToken);
+            // We'd like to remove refresh token from cookie after use.
+            refreshTokenService.revokeToken(refreshToken);
+            return generateTokens(username, response);
+        }
+        catch(Exception e) {
+            throw new BadCredentialsException("Failed to refresh token: " + e.getMessage());
+        }
+    }
+}
