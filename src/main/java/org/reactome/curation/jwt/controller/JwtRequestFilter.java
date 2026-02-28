@@ -30,9 +30,8 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                                     HttpServletResponse response, 
                                     FilterChain chain)  throws ServletException, IOException {
         // Check if the request is for authenticate or register
-        if (request.getRequestURI().equals("/api/authenticate") || 
-                request.getRequestURI().equals("/api/refresh") ||
-            request.getRequestURI().equals("/api/register")) {
+        if (request.getRequestURI().equals("/api/auth/login") || 
+            request.getRequestURI().equals("/api/auth/refresh")) {
             chain.doFilter(request, response); // Skip JWT filter
             return;
         }
@@ -49,13 +48,13 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 username = jwtService.extractUsername(token);
             }
             catch(Exception e) {
-                logger.error("JwtRequestFilter.doFilterInternal: " + e.getMessage(), e);
+                logger.error("JwtRequestFilter.doFilterInternal: " + e.getMessage());
             }
         }
         if (username == null) {
             // Need to see if there is a better way.
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // Send 401 status
-            response.getWriter().write("Invalid or missing JWT token");
+            response.getWriter().write("Unauthorized - Try login again.");
             response.getWriter().flush();
             return;
 //            throw new BadCredentialsException("Wrong jwt token.");

@@ -9,6 +9,7 @@ import org.reactome.curation.user.service.JwtService;
 import org.reactome.curation.user.service.RefreshTokenService;
 import org.reactome.curation.user.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -20,8 +21,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("api")
-@CrossOrigin(origins = "http://localhost:4200", allowCredentials = "true")
+@RequestMapping("api/auth")
+@CrossOrigin(origins = {"http://localhost:4200", "https://curator.reactome.org"}, allowCredentials = "true")
 public class AuthenticateController {
 
     @Autowired
@@ -30,6 +31,9 @@ public class AuthenticateController {
     private JwtService jwtService;
     @Autowired
     private RefreshTokenService refreshTokenService;
+    
+    @Value("${isProduction:false}")
+    private Boolean isProduction = false; // Set to true in production environment to enable secure cookies
 
     /**
      * Authenticate user and return both access and refresh tokens.
@@ -38,7 +42,7 @@ public class AuthenticateController {
      * @return AuthenticationResponse containing accessToken, refreshToken, and expiresIn
      * @throws BadCredentialsException if authentication fails
      */
-    @PostMapping("/authenticate")
+    @PostMapping("/login")
     public String authenticate(@RequestBody User user,
                                HttpServletResponse response) {
         if (!userService.authenticate(user.getUsername(), user.getPassword())) {
@@ -71,7 +75,7 @@ public class AuthenticateController {
     private ResponseCookie addRefreshToCookie(String token) {
         return ResponseCookie.from(JwtService.REFRESH_TOKEN_COOKIE_NAME, token)
                 .httpOnly(true)
-                .secure(false)
+                .secure(isProduction) // Set secure flag based on environment
                 .sameSite("Lax")
                 .path("/api")
                 .maxAge(Duration.ofHours(12))

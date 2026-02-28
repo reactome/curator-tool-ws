@@ -4,6 +4,7 @@ import java.util.Date;
 
 import javax.crypto.SecretKey;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import io.jsonwebtoken.Jwts;
@@ -16,14 +17,21 @@ public class JwtService {
     // There should be only one key for the whole application when it starts.
     private static final SignatureAlgorithm signatureAlg = SignatureAlgorithm.HS512;
     private static final SecretKey key = Keys.secretKeyFor(signatureAlg);
-    // The following configurations may need to move to an external configuration file 
-    private static final long ACCESS_TOKEN_TIME = 1000 * 10; // 10 minutes
-    public static final long IDLE_TOKEN_TIME = 1000 * 60 * 10 * 2; // 20 minutes
-    public static final long REFRESH_TOKEN_TIME = 1000 * 60 * 24 * 7; // 7 days
+    
+    // JWT token timing configurations read from application.properties
+    @Value("${jwt.access-token-time:600000}")
+    private long accessTokenTime; // Default: 10 minutes in milliseconds
+    
+    @Value("${jwt.idle-token-time:1200000}")
+    private long idleTokenTime; // Default: 20 minutes in milliseconds
+    
+    @Value("${jwt.refresh-token-time:604800000}")
+    private long refreshTokenTime; // Default: 7 days in milliseconds
+    
     public static final String REFRESH_TOKEN_COOKIE_NAME = "refresh_token";
 
     public String generateAccessToken(String username) {
-        return generateToken(username, ACCESS_TOKEN_TIME);
+        return generateToken(username, accessTokenTime);
     }
 
     private String generateToken(String username, long expirationTime) {
@@ -37,13 +45,39 @@ public class JwtService {
 
     /**
      * Generate a refresh token and return it with expiration time.
-     * The refresh token expires at 2x the access token duration.
      * 
      * @param username the username for the token
      * @return the JWT refresh token string
      */
     public String generateRefreshToken(String username) {
-        return generateToken(username, REFRESH_TOKEN_TIME);
+        return generateToken(username, refreshTokenTime);
+    }
+    
+    /**
+     * Get the refresh token expiration time in milliseconds.
+     * 
+     * @return the refresh token expiration time
+     */
+    public long getRefreshTokenExpirationTime() {
+        return refreshTokenTime;
+    }
+    
+    /**
+     * Get the access token expiration time in milliseconds.
+     * 
+     * @return the access token expiration time
+     */
+    public long getAccessTokenExpirationTime() {
+        return accessTokenTime;
+    }
+    
+    /**
+     * Get the idle token expiration time in milliseconds.
+     * 
+     * @return the idle token expiration time
+     */
+    public long getIdleTokenTime() {
+        return idleTokenTime;
     }
 
     /**

@@ -1,10 +1,10 @@
 package org.reactome.curation.user.service;
 
 import org.reactome.curation.user.model.RefreshToken;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -16,24 +16,25 @@ import java.util.Optional;
 @Service
 public class RefreshTokenService {
     
+    @Autowired
+    private JwtService jwtService;
+    
     // In-memory storage: token string -> RefreshToken
     private final Map<String, RefreshToken> refreshTokenStore = new ConcurrentHashMap<>();
     
     /**
      * Store a refresh token in memory.
      * 
-     * @param username the username associated with the refresh token
      * @param token the JWT refresh token string
-     * @param expiresAt the expiration time of the refresh token
      * @return the stored RefreshToken object
      */
     public RefreshToken saveRefreshToken(String token) {
         RefreshToken refreshToken = new RefreshToken();
-        refreshToken.setToken(token);
         Instant now = Instant.now();
         refreshToken.setLastUsedAt(now);
-        refreshToken.setExpiresAt(now.plusMillis(JwtService.REFRESH_TOKEN_TIME));
+        refreshToken.setExpiresAt(now.plusMillis(jwtService.getRefreshTokenExpirationTime()));
         refreshToken.setRevoked(false);
+        refreshToken.setUsername(jwtService.extractUsername(token));
         
         refreshTokenStore.put(token, refreshToken);
         return refreshToken;
@@ -52,7 +53,11 @@ public class RefreshTokenService {
         }
         
         // Check if token is expired or revoked
-        if (refreshToken.isRevoked() || isTokenExpired(refreshToken) || isTokenIdle(refreshToken)) {
+        if (refreshToken.isRevoked() || 
+            isTokenExpired(refreshToken) || 
+            isTokenIdle(refreshToken) || 
+            !isTheSameUser(token, refreshToken)) {
+            refreshToken.setRevoked(true);
             refreshTokenStore.remove(token);
             return Optional.empty();
         }
@@ -86,14 +91,20 @@ public class RefreshTokenService {
     }
     
     /**
-     * Check if a refresh token has been idle for too long.
+     * Check if a refresh token is idle.
      * This is an additional check to prevent tokens from being used after a long period of inactivity.
      * 
      * @param refreshToken the RefreshToken to check
      * @return true if the token is idle, false otherwise
      */
     private boolean isTokenIdle(RefreshToken refreshToken) {
-        return Instant.now().isAfter(refreshToken.getLastUsedAt().plusMillis(JwtService.IDLE_TOKEN_TIME));
+        return Instant.now().isAfter(refreshToken.getLastUsedAt().plusMillis(jwtService.getIdleTokenTime()));
+    }
+    
+    private boolean isTheSameUser(String refreshToken, 
+                                  RefreshToken tokenInStore) {
+        String username = jwtService.extractUsername(refreshToken);
+        return tokenInStore.getUsername().equals(username);
     }
     
     /**

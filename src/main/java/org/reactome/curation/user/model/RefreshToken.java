@@ -12,8 +12,6 @@ import lombok.Data;
 @Data
 public class RefreshToken {
 
-    private String token;
-
     private Instant expiresAt;
 
     private Instant lastUsedAt;
@@ -21,5 +19,5 @@ public class RefreshToken {
     // In practice, this may not be needed.
     private boolean revoked;
 
-    private User user;
+    private String username;
 }
