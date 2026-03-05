@@ -517,8 +517,6 @@ public class CurationController {
         }
     }
     
-    //TODO: Need to change the account into a more secure way!!!
-    //TODO: Should return true or false instead void for the front end to determine the status
     @PostMapping("persistInstances/{account}")
     public void persistInstances(@RequestBody UserInstances instances,
                                  @PathVariable("account") String account) {
