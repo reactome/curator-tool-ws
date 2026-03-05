@@ -22,6 +22,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("api/auth")
+// Need to use external configuration file to set allowed origins. Otherwise, we have to hard code the allowed origins here and it is not ideal.
+// This may not work if we change the frontend server URL in the future. 
 @CrossOrigin(origins = {"http://localhost:4200", "https://curator.reactome.org"}, allowCredentials = "true")
 public class AuthenticateController {
 
