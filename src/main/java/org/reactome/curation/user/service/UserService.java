@@ -41,6 +41,10 @@ public class UserService {
     
     
     public User saveUser(String username, String rawPassword, String role) {
+        Optional<User> existingUser = userRepository.findByUsername(username);
+        if (existingUser.isPresent()) {
+            throw new IllegalArgumentException("User already exists: " + username);
+        }
         User user = new User();
         user.setUsername(username);
         user.setPassword(passwordEncoder.encode(rawPassword));
@@ -51,5 +55,18 @@ public class UserService {
 
     public Optional<User> findUserByUsername(String username) {
         return userRepository.findByUsername(username);
+    }
+    
+    public User changePassword(String username, String rawPassword) {
+        User user = userRepository.findByUsername(username)
+                                  .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+        user.setPassword(passwordEncoder.encode(rawPassword));
+        return userRepository.save(user);
+    }
+    
+    public void deleteUser(String username) {
+        User user = userRepository.findByUsername(username)
+                                  .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+        userRepository.delete(user);
     }
 }

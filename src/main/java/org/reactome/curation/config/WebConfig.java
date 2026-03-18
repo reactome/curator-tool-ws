@@ -15,6 +15,8 @@ import org.reactome.server.graph.domain.relationship.HasCompartment;
 import org.reactome.server.graph.domain.relationship.Output;
 import org.reactome.server.graph.service.AdvancedDatabaseObjectService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
@@ -29,6 +31,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 // It is needed to define the following bean to enable the correct JSON one hop serialization
 @Configuration
+@ConditionalOnWebApplication(type = Type.SERVLET)
 @EnableAspectJAutoProxy(proxyTargetClass = true)
 public class WebConfig extends WebMvcConfigurationSupport {
     // This is required by LazyFetchAspect.
