@@ -327,7 +327,7 @@ public class CurationService {
     }
     
     private String getFileForPersistedInstances(String accountName) {
-        File file = new File(toolEnv.getFileRepoDir(), accountName + ".json");
+        File file = new File(toolEnv.getFileRepoDir() + File.separator + accountName, accountName + ".json");
         return file.getAbsolutePath();
     }
     

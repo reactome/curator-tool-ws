@@ -494,7 +494,6 @@ public class CurationController {
         }
     }
     
-    //TODO: Need to change the account into a more secure way. Currently just for prototyping!
     @GetMapping("loadInstances/{account}")
     public UserInstances loadInstances(@PathVariable("account") String account) {
         try {

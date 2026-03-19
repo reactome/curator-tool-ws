@@ -43,10 +43,22 @@ public class CurationFileRepository {
             backupFile(fileName);
         }
         
+        if (!ensureDirectoryExists(file)) {
+            throw new IOException("Failed to create directory for file: " + file.getAbsolutePath());
+        }
+        
         ObjectMapper mapper = getObjectMapper();
         // Give it some format
         mapper.writerWithDefaultPrettyPrinter().writeValue(file, userInstances);
         logger.info("Saved instances to " + file.getAbsolutePath());
+    }
+    
+    private boolean ensureDirectoryExists(File file) {
+        File parentDir = file.getParentFile();
+        if (parentDir != null && !parentDir.exists()) {
+            return parentDir.mkdirs();
+        }
+        return true;
     }
     
     /**
