@@ -15,7 +15,6 @@ import org.reactome.curation.user.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -51,8 +50,13 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             return;
         }
         String authorizationHeader = request.getHeader("Authorization");
-        if (authorizationHeader == null || authorizationHeader.trim().length() == 0)
-            throw new BadCredentialsException("Cannot find jwt token.");
+        if (authorizationHeader == null || authorizationHeader.trim().length() == 0) {
+            logger.warn("Request to {} rejected: missing Authorization header.", request.getRequestURI());
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Unauthorized - Cannot find jwt token.");
+            response.getWriter().flush();
+            return;
+        }
 
         String username = null;
         
@@ -63,11 +67,11 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 username = jwtService.extractUsername(token);
             }
             catch(Exception e) {
-                logger.error("JwtRequestFilter.doFilterInternal: " + e.getMessage());
+                logger.warn("Request to {} rejected: invalid JWT token - {}", request.getRequestURI(), e.getMessage());
             }
         }
         if (username == null) {
-            // Need to see if there is a better way.
+            logger.warn("Request to {} rejected: could not extract username from token.", request.getRequestURI());
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // Send 401 status
             response.getWriter().write("Unauthorized - Try login again.");
             response.getWriter().flush();
@@ -77,6 +81,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         
         Optional<User> user = userService.findUserByUsername(username);
         if (user.isEmpty()) {
+            logger.warn("Request to {} rejected: user '{}' not found.", request.getRequestURI(), username);
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // Send 401 status
             response.getWriter().write("Unauthorized - User not found.");
             response.getWriter().flush();
@@ -87,6 +92,8 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         if (isWriteRequest(request.getRequestURI())) {
             String role = user.get().getRole();
             if (role == null || !role.equalsIgnoreCase("curator")) {
+                logger.warn("Request to {} rejected: user '{}' has role '{}', curator required.",
+                        request.getRequestURI(), username, role);
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN); // 403
                 response.getWriter().write("Forbidden - curator role required.");
                 response.getWriter().flush();
@@ -96,6 +103,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         
         // If username is valid, set the authentication in the security context
         if (SecurityContextHolder.getContext().getAuthentication() == null) {
+            logger.debug("Authenticated user '{}' for request to {}.", username, request.getRequestURI());
             // Set the authentication in the security context
             // Make sure to use this version of constructor even though null is passed
             // to avoid circular calling. It is fine since we have validated jwt already.
