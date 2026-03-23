@@ -13,10 +13,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.gk.model.ReactomeJavaConstants;
 import org.reactome.curation.config.CuratorToolEnv;
+import org.reactome.curation.model.CurationAttribute;
+import org.reactome.curation.model.CurationAttribute.DefiningAttributeValue;
+import org.reactome.curation.model.CurationAttribute.DefiningType;
 import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
@@ -331,10 +335,87 @@ public class CurationService {
         return file.getAbsolutePath();
     }
     
+    /**
+     * Find existing instances in the database that match the defining attributes of
+     * the passed {@link SimpleInstance}.
+     * <p>
+     * Steps:
+     * <ol>
+     *   <li>Load the schema attribute definitions for the instance's schema class.</li>
+     *   <li>For each attribute whose defining type is ALL_DEFINING or ANY_DEFINING,
+     *       look up the corresponding value in the instance's attribute map and wrap
+     *       it in a {@link DefiningAttributeValue}, noting whether it is a reference
+     *       (instance-type) attribute so the Cypher layer knows to match by dbId.</li>
+     *   <li>Delegate to the repository which calls
+     *       {@code CypherQueryUtilities.findMatchingInstancesByDefiningAttributes}.</li>
+     * </ol>
+     *
+     * @param instance the candidate instance whose defining attributes are used as the search key
+     * @return list of lightweight {@link SimpleInstance} shells for matched instances,
+     *         empty if none found or if no defining attributes have values
+     * @throws Exception if the schema attributes cannot be loaded
+     */
+    public List<SimpleInstance> findMatchedInstances(SimpleInstance instance) throws Exception {
+        String schemaClassName = instance.getSchemaClassName();
+        List<CurationAttribute> attributes = getAttributes(schemaClassName);
+        if (attributes == null || attributes.isEmpty())
+            return Collections.emptyList();
+
+        Map<String, DefiningAttributeValue> definingAttributeValues = new HashMap<>();
+        for (CurationAttribute attr : attributes) {
+            DefiningType definingType = attr.getDefiningType();
+            // Only ALL_DEFINING and ANY_DEFINING attributes are used for matching
+            if (definingType == null
+                    || definingType == DefiningType.NONE_DEFINING
+                    || definingType == DefiningType.UNDEFINED)
+                continue;
+            String attrName = attr.getName();
+            Object value = instance.getAttribute(attrName);
+            if (value == null)
+                continue; // No value provided for this defining attribute — skip it
+
+            // Determine if this is a reference (relationship) attribute.
+            // For reference attributes the value is a SimpleInstance or a List thereof;
+            // the Cypher layer will match by dbId.
+            boolean isReference = isInstanceType(schemaClassName, attrName);
+            Object searchValue;
+            if (isReference) {
+                // Extract dbId(s) so the Cypher query can match on the relationship target
+                if (value instanceof List) {
+                    List<Long> dbIds = new ArrayList<>();
+                    for (Object item : (List<?>) value) {
+                        if (item instanceof SimpleInstance) {
+                            Long dbId = ((SimpleInstance) item).getDbId();
+                            if (dbId != null)
+                                dbIds.add(dbId);
+                        }
+                    }
+                    if (dbIds.isEmpty())
+                        continue;
+                    searchValue = dbIds;
+                } else if (value instanceof SimpleInstance) {
+                    Long dbId = ((SimpleInstance) value).getDbId();
+                    if (dbId == null)
+                        continue;
+                    searchValue = dbId;
+                } else {
+                    continue; // Unexpected type — skip
+                }
+            } else {
+                searchValue = value;
+            }
+            definingAttributeValues.put(attrName, new DefiningAttributeValue(searchValue, definingType, isReference));
+        }
+
+        if (definingAttributeValues.isEmpty())
+            return Collections.emptyList();
+
+        return curationRepository.findMatchedInstances(schemaClassName, definingAttributeValues);
+    }
+
     public void deletePersistedInstances(String accountName) throws Exception {
         fileRepository.deleteFile(getFileForPersistedInstances(accountName));
     }
-
     public List<SimpleInstance> getEventTree(String speciesName) {
         return curationRepository.getEventTree(speciesName);
     }

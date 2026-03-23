@@ -2,14 +2,17 @@ package org.reactome.curation.repository;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.gk.model.ReactomeJavaConstants;
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
+import org.reactome.curation.model.CurationAttribute.DefiningAttributeValue;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.domain.model.InstanceEdit;
@@ -326,6 +329,144 @@ public class CypherQueryUtilities {
      */
     public String getNodeName(DatabaseObject obj) {
         return "obj_" + obj.getDbId();
+    }
+    
+    /**
+     * Build a Cypher query to find existing instances that match a new instance based on defining attributes.
+     * In Reactome's data model, defining attributes determine if two instances should be considered identical.
+     * There are two types of defining attributes:
+     * - ALL_DEFINING: All values must match
+     * - ANY_DEFINING: At least one value must match
+     * 
+     * @param schemaClass the schema class name (e.g., "Pathway", "Reaction")
+     * @param definingAttributes map of attribute names to their values and defining types
+     * @param neo4jClient the Neo4j client for executing queries
+     * @return a list of dbIds of matching instances, or empty list if no matches found
+     * 
+     * Example usage:
+     * <pre>
+     * Map&lt;String, DefiningAttributeValue&gt; attributes = new HashMap&lt;&gt;();
+     * attributes.put("name", new DefiningAttributeValue("MyPathway", DefiningType.ALL_DEFINING, false));
+     * attributes.put("species", new DefiningAttributeValue(48887L, DefiningType.ALL_DEFINING, true));
+     * List&lt;Long&gt; matchingDbIds = queryUtilities.findMatchingInstancesByDefiningAttributes(
+     *     "Pathway", attributes, neo4jClient);
+     * </pre>
+     */
+    public List<Long> findMatchingInstancesByDefiningAttributes(
+            String schemaClass,
+            Map<String, DefiningAttributeValue> definingAttributes,
+            Neo4jClient neo4jClient) {
+        
+        if (definingAttributes == null || definingAttributes.isEmpty()) {
+            logger.warn("No defining attributes provided for matching");
+            return new ArrayList<>();
+        }
+        
+        // Build the Cypher query
+        StringBuilder matchBuilder  = new StringBuilder();
+        StringBuilder whereBuilder  = new StringBuilder();
+        matchBuilder.append("MATCH (n:").append(schemaClass).append(") ");
+        
+        // Separate ALL_DEFINING and ANY_DEFINING attributes
+        List<String> allDefiningClauses = new ArrayList<>();
+        List<String> anyDefiningClauses = new ArrayList<>();
+        Map<String, Object> parameters = new HashMap<>();
+        // Extra MATCH clauses needed for reference attributes (cannot introduce
+        // new variables inside a WHERE pattern expression in Neo4j).
+        List<String> refMatchClauses = new ArrayList<>();
+        
+        for (Map.Entry<String, DefiningAttributeValue> entry : definingAttributes.entrySet()) {
+            String attName = entry.getKey();
+            DefiningAttributeValue defValue = entry.getValue();
+            Object value = defValue.getValue();
+            boolean isReference = defValue.isReference();
+            
+            if (value == null) {
+                continue; // Skip null values
+            }
+            
+            String whereClause;
+            if (isReference) {
+                // Reference attributes: the pattern must live in a MATCH clause because
+                // Neo4j does not allow new node variables to be introduced in WHERE.
+                // Use a unique alias per attribute so multiple reference attributes
+                // can coexist in the same query.
+                String refAlias = "ref_" + attName;
+                String paramName = attName + "_dbId";
+                // ALL_DEFINING → MATCH (must exist), ANY_DEFINING → OPTIONAL MATCH
+                // with a null-check in WHERE so the absence of one is allowed.
+                boolean isAll = defValue.getDefiningType() == org.reactome.curation.model.CurationAttribute.DefiningType.ALL_DEFINING;
+                String matchKeyword = isAll ? "MATCH" : "OPTIONAL MATCH";
+                refMatchClauses.add(matchKeyword + " (n)-[:" + attName + "]->(" + refAlias + ":DatabaseObject)");
+                parameters.put(paramName, value);
+                // The WHERE condition simply constrains the already-bound alias.
+                whereClause = refAlias + ".dbId = $" + paramName;
+            } else {
+                // For simple attributes, match directly
+                String paramName = attName + "_value";
+                
+                if (value instanceof Collection) {
+                    // For multi-valued attributes, check if all/any values match
+                    Collection<?> values = (Collection<?>) value;
+                    if (values.isEmpty()) {
+                        continue;
+                    }
+                    whereClause = "ALL(v IN $" + paramName + " WHERE v IN n." + attName + ")";
+                    parameters.put(paramName, new ArrayList<>(values));
+                } else {
+                    // For single-valued attributes
+                    whereClause = "n." + attName + " = $" + paramName;
+                    parameters.put(paramName, value);
+                }
+            }
+            
+            // Add to appropriate list based on defining type
+            if (defValue.getDefiningType() == org.reactome.curation.model.CurationAttribute.DefiningType.ALL_DEFINING) {
+                allDefiningClauses.add(whereClause);
+            } else if (defValue.getDefiningType() == org.reactome.curation.model.CurationAttribute.DefiningType.ANY_DEFINING) {
+                anyDefiningClauses.add(whereClause);
+            }
+        }
+        
+        // Append any reference MATCH clauses after the initial node MATCH
+        for (String refMatch : refMatchClauses) {
+            matchBuilder.append(refMatch).append(" ");
+        }
+
+        // Build WHERE clause
+        List<String> whereClauses = new ArrayList<>();
+        
+        // ALL_DEFINING: All must match (AND condition)
+        if (!allDefiningClauses.isEmpty()) {
+            whereClauses.add("(" + String.join(" AND ", allDefiningClauses) + ")");
+        }
+        
+        // ANY_DEFINING: At least one must match (OR condition)
+        if (!anyDefiningClauses.isEmpty()) {
+            whereClauses.add("(" + String.join(" OR ", anyDefiningClauses) + ")");
+        }
+        
+        StringBuilder queryBuilder = new StringBuilder(matchBuilder);
+        if (!whereClauses.isEmpty()) {
+            queryBuilder.append("WHERE ");
+            queryBuilder.append(String.join(" AND ", whereClauses));
+            queryBuilder.append(" ");
+        }
+        
+        queryBuilder.append("RETURN n.dbId AS dbId");
+        
+        String cypher = queryBuilder.toString();
+        logger.debug("Finding matching instances with query: " + cypher);
+        logger.debug("Parameters: " + parameters);
+        
+        // Execute query
+        return neo4jClient.query(cypher)
+                .bindAll(parameters)
+                .fetchAs(Long.class)
+                .mappedBy((typeSystem, record) -> record.get("dbId").asLong())
+                .all()
+                .stream()
+                .collect(Collectors.toList());
     }
 
 }

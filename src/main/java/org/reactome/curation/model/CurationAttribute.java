@@ -65,5 +65,33 @@ public class CurationAttribute {
         }
     }
     
-
+    /**
+     * Helper class to encapsulate defining attribute values with their metadata.
+     */
+    public static class DefiningAttributeValue {
+        private final Object value;
+        private final DefiningType definingType;
+        private final boolean isReference;
+        
+        public DefiningAttributeValue(Object value, 
+                                     DefiningType definingType,
+                                     boolean isReference) {
+            this.value = value;
+            this.definingType = definingType;
+            this.isReference = isReference;
+        }
+        
+        public Object getValue() {
+            return value;
+        }
+        
+        public CurationAttribute.DefiningType getDefiningType() {
+            return definingType;
+        }
+        
+        public boolean isReference() {
+            return isReference;
+        }
+    }
+    
 }

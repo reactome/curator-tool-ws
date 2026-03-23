@@ -7,7 +7,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.gk.model.ReactomeJavaConstants;
@@ -83,7 +82,7 @@ class RESTfulAPITests {
         String jsonObj = mapper.writeValueAsString(request);
         System.out.println(jsonObj);
         
-        String url = "/api/authenticate";
+        String url = "/api/auth/login";
         String jwt = mockMvc.perform(post(url).contentType(MediaType.APPLICATION_JSON)
                 .content(jsonObj))
                 .andExpect(status().isOk())
@@ -756,6 +755,78 @@ class RESTfulAPITests {
                 .getResponse()
                 .getContentAsString();
         System.out.println("Reaction with dbId: " + dbId + "\n" + json);
+    }
+
+    /**
+     * Test the matchInstances API endpoint introduced to find existing database
+     * instances that match the defining attributes of a passed SimpleInstance.
+     * Three cases are covered:
+     * <ol>
+     *   <li>Scalar defining attribute: LiteratureReference matched by pubMedIdentifier.</li>
+     *   <li>String defining attribute: Summation matched by text content.</li>
+     *   <li>Reference (relationship) defining attribute: ReferenceGeneProduct matched
+     *       by species (a reference to a Taxon node).</li>
+     * </ol>
+     */
+    @Test
+    public void testMatchInstances() throws Exception {
+        assertNotNull(mockMvc);
+        String url = BASE_URL + "matchInstances";
+        String jwt = getJWT();
+        ObjectMapper mapper = CurationWSTestHelper.createObjectMapper();
+
+        // Case 1: LiteratureReference matched by pubMedIdentifier (scalar defining attribute)
+        SimpleInstance litRef = new SimpleInstance();
+        litRef.setSchemaClassName(ReactomeJavaConstants.LiteratureReference);
+        litRef.setAttribute(ReactomeJavaConstants.pubMedIdentifier, 24525295);
+        String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(litRef);
+        logger.info("Case 1 – LiteratureReference by pubMedIdentifier:\n" + json);
+        String rtn = mockMvc.perform(post(url)
+                        .header("Authorization", "Bearer " + jwt)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        logger.info("Matched LiteratureReference instances: " + rtn);
+
+        // Case 2: Summation matched by text content (string defining attribute)
+        SimpleInstance summation = new SimpleInstance();
+        summation.setSchemaClassName(ReactomeJavaConstants.Summation);
+        summation.setAttribute(ReactomeJavaConstants.text, "Catalyzes the convertion of D-pinitol into galactopinitol. ALSO converts D-ononitol into D-galactosylononitol.");
+        json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(summation);
+        logger.info("Case 2 – Summation by text:\n" + json);
+        rtn = mockMvc.perform(post(url)
+                        .header("Authorization", "Bearer " + jwt)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        logger.info("Matched Summation instances: " + rtn);
+
+        // Case 3: ReferenceGeneProduct matched by species (reference defining attribute)
+        // Species dbId 48887 = Homo sapiens
+        SimpleInstance species = new SimpleInstance();
+        species.setDbId(48887L);
+        species.setSchemaClassName(ReactomeJavaConstants.Species);
+        SimpleInstance rgp = new SimpleInstance();
+        rgp.setSchemaClassName(ReactomeJavaConstants.ReferenceGeneProduct);
+        rgp.setAttribute(ReactomeJavaConstants.species, species);
+        rgp.setAttribute(ReactomeJavaConstants.identifier, "Q9Y6Y0");
+        json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(rgp);
+        logger.info("Case 3 – ReferenceGeneProduct by species:\n" + json);
+        rtn = mockMvc.perform(post(url)
+                        .header("Authorization", "Bearer " + jwt)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        logger.info("Matched ReferenceGeneProduct instances: " + rtn);
     }
 
 }

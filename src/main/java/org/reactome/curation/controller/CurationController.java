@@ -554,6 +554,27 @@ public class CurationController {
         return referrers;
     }
 
+    /**
+     * Find existing instances whose defining attributes match those of the passed instance.
+     * The schema class of the passed instance is used to look up which attributes are
+     * defining (ALL_DEFINING or ANY_DEFINING).  Only attributes that are both defining
+     * and present in the passed instance's attribute map are included in the query.
+     *
+     * @param instance the candidate instance to match against
+     * @return list of lightweight SimpleInstance shells (dbId, displayName, schemaClass)
+     *         for each matched instance, or an empty list if none are found
+     */
+    @PostMapping("matchInstances")
+    public List<SimpleInstance> matchInstances(@RequestBody SimpleInstance instance) {
+        try {
+            return service.findMatchedInstances(instance);
+        }
+        catch (Exception e) {
+            logger.error("CurationController.matchInstances: " + e.getMessage(), e);
+            throw new IllegalStateException(e.getMessage());
+        }
+    }
+
     //TODO; use the global exception handling
     @PostMapping("qaReport")
     public QAReport fetchQAReport(@RequestBody SimpleInstance instance)  {

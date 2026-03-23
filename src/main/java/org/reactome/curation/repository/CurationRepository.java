@@ -23,6 +23,7 @@ import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReadingWithoutWhere;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingUpdate;
 import org.neo4j.cypherdsl.core.StatementBuilder.OrderableOngoingReadingAndWithWithoutWhere;
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
+import org.reactome.curation.model.CurationAttribute.DefiningAttributeValue;
 import org.reactome.curation.model.CuratorToolWSUtils;
 import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
@@ -1485,5 +1486,35 @@ public class CurationRepository {
         if (setId == null)
             return Collections.EMPTY_SET;
         return queryUtilities.getMemberDbIdsForEntitySet(setId, neo4jClient);
+    }
+
+    /**
+     * Find instances whose defining attributes match those of the passed instance.
+     * Delegates the Cypher query to {@link CypherQueryUtilities#findMatchingInstancesByDefiningAttributes},
+     * then converts each returned dbId into a lightweight {@link SimpleInstance} shell
+     * (dbId, displayName, schemaClass only).
+     *
+     * @param schemaClass        the schema class name of the instance being matched
+     * @param definingAttributes map of attribute name → {@link DefiningAttributeValue}
+     *                           built from the instance's attributes and schema definition
+     * @return list of matching SimpleInstance shells, empty if none found
+     */
+    public List<SimpleInstance> findMatchedInstances(String schemaClass,
+                                                     Map<String, DefiningAttributeValue> definingAttributes) {
+        List<Long> dbIds = queryUtilities.findMatchingInstancesByDefiningAttributes(
+                schemaClass, definingAttributes, neo4jClient);
+        if (dbIds == null || dbIds.isEmpty())
+            return Collections.emptyList();
+        // Fetch lightweight shells (dbId, displayName, schemaClass) for each matched id
+        String query = "MATCH (n:DatabaseObject) " +
+                       "WHERE n.dbId IN $dbIds " +
+                       "RETURN n.dbId AS `inst.dbId`, n.displayName AS `inst.displayName`, " +
+                       "n.schemaClass AS `inst.schemaClass`";
+        Collection<Map<String, Object>> rows = neo4jClient.query(query)
+                .bindAll(Map.of("dbIds", dbIds))
+                .fetch().all();
+        return rows.stream()
+                   .map(row -> constructInstance(row, schemaClass))
+                   .collect(Collectors.toList());
     }
 }
