@@ -129,7 +129,7 @@ public class PathwayDiagramService {
     private void initGraphConvertObjects() {
         if (graphFactory == null) {
             this.graphFactory = new DiagramGraphFactory(ados);
-            this.processFactory = new ProcessFactory("/process_schema.xsd");
+            this.processFactory = new ProcessFactory("process_schema.xsd");
             this.trivialChemicals = new TrivialChemicals(ados);
             // This is really a hack
             TestReportsHelper.setAdvancedDatabaseObjectService(ados);
