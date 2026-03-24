@@ -129,7 +129,17 @@ public class PathwayDiagramService {
     private void initGraphConvertObjects() {
         if (graphFactory == null) {
             this.graphFactory = new DiagramGraphFactory(ados);
-            this.processFactory = new ProcessFactory("process_schema.xsd");
+            // TODO: Still need to figure out how to load the schema file.
+            // However, the errors don't matter to us really!!!
+            String processSchema = "process_schema.xsd";
+            if (PathwayDiagramService.class.getClassLoader().getResource(processSchema) == null) {
+                logger.error("Cannot find '" + processSchema + "' on classpath.");
+                this.processFactory = new ProcessFactory("/" + processSchema);
+            }
+            else 
+                this.processFactory = new ProcessFactory(processSchema);
+
+            // Load schema to control where we should put process_schema.xsd file. This is really a hack to make sure the schema file is in the classpath.
             this.trivialChemicals = new TrivialChemicals(ados);
             // This is really a hack
             TestReportsHelper.setAdvancedDatabaseObjectService(ados);

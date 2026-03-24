@@ -602,7 +602,7 @@ public class CurationRepository {
      * try to create an index on displayName if it is not here like this: CREATE
      * INDEX ON :DatabaseObject(displayName)
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings({"rawtypes"})
     public InstanceList listInstances(String className, int skip, int limit, String text) {
         if (text == null || text.trim().length() == 0) {
             List emptyList = Collections.EMPTY_LIST;

@@ -15,4 +15,8 @@ public class InstanceList {
     private List<SimpleInstance> instances;
     // Total count of the query results
     private Integer totalCount;
+    
+    public boolean isEmpty() {
+        return instances == null || instances.isEmpty();
+    }
 }

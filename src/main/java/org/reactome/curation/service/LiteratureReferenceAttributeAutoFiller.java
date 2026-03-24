@@ -98,7 +98,7 @@ public class LiteratureReferenceAttributeAutoFiller {
                     0, 
                     100, // TODO: This is arbitrary and needs to be updated. 
                     displayName);
-            if (personInsts != null && personInsts.getTotalCount() > 0) {
+            if (personInsts != null && !personInsts.isEmpty()) {
                 // Make sure all three matched
                 for (SimpleInstance inst : personInsts.getInstances()) {
                     org.reactome.server.graph.domain.model.Person dbInst = (org.reactome.server.graph.domain.model.Person) objectRepository.findById(inst.getDbId(), 1);
