@@ -836,10 +836,12 @@ public class CytoscapJSToRenderableDiagramConverter {
         for (Integer compartmentId : id2Compartment.keySet()) {
             List<JsonNode> nodes = id2Compartment.get(compartmentId);
             // Figure out which is inner and which is outer
-            if (nodes.size() != 2) {
-                logger.error("Compartment with id: " + compartmentId + " does not have exactly two nodes: " + nodes.size());
-                continue;
-            }
+            // Some compartment has only one single layer (i.e. compartments whose names end with "membrane"). 
+            // In this case, we will just use the single node as the outer node and ignore the inner node.
+//            if (nodes.size() != 2) {
+//                logger.error("Compartment with id: " + compartmentId + " does not have exactly two nodes: " + nodes.size());
+//                continue;
+//            }
             JsonNode innerNode = null;
             JsonNode outerNode = null;
             for (JsonNode node : nodes) {
@@ -882,12 +884,14 @@ public class CytoscapJSToRenderableDiagramConverter {
             compartment.setTextPosition((int)(labelX), (int)(labelY));
 
             // Calculate insets based on inner node
-            double innerX = innerNode.path("position").path("x").asDouble();
-            double innerY = innerNode.path("position").path("y").asDouble();
-            double innerWidth = innerNode.path("data").path("width").asDouble();
-            double innerHeight = innerNode.path("data").path("height").asDouble();
-            Rectangle innerBounds = new Rectangle((int)(innerX - innerWidth / 2), (int) (innerY - innerHeight / 2), (int)innerWidth, (int)innerHeight);
-            compartment.setInsets(innerBounds);
+            if (innerNode != null) {
+                double innerX = innerNode.path("position").path("x").asDouble();
+                double innerY = innerNode.path("position").path("y").asDouble();
+                double innerWidth = innerNode.path("data").path("width").asDouble();
+                double innerHeight = innerNode.path("data").path("height").asDouble();
+                Rectangle innerBounds = new Rectangle((int)(innerX - innerWidth / 2), (int) (innerY - innerHeight / 2), (int)innerWidth, (int)innerHeight);
+                compartment.setInsets(innerBounds);
+            }
 
             diagram.addComponent(compartment);
         }
