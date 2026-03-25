@@ -13,7 +13,8 @@ import lombok.NoArgsConstructor;
 @JsonInclude(Include.NON_NULL)
 public class InstanceList {
     private List<SimpleInstance> instances;
-    // Total count of the query results
+    // Total count of the query results.
+    // This number may be different from the size of the instances list, which is determined by the page size.
     private Integer totalCount;
     
     public boolean isEmpty() {

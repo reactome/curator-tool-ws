@@ -89,6 +89,11 @@ public class CuratorToolExporter {
             // This class should not be exported
             if (graphClass.getSimpleName().equals(ReactomeJavaConstants.DrugType))
                 continue;
+            // Avoid Interaction class. They are not used in the curation database.
+            if (graphClass.getSimpleName().equals(ReactomeJavaConstants.Interaction) ||
+                graphClass.getSimpleName().equals("DirectedInteraction") ||
+                graphClass.getSimpleName().equals("UndirectedInteraction"))
+                continue;
             SimpleSchemaClass simpleClass = new SimpleSchemaClass();
             simpleClass.setName(graphClass.getSimpleName());
             simpleClass.setAbstract(Modifier.isAbstract(graphClass.getModifiers()));
