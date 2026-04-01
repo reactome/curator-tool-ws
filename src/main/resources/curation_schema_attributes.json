@@ -9,6 +9,10 @@
     "name" : "crossReference"
   }, {
     "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "cell"
+  }, {
+    "definingType" : "UNDEFINED",
     "category" : "MANDATORY",
     "name" : "summation"
   }, {
@@ -477,6 +481,10 @@
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
     "name" : "disease"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "participantCellType"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -1376,6 +1384,10 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
+    "name" : "participantCellType"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
     "name" : "doRelease"
   }, {
     "definingType" : "UNDEFINED",
@@ -1581,6 +1593,43 @@
     "category" : "NOMANUALEDIT",
     "name" : "stId"
   } ],
+  "Summation" : [ {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "dbId"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "literatureReference"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "displayName"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modifiedList"
+  }, {
+    "definingType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "text"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stId"
+  } ],
   "Person" : [ {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -1641,43 +1690,6 @@
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
     "name" : "modifiedList"
-  } ],
-  "Summation" : [ {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "dbId"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
-    "name" : "literatureReference"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "created"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "displayName"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "modified"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "modifiedList"
-  }, {
-    "definingType" : "ALL_DEFINING",
-    "category" : "MANDATORY",
-    "name" : "text"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "stId"
   } ],
   "SequenceOntology" : [ {
     "definingType" : "ANY_DEFINING",
@@ -1948,6 +1960,10 @@
     "definingType" : "UNDEFINED",
     "category" : "MANDATORY",
     "name" : "accessUrl"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "identifiersPrefix"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
@@ -2426,6 +2442,10 @@
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
     "name" : "created"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "componentCellType"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -3003,6 +3023,10 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
+    "name" : "participantCellType"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
     "name" : "doRelease"
   }, {
     "definingType" : "UNDEFINED",
@@ -3197,6 +3221,10 @@
     "definingType" : "UNDEFINED",
     "category" : "MANDATORY",
     "name" : "releaseDate"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "participantCellType"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -3473,6 +3501,10 @@
     "definingType" : "UNDEFINED",
     "category" : "REQUIRED",
     "name" : "tissue"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "cell"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "MANDATORY",
@@ -3931,6 +3963,10 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
+    "name" : "participantCellType"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
     "name" : "doRelease"
   }, {
     "definingType" : "UNDEFINED",
@@ -4139,6 +4175,10 @@
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
     "name" : "crossReference"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "cell"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "MANDATORY",
@@ -5262,59 +5302,6 @@
     "category" : "NOMANUALEDIT",
     "name" : "stId"
   } ],
-  "Anatomy" : [ {
-    "definingType" : "ALL_DEFINING",
-    "category" : "MANDATORY",
-    "name" : "identifier"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "dbId"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
-    "name" : "synonym"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "displayName"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "created"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "MANDATORY",
-    "name" : "name"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "modified"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "modifiedList"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "MANDATORY",
-    "name" : "referenceDatabase"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
-    "name" : "definition"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
-    "name" : "instanceOf"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "stableIdentifier"
-  }, {
-    "definingType" : "UNDEFINED",
-    "category" : "NOMANUALEDIT",
-    "name" : "stId"
-  } ],
   "ReferenceTherapeutic" : [ {
     "definingType" : "ALL_DEFINING",
     "category" : "MANDATORY",
@@ -5395,6 +5382,59 @@
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
     "name" : "prodrugIds"
+  } ],
+  "Anatomy" : [ {
+    "definingType" : "ALL_DEFINING",
+    "category" : "MANDATORY",
+    "name" : "identifier"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "dbId"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "synonym"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "displayName"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "name"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modifiedList"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "referenceDatabase"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "definition"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "instanceOf"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stId"
   } ],
   "ProteinDrug" : [ {
     "definingType" : "UNDEFINED",
@@ -5634,6 +5674,10 @@
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
     "name" : "disease"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
+    "name" : "participantCellType"
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
@@ -6669,6 +6713,10 @@
   }, {
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
+    "name" : "participantCellType"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "OPTIONAL",
     "name" : "doRelease"
   }, {
     "definingType" : "UNDEFINED",
@@ -7099,6 +7147,43 @@
     "definingType" : "UNDEFINED",
     "category" : "OPTIONAL",
     "name" : "revised"
+  } ],
+  "PhysicalEntityCellType" : [ {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "dbId"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "displayName"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "created"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "physicalEntity"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modified"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "modifiedList"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "MANDATORY",
+    "name" : "cell"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stableIdentifier"
+  }, {
+    "definingType" : "UNDEFINED",
+    "category" : "NOMANUALEDIT",
+    "name" : "stId"
   } ],
   "InteractionEvent" : [ {
     "definingType" : "UNDEFINED",

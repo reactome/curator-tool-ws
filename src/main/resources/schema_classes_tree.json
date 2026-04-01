@@ -272,6 +272,9 @@
     } ],
     "abstract" : true
   }, {
+    "name" : "PhysicalEntityCellType",
+    "abstract" : false
+  }, {
     "name" : "Publication",
     "children" : [ {
       "name" : "Book",

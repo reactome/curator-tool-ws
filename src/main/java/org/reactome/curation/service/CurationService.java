@@ -13,12 +13,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.gk.model.ReactomeJavaConstants;
 import org.reactome.curation.config.CuratorToolEnv;
-import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.model.CurationAttribute.DefiningAttributeValue;
 import org.reactome.curation.model.CurationAttribute.DefiningType;
 import org.reactome.curation.model.CurationAttribute;
@@ -454,8 +452,8 @@ public class CurationService {
      * A recursive way to get the new DatabaseObject in the passed object's reference graph.
      * Note: If a reference is an updated instance using a new instance, this new instance
      * is not included since its dbId will not get updated.
-     * @param obj
-     * @param newInsts
+     * @param obj instance to inspect for nested new objects
+     * @return all nested objects whose dbId is still negative
      */
     public Set<DatabaseObject> grepNewInstances(DatabaseObject obj) {
         Set<DatabaseObject> newInstances = new HashSet<>();

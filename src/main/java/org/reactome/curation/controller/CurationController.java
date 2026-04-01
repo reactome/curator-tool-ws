@@ -26,6 +26,7 @@ import org.reactome.curation.qa.QAService;
 import org.reactome.curation.qa.model.QAReport;
 import org.reactome.curation.service.CurationService;
 import org.reactome.curation.service.PathwayDiagramService;
+import org.reactome.curation.util.CurationAuditLogger;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.domain.model.Deleted;
 import org.reactome.server.graph.domain.model.InstanceEdit;
@@ -69,7 +70,9 @@ public class CurationController {
     private StableIdentifierGenerator stableIdentifierGenerator;
     @Autowired
     private PathwayDiagramService diagramService;
-    
+    @Autowired
+    private CurationAuditLogger auditLogger;
+
     /**
      * This method basically provides as a delegate to load the pathway JSON files.
      * @param fileName
@@ -118,29 +121,32 @@ public class CurationController {
     @PostMapping("uploadCyNetwork/{pathwayId}")
     public Boolean saveCytoscapeNetwork(@PathVariable("pathwayId") Long pathwayDiagramId,
                                         @RequestBody JsonNode networkJson) {
+        String username = getUsername();
         try {
-            // Create or update PathwayDiagram instance
-            Long dbId = networkJson.get("defaultPersonId").asLong(); 
-            if (dbId == null || dbId <= 0) {
-                logger.error("CurationController.saveCytoscapeNetwork: The defaultPersonId is missing or is not in the database.");
+            JsonNode defaultPersonNode = networkJson == null ? null : networkJson.get("defaultPersonId");
+            if (defaultPersonNode == null || !defaultPersonNode.canConvertToLong()) {
+                logger.error("CurationController.saveCytoscapeNetwork: The defaultPersonId is missing or invalid.");
                 return Boolean.FALSE;
             }
-            // PathwayDiagram instance should be there already.
+            Long dbId = defaultPersonNode.asLong();
+            if (dbId <= 0) {
+                logger.error("CurationController.saveCytoscapeNetwork: The defaultPersonId is not in the database.");
+                return Boolean.FALSE;
+            }
             DatabaseObject pdInst = service.findById(pathwayDiagramId);
             if (pdInst == null) {
-                logger.error("CurationController.saveCytoscapeNetwork: Cannot find the PathwayDiagram instance with dbId: " + pathwayDiagramId);
+                logger.error("CurationController.saveCytoscapeNetwork: Cannot find the PathwayDiagram instance with dbId: {}", pathwayDiagramId);
                 return Boolean.FALSE;
             }
-            // Need to add IE to track the modification
-            // Call here before save the network to ensure the modification can be tracked.
             InstanceEdit ie = converter.createInstanceEdit(dbId);
             diagramService.saveCytoscapeNetwork(pathwayDiagramId, networkJson);
             service.addModifiedIE(pdInst, ie);
+            auditLogger.logDiagramUpdate(username, pathwayDiagramId, pdInst.getDisplayName(), true, null);
             return Boolean.TRUE;
         }
         catch(Exception e) {
             logger.error("CurationController.saveCytoscapeNetwork: " + e.getMessage(), e);
-//            throw new IllegalStateException(e.getMessage());
+            auditLogger.logDiagramUpdate(username, pathwayDiagramId, "N/A", false, e.getMessage());
             return Boolean.FALSE;
         }
     }
@@ -231,8 +237,9 @@ public class CurationController {
         // Check if the passed instance can be committed
         if (this.service.isConflictWithStored(instance))
             throw new InstanceChangedException(instance);
+        String username = getUsername();
+        boolean isUpdate = instance.getDbId() != null && instance.getDbId() > 0;
         try {
-            boolean isUpdate = instance.getDbId() != null && instance.getDbId() > 0;
             DatabaseObject databaseObject = converter.convert(instance, true);
             Set<DatabaseObject> newInstances = service.grepNewInstances(databaseObject);
             // Make sure itself is not included in newInstances
@@ -275,14 +282,14 @@ public class CurationController {
             if (databaseObject.getStableIdentifier() != null && isUpdate) {
                 // Means the existing StableIdentifier has been modified
                 if (databaseObject.getModified() == databaseObject.getStableIdentifier().getModified()) 
-                    service.commit(databaseObject.getStableIdentifier());
+                    commitAndAudit(username, databaseObject.getStableIdentifier(), isAdd(databaseObject.getStableIdentifier()));
             }
             // Step 4: Now commit the instance itself
             // All new instances will not here due to step 2.
-            DatabaseObject stored = service.commit(databaseObject);
-            // Step 5: Commit all other new instances too. 
+            DatabaseObject stored = commitAndAudit(username, databaseObject, !isUpdate);
+            // Step 5: Commit all other new instances too.
             for (DatabaseObject newInstance : newInstances) {
-                service.commit(newInstance);
+                commitAndAudit(username, newInstance, true);
             }
                         
             // For the front end, we just need to return a SimpleInstance having attributes that may change
@@ -310,10 +317,12 @@ public class CurationController {
      */
     @PostMapping("delete")
     public SimpleInstance delete(@RequestBody SimpleInstance instance) {
+        String username = getUsername();
         try {
             DatabaseObject obj = converter.convert(instance);
             InstanceEdit ie = converter.createInstanceEdit(instance);
             if (service.delete(obj, ie)) {
+                auditLogger.logDelete(username, instance, true, null);
                 SimpleInstance ieInst = converter.convert(ie);
                 return ieInst;
             }
@@ -321,6 +330,7 @@ public class CurationController {
         }
         catch(Exception e) {
             logger.error("CurationController.delete: " + e.getMessage(), e);
+            auditLogger.logDelete(username, instance, false, e.getMessage());
             throw new IllegalStateException(e.getMessage());
         }
     }
@@ -332,15 +342,20 @@ public class CurationController {
      */
     @PostMapping("deleteByDeleted")
     public SimpleInstance deleteByDeleted(@RequestBody SimpleInstance instance) {
+        String username = getUsername();
         try {
             // Instance should be Deleted. Otherwise, let an exception be thrown.
             Deleted obj = (Deleted) converter.convert(instance);
             InstanceEdit ie = converter.createInstanceEdit(instance);
             Deleted rtn = service.deleteByDeleted(obj, ie);
+            int count = obj.getDeletedInstanceDbId() == null ? 0 : obj.getDeletedInstanceDbId().size();
+            // Use rtn so that we can get the dbId for Deleted instance.
+            auditLogger.logBulkDelete(username, rtn, count, true, null);
             return converter.convert(rtn);
         }
         catch(Exception e) {
             logger.error("CurationController.deleteByDeleted: " + e.getMessage(), e);
+            auditLogger.logBulkDelete(username, instance, 0, false, e.getMessage());
             throw new IllegalStateException(e.getMessage());
         }
     }
@@ -586,5 +601,40 @@ public class CurationController {
             logger.error("QAController.qaReport: " + e.getMessage(), e);
             throw new IllegalStateException(e.getMessage());
         }
+    }
+
+    private String getUsername() {
+        try {
+            org.springframework.security.core.Authentication auth =
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated()) {
+                return auth.getName();
+            }
+        } catch (Exception e) {
+            logger.error("Could not get username from security context: " + e.getMessage());
+        }
+        return "UNKNOWN";
+    }
+
+    private DatabaseObject commitAndAudit(String username, DatabaseObject obj, boolean isAdd) throws Exception {
+        try {
+            DatabaseObject saved = service.commit(obj);
+            if (isAdd)
+                auditLogger.logAdd(username, saved, true, null);
+            else
+                auditLogger.logUpdate(username, saved, true, null);
+            return saved;
+        }
+        catch (Exception e) {
+            if (isAdd)
+                auditLogger.logAdd(username, obj, false, e.getMessage());
+            else
+                auditLogger.logUpdate(username, obj, false, e.getMessage());
+            throw e;
+        }
+    }
+
+    private boolean isAdd(DatabaseObject obj) {
+        return obj == null || obj.getDbId() == null || obj.getDbId() <= 0;
     }
 }
