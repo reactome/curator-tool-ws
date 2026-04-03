@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- Read the log directory from application.properties (falls back to "logs") -->
+    <springProperty name="LOG_DIR" source="logging.dir" defaultValue="logs"/>
+
+    <property name="LOG_FILE"    value="${LOG_DIR}/curator-tool-ws.log"/>
+    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss,SSS} %-5level [%thread] %logger{36}: %msg%n"/>
+
+    <!-- ── Console appender ──────────────────────────────────────────────── -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- ── Rolling file appender ─────────────────────────────────────────── -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_FILE}</file>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- Roll over daily; keep 30 days of history; cap total size at 500 MB -->
+            <fileNamePattern>${LOG_DIR}/curator-tool-ws.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>500MB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <!-- ── Audit file appender (for curation write actions) ────────────────── -->
+    <property name="AUDIT_LOG_FILE" value="${LOG_DIR}/curation-audit.log"/>
+    <appender name="AUDIT_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${AUDIT_LOG_FILE}</file>
+        <encoder>
+            <pattern>%msg%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- Roll over daily; keep 90 days of audit history; cap total size at 1 GB -->
+            <fileNamePattern>${LOG_DIR}/curation-audit.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>90</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+<!--     ── Package-level overrides (mirrors application.properties settings) -->
+<!--     <logger name="org.springframework.data.neo4j" -->
+<!--             level="INFO"  additivity="false"> -->
+<!--         <appender-ref ref="CONSOLE"/> -->
+<!--         <appender-ref ref="FILE"/> -->
+<!--     </logger> -->
+
+<!--     <logger name="org.springframework.security" -->
+<!--             level="INFO"  additivity="false"> -->
+<!--         <appender-ref ref="CONSOLE"/> -->
+<!--         <appender-ref ref="FILE"/> -->
+<!--     </logger> -->
+
+    <!-- ── Audit logger for curation write actions ──────────────────────────── -->
+    <logger name="curation-audit" level="INFO" additivity="false">
+        <appender-ref ref="AUDIT_FILE"/>
+    </logger>
+
+    <!-- ── Root logger: everything goes to both console and file ─────────── -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+
+</configuration>
