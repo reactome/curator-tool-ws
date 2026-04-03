@@ -4,6 +4,12 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+# Environment variables and secrets - DO NOT COMMIT
+.env
+.env.local
+.env.*.local
+secrets/
+
 ### STS ###
 .apt_generated
 .classpath
@@ -23,11 +29,16 @@ target/
 /nbproject/private/
 /nbbuild/
 /dist/
+/logs/
+/logging.dir_IS_UNDEFINED/
+/file_repo/
 /nbdist/
 /.nb-gradle/
+/data/
 build/
 !**/src/main/**/build/
 !**/src/test/**/build/
+/docs/chatemt_code_security_review.docx
 
 ### VS Code ###
 .vscode/
