@@ -249,6 +249,10 @@ public class CytoscapJSToRenderableDiagramConverter {
             if (line != null)
                 diagram.addComponent(line);
         }
+        if (diagram == null || diagram.getComponents() == null || diagram.getComponents().isEmpty()) {
+//            logger.warn("No components found in the diagram after conversion.");
+            return; // Do nothing
+        }
         scale(diagram);
     }
     

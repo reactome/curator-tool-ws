@@ -1,4 +1,3 @@
 # This file is not used in the app. However, keep it here so that we know what the test user is.
-test@gmail.com,password
 # The test user as of 4/9/2025
 test, password (created by ServiceTests.java)

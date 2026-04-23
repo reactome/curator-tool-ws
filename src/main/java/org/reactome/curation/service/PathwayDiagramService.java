@@ -161,12 +161,14 @@ public class PathwayDiagramService {
         }
         // For normal pathway diagram
         String xml = diagramWriter.generateXMLString(pathwayDiagram);
-        _generateDiagramJSON(pathway, xml);
+        _generateDiagramJSON(pathway, xml, pathwayDiagram.getComponents() == null || pathwayDiagram.getComponents().size() == 0);
     }
     
     @SuppressWarnings("unchecked")
     private void fillInSchemaClassNames(RenderablePathway diagram) {
         Set<Long> dbIds = new HashSet<>();
+        if (diagram.getComponents() == null)
+            return;
         for (Renderable r : (List<Renderable>) diagram.getComponents()) {
             Long dbId = r.getReactomeId();
             if (dbId == null)
@@ -185,15 +187,25 @@ public class PathwayDiagramService {
         }
     }
 
-    private void _generateDiagramJSON(Pathway pathway, String xml) {
-        // Generate XML first: This is the native XML contains both normal and disease layout information
-        Process process = processFactory.createProcess(xml, pathway.getDbId() + "");
-        // This is a hack to use PathwayDiagram instead of Pathway.
-        Diagram diagram = LayoutFactory.getDiagramFromProcess(process, 
-                                                              pathway.getDbId(),
-                                                              pathway.getDisplayName(),
-                                                              pathway.getStId(),
-                                                              pathway.getSpeciesName());
+    private void _generateDiagramJSON(Pathway pathway, String xml, boolean isEmptyDiagram) throws Exception {
+        Diagram diagram = null;
+        if (isEmptyDiagram) {
+            // For empty diagram, we don't have any component, so we can skip the process of creating graph and just create an empty diagram with the basic information.
+            diagram = new Diagram();
+            diagram.setDbId(pathway.getDbId());
+            diagram.setDisplayName(pathway.getDisplayName());
+            diagram.setSpeciesName(pathway.getSpeciesName());
+            diagram.setStableId(pathway.getStId());
+        }
+        else {
+            Process process = processFactory.createProcess(xml, pathway.getDbId() + "");
+            // This is a hack to use PathwayDiagram instead of Pathway.
+            diagram = LayoutFactory.getDiagramFromProcess(process, 
+                    pathway.getDbId(),
+                    pathway.getDisplayName(),
+                    pathway.getStId(),
+                    pathway.getSpeciesName());
+        }
         // Bypass all QA checks here and generate the json text
         Graph graph = graphFactory.getGraph(diagram);
         diagram.createShadows(graph.getSubpathways());
@@ -235,7 +247,7 @@ public class PathwayDiagramService {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         XMLOutputter outputter = new XMLOutputter(Format.getPrettyFormat());
         outputter.output(rootElm, bos);
-        _generateDiagramJSON(pathway, bos.toString());
+        _generateDiagramJSON(pathway, bos.toString(), false);
     }
     
     private void appendElement(String elmName,
