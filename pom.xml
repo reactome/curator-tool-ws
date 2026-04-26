@@ -109,6 +109,16 @@
 				<artifactId>maven-jar-plugin</artifactId>
 				<executions>
 					<execution>
+						<id>plain-jar</id>
+						<phase>package</phase>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+						<configuration>
+							<classifier>plain</classifier>
+						</configuration>
+					</execution>
+					<execution>
 						<id>user-manager-jar</id>
 						<phase>package</phase>
 						<goals>
@@ -138,10 +148,6 @@
 						<goals>
 							<goal>repackage</goal>
 						</goals>
-						<configuration>
-							<!-- Keep the main installed artifact as a plain jar; attach runnable app jar as classified artifact -->
-							<classifier>boot</classifier>
-						</configuration>
 					</execution>
 					<execution>
 						<id>repackage-usermanager</id>
