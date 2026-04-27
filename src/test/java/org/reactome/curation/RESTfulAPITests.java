@@ -419,6 +419,22 @@ class RESTfulAPITests {
                            .getContentAsString();
         logger.info("Found instances:\n" + rtn);
     }
+
+    @Test
+    public void testOutputEventDocx() throws Exception {
+        assertNotNull(mockMvc);
+        String jwt = getJWT();
+        Long eventId = 109582L; // Apoptosis
+        String url = BASE_URL + "exportEventDocx/" + eventId;
+        byte[] output = mockMvc.perform(get(url).header("Authorization", "Bearer " + jwt))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsByteArray();
+        // Output into a file
+        java.nio.file.Path outputPath = java.nio.file.Paths.get("event_" + eventId + ".docx");
+        java.nio.file.Files.write(outputPath, output);
+    }
     
 
     @Test

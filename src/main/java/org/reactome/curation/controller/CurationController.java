@@ -25,14 +25,19 @@ import org.reactome.curation.model.UserInstances;
 import org.reactome.curation.qa.QAService;
 import org.reactome.curation.qa.model.QAReport;
 import org.reactome.curation.service.CurationService;
+import org.reactome.curation.service.EventDocxExportService;
 import org.reactome.curation.service.PathwayDiagramService;
 import org.reactome.curation.util.CurationAuditLogger;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.domain.model.Deleted;
+import org.reactome.server.graph.domain.model.Event;
 import org.reactome.server.graph.domain.model.InstanceEdit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -72,6 +77,8 @@ public class CurationController {
     private PathwayDiagramService diagramService;
     @Autowired
     private CurationAuditLogger auditLogger;
+    @Autowired
+    private EventDocxExportService eventDocxExportService;
 
     /**
      * This method basically provides as a delegate to load the pathway JSON files.
@@ -567,6 +574,33 @@ public class CurationController {
     public Collection<NamedReferrerList> getReferrers(@PathVariable("dbId") Long dbId) throws Exception {
         Collection<NamedReferrerList> referrers =  service.getReferrers(dbId);
         return referrers;
+    }
+
+    @GetMapping(value = "exportEventDocx/{dbId}", produces = "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+    public ResponseEntity<byte[]> exportEventDocx(@PathVariable("dbId") Long dbId) {
+        try {
+            DatabaseObject obj = service.findById(dbId);
+            if (obj == null)
+                throw new DatabaseObjectNotFoundException(dbId);
+            if (!(obj instanceof Event))
+                throw new IllegalArgumentException("Instance " + dbId + " is not an Event.");
+
+            Event event = (Event) obj;
+            byte[] content = eventDocxExportService.exportEventDocx(event);
+            String filename = eventDocxExportService.buildFileName(event);
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(eventDocxExportService.getDocxContentType()))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                    .contentLength(content.length)
+                    .body(content);
+        }
+        catch (DatabaseObjectNotFoundException | IllegalArgumentException e) {
+            throw e;
+        }
+        catch (Exception e) {
+            logger.error("CurationController.exportEventDocx: " + e.getMessage(), e);
+            throw new IllegalStateException(e.getMessage());
+        }
     }
 
     /**

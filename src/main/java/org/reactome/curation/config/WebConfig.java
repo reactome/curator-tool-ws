@@ -20,6 +20,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplicat
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupport;
@@ -92,6 +93,7 @@ public class WebConfig extends WebMvcConfigurationSupport {
         //        stringHttpMessageConverter.setSupportedMediaTypes(mediaTypes);
         //      converters.add(stringHttpMessageConverter);
 
+        converters.add(new ByteArrayHttpMessageConverter());
         converters.add(mappingJackson2HttpMessageConverter);
         super.configureMessageConverters(converters);
     }
