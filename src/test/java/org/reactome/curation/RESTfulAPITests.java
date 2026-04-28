@@ -425,6 +425,7 @@ class RESTfulAPITests {
         assertNotNull(mockMvc);
         String jwt = getJWT();
         Long eventId = 109582L; // Apoptosis
+        eventId = 69620L; // Cell Cycle Checkpoints
         String url = BASE_URL + "exportEventDocx/" + eventId;
         byte[] output = mockMvc.perform(get(url).header("Authorization", "Bearer " + jwt))
                 .andExpect(status().isOk())

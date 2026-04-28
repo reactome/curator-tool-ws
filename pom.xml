@@ -84,6 +84,16 @@
             <artifactId>diagram-converter</artifactId>
             <version>3.0.9.CT</version>
         </dependency>
+        <dependency>
+            <groupId>org.reactome.server.tools</groupId>
+            <artifactId>reaction-exporter</artifactId>
+            <version>1.2.9.CT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.reactome.server.tools</groupId>
+            <artifactId>diagram-exporter</artifactId>
+            <version>2.0.8</version>
+        </dependency>
 		<!-- JWT Security -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
