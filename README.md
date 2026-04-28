@@ -1,4 +1,4 @@
-which mThis project is used to provide a RESTful API for the Web-based Curator Tool developed using Angular. The backend of this project is a Neo4j graph database, which is used for curation.
+This project is used to provide a RESTful API for the Web-based Curator Tool developed using Angular. The backend of this project is a Neo4j graph database, which is used for curation.
 
 To build standalone executable jars after making the needed configuration changes (for example `application.properties` and `services.properties`), run:
 

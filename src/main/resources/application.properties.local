@@ -1,6 +1,6 @@
 spring.neo4j.uri=${NEO4J_URI:bolt://localhost:7687}
-spring.neo4j.authentication.username=${NEO4J_USER:neo4j}
-spring.neo4j.authentication.password=${NEO4J_PASSWORD:changeme}
+spring.neo4j.authentication.username={}}
+spring.neo4j.authentication.password={}}
 
 
 # For SchemaRepository: Make sure the graph database name is correct
@@ -11,6 +11,7 @@ spring.data.neo4j.database=graph.db
 
 logging.level.org.springframework.data.neo4j=INFO
 logging.level.org.springframework.security=INFO
+logging.level.org.reactome.server.tools.reaction.exporter=INFO
 # Directory for the rolling log file (used by logback-spring.xml)
 logging.dir=logs
 
@@ -39,6 +40,8 @@ diagram_graph_dir=/Users/wug/Documents/web_curator_tool/diagram/graph
 diagram_cytoscape_dir=/Users/wug/Documents/web_curator_tool/diagram/cytoscape
 # To control the time for reusing InstanceEdit (time unit: second)
 instance_edit_duration=60
+# Root directory for storing files related to figure generation. This is used by the figure generation module to store temporary files and generated figures. Make sure this directory exists and has write permissions.
+figure_root_dir=/Users/wug/Documents/web_curator_tool
 
 # JWT Token Configuration (time unit: milliseconds)
 # 5 minutes
@@ -74,8 +77,8 @@ server.port=9090
 # Don't lock the file so that we can test at local dev
 spring.datasource.url=${DATASOURCE_URL:jdbc:h2:file:./data/reactome_h2;DB_CLOSE_DELAY=-1;FILE_LOCK=NO}
 spring.datasource.driver-class-name=org.h2.Driver
-spring.datasource.username=${DATASOURCE_USER:reactome}
-spring.datasource.password=${DATASOURCE_PASSWORD:changeme}
+spring.datasource.username={}}
+spring.datasource.password={}}
 spring.h2.console.enabled=true
 spring.jpa.hibernate.ddl-auto=update
 # JPA (Hibernate) configuration

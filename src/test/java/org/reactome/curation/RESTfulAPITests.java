@@ -10,7 +10,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.gk.model.ReactomeJavaConstants;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.reactome.curation.controller.DatabaseObjectInstanceConverter;
 import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
@@ -21,12 +23,14 @@ import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.domain.model.ModifiedResidue;
 import org.reactome.server.graph.domain.model.Reaction;
 import org.reactome.server.graph.domain.model.ReferenceGeneProduct;
+import org.reactome.server.graph.utils.ReactomeGraphCore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.context.ApplicationContext;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,6 +38,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class RESTfulAPITests {
     private static final Logger logger = LoggerFactory.getLogger(RESTfulAPITests.class);
     
@@ -43,6 +48,13 @@ class RESTfulAPITests {
     private MockMvc mockMvc;
     @Autowired
     private DatabaseObjectInstanceConverter converter;
+    @Autowired
+    private ApplicationContext applicationContext;
+
+    @BeforeAll
+    void setReactomeGraphCoreContextForTests() {
+        ReactomeGraphCore.setContext(applicationContext);
+    }
 
     @Test
     void contextLoads() {
