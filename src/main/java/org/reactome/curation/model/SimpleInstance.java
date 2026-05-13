@@ -38,7 +38,9 @@ public class SimpleInstance extends DatabaseObject {
 
 //    private Long dbId;
 //    private String displayName;
-    private boolean isStructureModified;
+    private Boolean isStructureModified;
+    // Use Boolean object to avoid export null value in JSON
+    private Boolean isStableIdentifierModified;
     private String schemaClassName;
     private Map<String, Object> attributes;
     private List<String> modifiedAttributes; // Names of attributes that have been updated.
@@ -51,7 +53,7 @@ public class SimpleInstance extends DatabaseObject {
         return newInstOld2NewId;
     }
 
-    public boolean isStructureModified() {
+    public Boolean isStructureModified() {
         return isStructureModified;
     }
 
@@ -69,6 +71,14 @@ public class SimpleInstance extends DatabaseObject {
     
     public Long getDefaultPersonId() {
         return this.defaultPersonId;
+    }
+
+    public Boolean isStableIdentifierModified() {
+        return isStableIdentifierModified;
+    }
+
+    public void setStableIdentifierModified(Boolean stableIdentifierModified) {
+        this.isStableIdentifierModified = stableIdentifierModified;
     }
 
     public void setAttribute(String attributeName, Object value) {
@@ -192,6 +202,9 @@ class SimpleInstanceDeserializer extends JsonDeserializer<SimpleInstance> {
                 }
                 else if ("isStructureModified".equals(fieldName)) {
                     instance.setStructureModified(fieldValue.asBoolean());
+                }
+                else if ("isStableIdentifierModified".equals(fieldName)) {
+                    instance.setStableIdentifierModified(fieldValue.asBoolean());
                 }
                 else if ("modifiedAttributes".equals(fieldName)) {
                     // This should be an array

@@ -142,8 +142,13 @@ public class CurationService {
         // Need to load attributes if needed
         Set<AttributeProperties> properties = DatabaseObjectUtils.getAttributeTable(clsName);
         // For quick assignment
-        Map<String, AttributeProperties> name2prop = properties.stream()
-                .collect(Collectors.toMap(AttributeProperties::getName, Function.identity()));
+        Map<String, AttributeProperties> name2prop = new HashMap<>();
+        // Cannot use streams.toMap() as the previous code due to potential method overloading issue.
+        // e.g the new Person class definition. The modified property may be defined two times, therefore
+        // two entries in properties, which use objects.
+        for (AttributeProperties prop : properties) {
+            name2prop.put(prop.getName(), prop);
+        }
         attributes.forEach(att -> att.setProperties(name2prop.get(att.getName())));
         return attributes;
     }

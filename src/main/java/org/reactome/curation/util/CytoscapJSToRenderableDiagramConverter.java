@@ -465,7 +465,6 @@ public class CytoscapJSToRenderableDiagramConverter {
         // Process different edge categories
         List<Point> backbonePoints = new ArrayList<>();
 
-        // The order of processing inputs and outputs matters for setting backbone points
         processIOEdges(classifiedEdges.get("inputs"), true, hyperEdge, reactionNode, idToRenderable, backbonePoints);
         processIOEdges(classifiedEdges.get("outputs"), false, hyperEdge, reactionNode, idToRenderable, backbonePoints);
         processHelperEdges(classifiedEdges.get("activators"), "activator", hyperEdge, reactionNode, idToRenderable);
@@ -556,7 +555,13 @@ public class CytoscapJSToRenderableDiagramConverter {
             List<Point> points = positionsFromRelativeToAbsolute(edge, reactionNode, idToRenderable);
             if (points != null && !points.isEmpty()) {
                 if (isInput) hyperEdge.setPosition(points.get(points.size() - 1));
-                if (!isInput) points = points.subList(1, points.size());
+                if (!isInput) {
+                    // When no position is assigned, we are sure no inputs there. Therefore, we will use all points
+                    if (isEdgePositionNotAssigned(hyperEdge))
+                        hyperEdge.setPosition(points.get(0)); // Use the first point for the position
+                    else // Otherwise, the position should be the last point of the inputs.
+                        points = points.subList(1, points.size());
+                }
                 backbonePoints.addAll(points);
             }
         } 
@@ -573,6 +578,9 @@ public class CytoscapJSToRenderableDiagramConverter {
                 }
                 else {
                     backbonePoints.addAll(sharedPoints.subList(1, sharedPoints.size()));
+                    if (isEdgePositionNotAssigned(hyperEdge)) {
+                        hyperEdge.setPosition(sharedPoints.get(1));
+                    }
                 }
                 // Need to clean up groupedPoints to remove shared points
                 for (List<Point> pts : groupedPoints) {
@@ -617,6 +625,13 @@ public class CytoscapJSToRenderableDiagramConverter {
                 }
             }
         }
+    }
+
+    private boolean isEdgePositionNotAssigned(HyperEdge edge) {
+        Point position = edge.getPosition();
+        if (position == null) return true;
+        if (position.getX() == 0 && position.getY() == 0) return true;
+        return false;
     }
     
     private void processHelperEdges(List<JsonNode> edges,

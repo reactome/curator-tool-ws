@@ -286,10 +286,13 @@ public class CurationController {
             // And commit it first if needed
             // The reason we do this here is to ensure the StableIdenrifier is updated at the server-side without
             // the user's intervention due to the fact that the front-end may not have the complete information.
+            boolean isStableIdentifierModified = false;
             if (databaseObject.getStableIdentifier() != null && isUpdate) {
                 // Means the existing StableIdentifier has been modified
-                if (databaseObject.getModified() == databaseObject.getStableIdentifier().getModified()) 
+                if (databaseObject.getModified() == databaseObject.getStableIdentifier().getModified()) {
                     commitAndAudit(username, databaseObject.getStableIdentifier(), isAdd(databaseObject.getStableIdentifier()));
+                    isStableIdentifierModified = true;
+                }
             }
             // Step 4: Now commit the instance itself
             // All new instances will not here due to step 2.
@@ -301,6 +304,8 @@ public class CurationController {
                         
             // For the front end, we just need to return a SimpleInstance having attributes that may change
             SimpleInstance rtn = converter.convertInShell(stored);
+            if (isStableIdentifierModified)
+                rtn.setStableIdentifierModified(true);
             if (obj2id != null && obj2id.size() > 0) {
                 Map<Long, Long> newInstOld2NewId = new HashMap<>();
                 obj2id.forEach((obj, id) -> newInstOld2NewId.put(id, obj.getDbId()));
