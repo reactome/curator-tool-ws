@@ -95,7 +95,19 @@ public class PathwayDiagramService {
     public Boolean hasCytoscapeNetwork(Long pathwayId) throws IOException {
         return diagramRepository.hasCytoscapeNetwork(pathwayId);
     }
-    
+
+    /**
+     * Only a cytoscape JSON text for a PathwayDiagram, represented by pathwayDiagramId, will be saved.
+     * The cytoscape JSON will be saved into the configured cytoscape folder, which contains files named by
+     * PathwayDiagram instance dbIds. The JSON text will also be converted and exported to the diagram JSON text
+     * used by the original pathway browser and the new angular-based cytoscape view. If a PathwayDiagram represents
+     * more than one Pathways, one and only one of which should be a normal pathway, multiple diagram JSON files
+     * will be generated. These diagram JSON files are named by their Pathway dbIds and saved in the configured
+     * graph folder.
+     * @param pathwayDiagramId
+     * @param cytoscapeJSON
+     * @throws Exception
+     */
     public void saveCytoscapeNetwork(Long pathwayDiagramId, JsonNode cytoscapeJSON) throws Exception {
         String text = this.mapper.writeValueAsString(cytoscapeJSON);
         this.diagramRepository.saveCytoscapeNetwork(pathwayDiagramId, text);
