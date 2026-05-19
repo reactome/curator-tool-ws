@@ -83,9 +83,10 @@ public class InstanceEditManager {
         ie.setDisplayName(displayName);
         
         // Cache the newly created InstanceEdit
-        // Note: putIfAbsent ensures we only cache if no other thread has done so in the meantime,
-        // but if race condition occurs, both instances are valid so it's acceptable
-        instanceEditCache.putIfAbsent(personId, ie);
+        // If race condition occurs, both instances are valid so it's acceptable
+        // Have to use put so that we can cache the latest version of InstanceEdit for a Person.
+        // Don't use putIfAbsent because we want to update the cache with the latest InstanceEdit for the person.
+        instanceEditCache.put(personId, ie);
         logger.debug("Created and cached new InstanceEdit for person with dbId: " + personId);
         
         return ie;
