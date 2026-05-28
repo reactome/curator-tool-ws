@@ -44,6 +44,7 @@ public class AuthenticateController {
      * @return AuthenticationResponse containing accessToken, refreshToken, and expiresIn
      * @throws BadCredentialsException if authentication fails
      */
+    // TODO: add auditing to track users logging in and loggin out
     @PostMapping("/login")
     public String authenticate(@RequestBody User user,
                                HttpServletResponse response) {

@@ -2,14 +2,13 @@ package org.reactome.curation.util;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 
-public class ReactomeCuratorTool {
+public class CuratorToolUtilities {
     private static final Logger auditLogger = LoggerFactory.getLogger("curation-audit");
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 

@@ -73,7 +73,7 @@ class CurationControllerDiagramLockTest {
 
         // Note: In real test, you would need to mock getUsername() or use SecurityContextHolder
         // For now, we just verify the service interaction
-        verify(auditLogger, never()).logDiagramLock(anyString(), anyLong(), anyString(), anyBoolean(), anyString());
+        verify(auditLogger, never()).logDiagramLock(anyString(), anyLong(), anyBoolean(), anyString());
     }
 
     @Test
@@ -163,9 +163,9 @@ class CurationControllerDiagramLockTest {
         String username = "curator1";
         String displayName = "Test Pathway";
 
-        auditLogger.logDiagramLock(username, diagramId, displayName, true, null);
+        auditLogger.logDiagramLock(username, diagramId, true, null);
 
-        verify(auditLogger, times(1)).logDiagramLock(username, diagramId, displayName, true, null);
+        verify(auditLogger, times(1)).logDiagramLock(username, diagramId, true, null);
     }
 
     @Test
@@ -175,8 +175,8 @@ class CurationControllerDiagramLockTest {
         String username = "curator1";
         String displayName = "Test Pathway";
 
-        auditLogger.logDiagramUnlock(username, diagramId, displayName, true, null);
+        auditLogger.logDiagramUnlock(username, diagramId, true, null);
 
-        verify(auditLogger, times(1)).logDiagramUnlock(username, diagramId, displayName, true, null);
+        verify(auditLogger, times(1)).logDiagramUnlock(username, diagramId, true, null);
     }
 }

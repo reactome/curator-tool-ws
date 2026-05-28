@@ -179,18 +179,18 @@ public class CurationController {
             }
             Long dbId = databaseObject.getDbId();
             DiagramLock lock = diagramLockService.lockDiagram(dbId, username);
-            auditLogger.logDiagramLock(username, dbId, databaseObject.getDisplayName(), true, null);
+            auditLogger.logDiagramLock(username, dbId, true, null);
             logger.info("CurationController.lockDiagram: Diagram {} locked by user {}", dbId, username);
             return lock;
         }
         catch(DatabaseObjectNotFoundException e) {
             logger.error("CurationController.lockDiagram: " + e.getMessage(), e);
-            auditLogger.logDiagramLock(username, instance.getDbId(), "N/A", false, e.getMessage());
+            auditLogger.logDiagramLock(username, instance.getDbId(), false, e.getMessage());
             throw e;
         }
         catch(Exception e) {
             logger.error("CurationController.lockDiagram: " + e.getMessage(), e);
-            auditLogger.logDiagramLock(username, instance.getDbId(), "N/A", false, e.getMessage());
+            auditLogger.logDiagramLock(username, instance.getDbId(), false, e.getMessage());
             throw new IllegalStateException(e.getMessage());
         }
     }
@@ -205,24 +205,22 @@ public class CurationController {
     public Boolean unlockDiagram(@RequestBody DiagramLock diagramLock) {
         String username = getUsername();
         try {
-            DatabaseObject pdInst = service.findById(diagramLock.getDiagramDbId());
-            String diagramName = pdInst != null ? pdInst.getDisplayName() : "N/A";
 
-            boolean unlocked = diagramLockService.unlockDiagram(diagramLock, username);
+            boolean unlocked = diagramLockService.unlockDiagram(diagramLock);
             if (unlocked) {
-                auditLogger.logDiagramUnlock(username, diagramLock.getDiagramDbId(), diagramName, true, null);
+                auditLogger.logDiagramUnlock(username, diagramLock.getDiagramDbId(), true, null);
                 logger.info("CurationController.unlockDiagram: Diagram {} unlocked by user {}", diagramLock.getDiagramDbId(), username);
                 return Boolean.TRUE;
             } else {
                 String error = "Diagram is not locked by current user or is not locked at all";
-                auditLogger.logDiagramUnlock(username, diagramLock.getDiagramDbId(), diagramName, false, error);
+                auditLogger.logDiagramUnlock(username, diagramLock.getDiagramDbId(), false, error);
                 logger.warn("CurationController.unlockDiagram: " + error);
                 return Boolean.FALSE;
             }
         }
         catch(Exception e) {
             logger.error("CurationController.unlockDiagram: " + e.getMessage(), e);
-            auditLogger.logDiagramUnlock(username, diagramLock.getDiagramDbId(), "N/A", false, e.getMessage());
+            auditLogger.logDiagramUnlock(username, diagramLock.getDiagramDbId(), false, e.getMessage());
             return Boolean.FALSE;
         }
     }

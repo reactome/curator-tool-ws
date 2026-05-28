@@ -1,14 +1,13 @@
 package org.reactome.curation.service;
 
 import org.reactome.curation.model.DiagramLock;
-import org.reactome.curation.util.ReactomeCuratorTool;
+import org.reactome.curation.util.CuratorToolUtilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -53,7 +52,7 @@ public class DiagramLockService {
             }
 
             ZonedDateTime now = ZonedDateTime.now(ZoneId.of("GMT"));
-            DiagramLock lock = new DiagramLock(diagramDbId, username, ReactomeCuratorTool.getDateTime());
+            DiagramLock lock = new DiagramLock(diagramDbId, username, CuratorToolUtilities.getDateTime());
             lockedDiagrams.put(diagramDbId, lock);
 
             // Update user-to-diagrams mapping
@@ -68,10 +67,9 @@ public class DiagramLockService {
      * Unlocks a diagram for a specific user.
      *
      * @param diagramLock of the diagram to unlock
-     * @param lockId, use unique identifier so that diagram can be unlocked without username/user
      * @return true if unlock was successful, false if diagram was not locked or locked by different user
      */
-    public boolean unlockDiagram(DiagramLock diagramLock, String lockId) {
+    public boolean unlockDiagram(DiagramLock diagramLock) {
         Long diagramDbId = diagramLock.getDiagramDbId();
         if (diagramDbId == null || diagramDbId <= 0) {
             logger.warn("Invalid diagram dbId: {}", diagramDbId);
@@ -86,13 +84,13 @@ public class DiagramLockService {
             }
 
             if (!lock.getLockId().equals(diagramLock.getLockId())) {
-                logger.error("Diagram {} is locked by user {}, cannot unlock by user {}", diagramDbId, lock.getUsername(), lockId);
+                logger.error("Diagram {} is locked by user {}, cannot unlock by user {}", diagramDbId, lock.getUsername());
                 return false;
             }
 
             lockedDiagrams.remove(diagramDbId);
 
-            logger.info("Diagram {}, with lockId {}, unlocked, by username {}}", diagramDbId, lockId, lock.getUsername());
+            logger.info("Diagram {}, with lockId {}, unlocked, by username {}}", diagramDbId, lock.getUsername());
             return true;
     }
 
