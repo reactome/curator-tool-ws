@@ -6,8 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -51,7 +49,6 @@ public class DiagramLockService {
                 }
             }
 
-            ZonedDateTime now = ZonedDateTime.now(ZoneId.of("GMT"));
             DiagramLock lock = new DiagramLock(diagramDbId, username, CuratorToolUtilities.getDateTime());
             lockedDiagrams.put(diagramDbId, lock);
 
@@ -70,28 +67,45 @@ public class DiagramLockService {
      * @return true if unlock was successful, false if diagram was not locked or locked by different user
      */
     public boolean unlockDiagram(DiagramLock diagramLock) {
-        Long diagramDbId = diagramLock.getDiagramDbId();
+        if (diagramLock == null) {
+            logger.warn("Cannot unlock diagram: diagramLock is null");
+            return false;
+        }
+        return unlockDiagram(diagramLock.getDiagramDbId(), diagramLock.getLockId());
+    }
+
+    /**
+     * Unlocks a diagram using a diagram dbId and lockId (backup path for GET endpoint).
+     *
+     * @param diagramDbId dbId of the diagram to unlock
+     * @param lockId lock identifier to validate unlock ownership
+     * @return true if unlock was successful, false otherwise
+     */
+    public boolean unlockDiagram(Long diagramDbId, String lockId) {
         if (diagramDbId == null || diagramDbId <= 0) {
             logger.warn("Invalid diagram dbId: {}", diagramDbId);
             return true;
         }
 
-            DiagramLock lock = lockedDiagrams.get(diagramDbId);
+        if (lockId == null || lockId.trim().isEmpty()) {
+            logger.warn("Invalid lockId for diagram {}: {}", diagramDbId, lockId);
+            return false;
+        }
 
-            if (lock == null) {
-                logger.warn("Diagram {} is not locked", diagramDbId);
-                return true;
-            }
-
-            if (!lock.getLockId().equals(diagramLock.getLockId())) {
-                logger.error("Diagram {} is locked by user {}, cannot unlock by user {}", diagramDbId, lock.getUsername());
-                return false;
-            }
-
-            lockedDiagrams.remove(diagramDbId);
-
-            logger.info("Diagram {}, with lockId {}, unlocked, by username {}}", diagramDbId, lock.getUsername());
+        DiagramLock lock = lockedDiagrams.get(diagramDbId);
+        if (lock == null) {
+            logger.warn("Diagram {} is not locked", diagramDbId);
             return true;
+        }
+
+        if (!lockId.equals(lock.getLockId())) {
+            logger.error("Diagram {} is locked by user {}, cannot unlock with lockId {}", diagramDbId, lock.getUsername(), lockId);
+            return false;
+        }
+
+        lockedDiagrams.remove(diagramDbId);
+        logger.info("Diagram {}, with lockId {}, unlocked by username {}", diagramDbId, lock.getLockId(), lock.getUsername());
+        return true;
     }
 
     /**

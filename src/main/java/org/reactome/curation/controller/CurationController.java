@@ -226,6 +226,37 @@ public class CurationController {
     }
 
     /**
+     * Backup unlock endpoint using diagramDbId and lockId query parameters.
+     *
+     * @param diagramDbId dbId of the diagram to unlock
+     * @param lockId lock identifier to validate unlock ownership
+     * @return true if unlock was successful, false otherwise
+     */
+    @GetMapping("unlockDiagram")
+    public Boolean unlockDiagram(@RequestParam("diagramDbId") Long diagramDbId,
+                                 @RequestParam("lockId") String lockId) {
+        String username = getUsername();
+        try {
+            boolean unlocked = diagramLockService.unlockDiagram(diagramDbId, lockId);
+            if (unlocked) {
+                auditLogger.logDiagramUnlock(username, diagramDbId, true, null);
+                logger.info("CurationController.unlockDiagram(GET): Diagram {} unlocked by user {}", diagramDbId, username);
+                return Boolean.TRUE;
+            }
+
+            String error = "Diagram is not locked by provided lockId or is not locked at all";
+            auditLogger.logDiagramUnlock(username, diagramDbId, false, error);
+            logger.warn("CurationController.unlockDiagram(GET): {}", error);
+            return Boolean.FALSE;
+        }
+        catch (Exception e) {
+            logger.error("CurationController.unlockDiagram(GET): " + e.getMessage(), e);
+            auditLogger.logDiagramUnlock(username, diagramDbId, false, e.getMessage());
+            return Boolean.FALSE;
+        }
+    }
+
+    /**
      * Checks if a diagram is locked and returns lock information.
      *
      * @param dbId the dbId of the diagram
