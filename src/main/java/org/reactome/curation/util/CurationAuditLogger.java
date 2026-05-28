@@ -88,6 +88,32 @@ public class CurationAuditLogger {
         logAction(username, pathwayDiagramId, displayName, "PathwayDiagram", "DIAGRAM_UPDATE", success, errorMessage);
     }
 
+    /**
+     * Log a diagram lock action.
+     *
+     * @param username The curator performing the action
+     * @param pathwayDiagramId The dbId of the pathway diagram
+     * @param displayName The display name of the pathway diagram
+     * @param success Whether the operation succeeded
+     * @param errorMessage Error message if operation failed (null if successful)
+     */
+    public void logDiagramLock(String username, Long pathwayDiagramId, String displayName, boolean success, String errorMessage) {
+        logAction(username, pathwayDiagramId, displayName, "PathwayDiagram", "DIAGRAM_LOCK", success, errorMessage);
+    }
+
+    /**
+     * Log a diagram unlock action.
+     *
+     * @param username The curator performing the action
+     * @param pathwayDiagramId The dbId of the pathway diagram
+     * @param displayName The display name of the pathway diagram
+     * @param success Whether the operation succeeded
+     * @param errorMessage Error message if operation failed (null if successful)
+     */
+    public void logDiagramUnlock(String username, Long pathwayDiagramId, String displayName, boolean success, String errorMessage) {
+        logAction(username, pathwayDiagramId, displayName, "PathwayDiagram", "DIAGRAM_UNLOCK", success, errorMessage);
+    }
+
     private String getSchemaClassName(DatabaseObject obj) {
         if (obj == null) {
             return "N/A";

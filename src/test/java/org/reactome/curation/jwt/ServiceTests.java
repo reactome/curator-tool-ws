@@ -36,10 +36,10 @@ class ServiceTests {
     @Test
     void createUser() {
         // There is another test user: test and password
-//        String username = "test_1";
-//        String password = "test_1_pwd";
-        String username = "test";
+        String username = "guanming";
         String password = "password";
+//        String username = "test";
+//        String password = "password";
         String role = "curator";
         User user = userService.saveUser(username, password, role);
         logger.info("User saved: " + user);

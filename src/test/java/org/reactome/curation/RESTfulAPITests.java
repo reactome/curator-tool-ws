@@ -18,11 +18,7 @@ import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.user.model.User;
-import org.reactome.server.graph.domain.model.Complex;
-import org.reactome.server.graph.domain.model.DatabaseObject;
-import org.reactome.server.graph.domain.model.ModifiedResidue;
-import org.reactome.server.graph.domain.model.Reaction;
-import org.reactome.server.graph.domain.model.ReferenceGeneProduct;
+import org.reactome.server.graph.domain.model.*;
 import org.reactome.server.graph.utils.ReactomeGraphCore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -666,6 +662,28 @@ class RESTfulAPITests {
                            .getContentAsString();
         logger.info("Done updating a Complex: " + dbId);
     }
+
+//    @Test
+//    public void testLockPathwayDiagram() throws Exception {
+//        assertNotNull(mockMvc);
+//
+//        PathwayDiagram pathwayDiagram = CurationWSTestHelper();
+//        SimpleInstance instance = converter.convert(complex);
+//        instance.setDefaultPersonId(140537L);
+//        ObjectMapper mapper = CurationWSTestHelper.createObjectMapper();
+//        String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(instance);
+//        logger.info("Complex in JSON:\n" + json);
+//        String url = BASE_URL + "commit";
+//        logger.info("URL: " + url);
+//        String jwt = getJWT();
+//        String dbId = mockMvc.perform(post(url).header("Authorization", "Bearer " + jwt).contentType(MediaType.APPLICATION_JSON)
+//                        .content(json))
+//                .andExpect(status().isOk())
+//                .andReturn()
+//                .getResponse()
+//                .getContentAsString();
+//        logger.info("Done updating a Complex: " + dbId);
+//    }
     
     @Test
     public void testUpdateModifiedResidue() throws Exception {

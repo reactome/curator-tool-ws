@@ -16,6 +16,7 @@ import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
 import org.reactome.curation.exceptions.InstanceChangedException;
 import org.reactome.curation.exceptions.InstanceDeletionException;
 import org.reactome.curation.model.CurationAttribute;
+import org.reactome.curation.model.DiagramLock;
 import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.NamedReferrerList;
@@ -25,6 +26,7 @@ import org.reactome.curation.model.UserInstances;
 import org.reactome.curation.qa.QAService;
 import org.reactome.curation.qa.model.QAReport;
 import org.reactome.curation.service.CurationService;
+import org.reactome.curation.service.DiagramLockService;
 import org.reactome.curation.service.EventDocxExportService;
 import org.reactome.curation.service.PathwayDiagramService;
 import org.reactome.curation.util.CurationAuditLogger;
@@ -79,6 +81,8 @@ public class CurationController {
     private CurationAuditLogger auditLogger;
     @Autowired
     private EventDocxExportService eventDocxExportService;
+    @Autowired
+    private DiagramLockService diagramLockService;
 
     /**
      * This method basically provides as a delegate to load the pathway JSON files.
@@ -157,7 +161,106 @@ public class CurationController {
             return Boolean.FALSE;
         }
     }
-    
+
+    /**
+     * Locks a diagram for a specific user. This prevents other users from modifying the diagram
+     * until it is unlocked.
+     *
+     * @return DiagramLock object containing lock information
+     */
+    @PostMapping("lockDiagram")
+    public DiagramLock lockDiagram(@RequestBody SimpleInstance instance) {
+        String username = getUsername();
+        try {
+            DatabaseObject databaseObject = converter.convert(instance, false);
+            if (databaseObject == null) {
+                logger.error("CurationController.lockDiagram: Cannot find the diagram instance with dbId: {}", instance.getDbId());
+                throw new DatabaseObjectNotFoundException(instance.getDbId());
+            }
+            Long dbId = databaseObject.getDbId();
+            DiagramLock lock = diagramLockService.lockDiagram(dbId, username);
+            auditLogger.logDiagramLock(username, dbId, databaseObject.getDisplayName(), true, null);
+            logger.info("CurationController.lockDiagram: Diagram {} locked by user {}", dbId, username);
+            return lock;
+        }
+        catch(DatabaseObjectNotFoundException e) {
+            logger.error("CurationController.lockDiagram: " + e.getMessage(), e);
+            auditLogger.logDiagramLock(username, instance.getDbId(), "N/A", false, e.getMessage());
+            throw e;
+        }
+        catch(Exception e) {
+            logger.error("CurationController.lockDiagram: " + e.getMessage(), e);
+            auditLogger.logDiagramLock(username, instance.getDbId(), "N/A", false, e.getMessage());
+            throw new IllegalStateException(e.getMessage());
+        }
+    }
+
+    /**
+     * Unlocks a diagram for the current user.
+     *
+     * @param diagramLock of the diagram to unlock
+     * @return true if unlock was successful, false otherwise
+     */
+    @PostMapping("unlockDiagram")
+    public Boolean unlockDiagram(@RequestBody DiagramLock diagramLock) {
+        String username = getUsername();
+        try {
+            DatabaseObject pdInst = service.findById(diagramLock.getDiagramDbId());
+            String diagramName = pdInst != null ? pdInst.getDisplayName() : "N/A";
+
+            boolean unlocked = diagramLockService.unlockDiagram(diagramLock, username);
+            if (unlocked) {
+                auditLogger.logDiagramUnlock(username, diagramLock.getDiagramDbId(), diagramName, true, null);
+                logger.info("CurationController.unlockDiagram: Diagram {} unlocked by user {}", diagramLock.getDiagramDbId(), username);
+                return Boolean.TRUE;
+            } else {
+                String error = "Diagram is not locked by current user or is not locked at all";
+                auditLogger.logDiagramUnlock(username, diagramLock.getDiagramDbId(), diagramName, false, error);
+                logger.warn("CurationController.unlockDiagram: " + error);
+                return Boolean.FALSE;
+            }
+        }
+        catch(Exception e) {
+            logger.error("CurationController.unlockDiagram: " + e.getMessage(), e);
+            auditLogger.logDiagramUnlock(username, diagramLock.getDiagramDbId(), "N/A", false, e.getMessage());
+            return Boolean.FALSE;
+        }
+    }
+
+    /**
+     * Checks if a diagram is locked and returns lock information.
+     *
+     * @param dbId the dbId of the diagram
+     * @return DiagramLock object if locked, null otherwise
+     */
+    @GetMapping("getDiagramLock/{dbId}")
+    public DiagramLock getDiagramLock(@PathVariable("dbId") Long dbId) {
+        try {
+            return diagramLockService.getLock(dbId);
+        }
+        catch(Exception e) {
+            logger.error("CurationController.getDiagramLock: " + e.getMessage(), e);
+            return null;
+        }
+    }
+
+
+    /**
+     * Gets all currently locked diagrams across all users.
+     *
+     * @return map of all locked diagrams (diagramDbId -> DiagramLock)
+     */
+    @GetMapping("getAllLockedDiagrams")
+    public Map<Long, DiagramLock> getAllLockedDiagrams() {
+        try {
+            return diagramLockService.getAllLockedDiagrams();
+        }
+        catch(Exception e) {
+            logger.error("CurationController.getAllLockedDiagrams: " + e.getMessage(), e);
+            return new HashMap<>();
+        }
+    }
+
     
     @GetMapping("findDatabaseObjectByDbId/{dbId}")
     public DatabaseObject findByDdId(@PathVariable("dbId") Long dbId) {

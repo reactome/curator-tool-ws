@@ -13,6 +13,7 @@ import org.gk.model.InstanceNotFoundException;
 import org.gk.model.ReactomeJavaConstants;
 import org.reactome.curation.config.CuratorToolEnv;
 import org.reactome.curation.model.SimpleInstance;
+import org.reactome.curation.util.ReactomeCuratorTool;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.domain.model.InstanceEdit;
 import org.reactome.server.graph.domain.model.Person;
@@ -74,7 +75,7 @@ public class InstanceEditManager {
         InstanceEdit ie = new InstanceEdit();
         // Need to specify author and datetime
         ie.setAuthor(Collections.singletonList((Person)person));
-        ie.setDateTime(this.getDateTime());
+        ie.setDateTime(ReactomeCuratorTool.getDateTime());
         // Generate display name for it
         // Technically we should have a place to manage this for all instances
         // However, this work has been moved to the front-end. We just limit it
@@ -143,12 +144,6 @@ public class InstanceEditManager {
     public void clearAllCache() {
         instanceEditCache.clear();
         logger.debug("Cleared entire InstanceEdit cache");
-    }
-    
-    private String getDateTime() {
-        // Use GMT to ensure the same time zone for all curators
-        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("GMT"));
-        return now.format(FORMATTER);
     }
 
 }
