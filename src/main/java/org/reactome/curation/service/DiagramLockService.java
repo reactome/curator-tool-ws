@@ -40,23 +40,20 @@ public class DiagramLockService {
             throw new IllegalArgumentException("Username cannot be null or empty");
         }
 
-            // Check if diagram is already locked by another user
-            if (lockedDiagrams.containsKey(diagramDbId)) {
-                DiagramLock existingLock = lockedDiagrams.get(diagramDbId);
-                if (!existingLock.getUsername().equals(username)) {
-                    logger.warn("Diagram {} is already locked by user {}", diagramDbId, existingLock.getUsername());
-                    return existingLock; // Return existing lock info without changing it
-                }
-            }
+        // Atomic lock assignment: if a lock already exists for this diagram, keep it unchanged.
+        DiagramLock lock = lockedDiagrams.compute(diagramDbId, (dbId, existingLock) -> {
+            if (existingLock != null)
+                return existingLock;
+            return new DiagramLock(dbId, username, CuratorToolUtilities.getDateTime());
+        });
 
-            DiagramLock lock = new DiagramLock(diagramDbId, username, CuratorToolUtilities.getDateTime());
-            lockedDiagrams.put(diagramDbId, lock);
-
-            // Update user-to-diagrams mapping
-//            userLockedDiagrams.computeIfAbsent(username, k -> new java.util.ArrayList<>()).add(diagramDbId);
-
-            logger.info("Diagram {} locked by user {}", diagramDbId, username);
+        if (!username.equals(lock.getUsername())) {
+            logger.warn("Diagram {} is already locked by user {}", diagramDbId, lock.getUsername());
             return lock;
+        }
+
+        logger.info("Diagram {} locked by user {}", diagramDbId, username);
+        return lock;
 
     }
 
@@ -135,6 +132,29 @@ public class DiagramLockService {
         }
         synchronized (lockedDiagrams) {
             return lockedDiagrams.get(diagramDbId);
+        }
+    }
+
+    /**
+     * Finds a lock by session id.
+     * <p>
+     * This currently matches the provided session id against the lockId stored
+     * on each DiagramLock, so callers can use the session identifier as the
+     * lookup key for the lock associated with that session.
+     *
+     * @param sessionId session identifier or lock identifier
+     * @return the matching DiagramLock, or null if no lock matches
+     */
+    public DiagramLock getLock(String sessionId) {
+        if (sessionId == null || sessionId.trim().isEmpty()) {
+            return null;
+        }
+
+        synchronized (lockedDiagrams) {
+            return lockedDiagrams.values().stream()
+                    .filter(lock -> sessionId.equals(lock.getLockId()))
+                    .findFirst()
+                    .orElse(null);
         }
     }
 

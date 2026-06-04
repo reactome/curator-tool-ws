@@ -17,15 +17,9 @@ import java.util.stream.Collectors;
 
 import org.gk.model.ReactomeJavaConstants;
 import org.reactome.curation.config.CuratorToolEnv;
+import org.reactome.curation.model.*;
 import org.reactome.curation.model.CurationAttribute.DefiningAttributeValue;
 import org.reactome.curation.model.CurationAttribute.DefiningType;
-import org.reactome.curation.model.CurationAttribute;
-import org.reactome.curation.model.InstanceList;
-import org.reactome.curation.model.ListOperand;
-import org.reactome.curation.model.NamedReferrerList;
-import org.reactome.curation.model.SimpleInstance;
-import org.reactome.curation.model.SimpleSchemaClass;
-import org.reactome.curation.model.UserInstances;
 import org.reactome.curation.repository.CurationFileRepository;
 import org.reactome.curation.repository.CurationRepository;
 //import org.reactome.server.graph.aop.LazyFetchAspect;
@@ -328,7 +322,68 @@ public class CurationService {
                                 String accountName) throws Exception {
         fileRepository.persist(instances, getFileForPersistedInstances(accountName));
     }
-    
+
+    public void persistDiagramInstances(PathwayDiagramLockPayload diagramLockPayload,
+                                        String accountName) throws Exception {
+        UserInstances userInstances = loadUserInstances(accountName);
+        if (userInstances == null)
+            userInstances = new UserInstances();
+
+        List<PathwayDiagramLockPayload> pathwayDiagrams = userInstances.getPathwayDiagrams();
+        if (pathwayDiagrams == null)
+            pathwayDiagrams = new ArrayList<>();
+
+        Long diagramDbId = diagramLockPayload == null || diagramLockPayload.getDiagramLock() == null ?
+                null : diagramLockPayload.getDiagramLock().getDiagramDbId();
+        if (diagramDbId != null) {
+            pathwayDiagrams.removeIf(item -> item != null
+                    && item.getDiagramLock() != null
+                    && diagramDbId.equals(item.getDiagramLock().getDiagramDbId()));
+        }
+        pathwayDiagrams.add(diagramLockPayload);
+        userInstances.setPathwayDiagrams(pathwayDiagrams);
+
+        fileRepository.persist(userInstances, getFileForPersistedInstances(accountName));
+    }
+
+    public boolean deletePersistedDiagramInstances(PathwayDiagramLockPayload diagramLockPayload,
+                                                   String accountName) throws Exception {
+        UserInstances userInstances = loadUserInstances(accountName);
+        if (userInstances == null)
+            return false;
+
+        List<PathwayDiagramLockPayload> pathwayDiagrams = userInstances.getPathwayDiagrams();
+        if (pathwayDiagrams == null || pathwayDiagrams.isEmpty())
+            return false;
+
+        Long diagramDbId = diagramLockPayload == null || diagramLockPayload.getDiagramLock() == null ?
+                null : diagramLockPayload.getDiagramLock().getDiagramDbId();
+        if (diagramDbId == null || diagramDbId <= 0)
+            return false;
+
+        boolean removed = pathwayDiagrams.removeIf(item -> item != null
+                && item.getDiagramLock() != null
+                && diagramDbId.equals(item.getDiagramLock().getDiagramDbId()));
+        if (!removed)
+            return false;
+
+        if (pathwayDiagrams.isEmpty())
+            fileRepository.deleteFile(getFileForPersistedInstances(accountName));
+        else {
+            userInstances.setPathwayDiagrams(pathwayDiagrams);
+            fileRepository.persist(userInstances, getFileForPersistedInstances(accountName));
+        }
+        return true;
+    }
+
+    public String getPathwayDiagramAccountName(String username, Long diagramDbId) {
+        if (username == null || username.trim().isEmpty())
+            return null;
+        if (diagramDbId == null || diagramDbId <= 0)
+            return null;
+        return username;
+    }
+
     public UserInstances loadUserInstances(String accountName) throws Exception {
         return fileRepository.load(getFileForPersistedInstances(accountName));
     }

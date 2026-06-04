@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 
+import org.reactome.curation.model.PathwayDiagramLockPayload;
 import org.reactome.curation.model.UserInstances;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +37,16 @@ public class CurationFileRepository {
 
     public void persist(UserInstances userInstances,
                         String fileName) throws Exception {
+        persistObject(userInstances, fileName);
+    }
+
+    public void persist(PathwayDiagramLockPayload payload,
+                        String fileName) throws Exception {
+        persistObject(payload, fileName);
+    }
+
+    private void persistObject(Object payload,
+                               String fileName) throws Exception {
         File file = new File(fileName);
         
         // Backup the existing file before overwriting
@@ -49,7 +60,7 @@ public class CurationFileRepository {
         
         ObjectMapper mapper = getObjectMapper();
         // Give it some format
-        mapper.writerWithDefaultPrettyPrinter().writeValue(file, userInstances);
+        mapper.writerWithDefaultPrettyPrinter().writeValue(file, payload);
         logger.info("Saved instances to " + file.getAbsolutePath());
     }
     

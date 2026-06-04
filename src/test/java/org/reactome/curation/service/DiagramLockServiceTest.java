@@ -40,17 +40,20 @@ class DiagramLockServiceTest {
     }
 
     @Test
-    @DisplayName("Should prevent locking already locked diagram by different user")
+    @DisplayName("Should return existing lock when diagram is already locked by different user")
     void testLockLockedDiagramByDifferentUser() {
         Long diagramId = 12345L;
         String user1 = "curator1";
         String user2 = "curator2";
 
-        service.lockDiagram(diagramId, user1);
+        DiagramLock firstLock = service.lockDiagram(diagramId, user1);
+        DiagramLock returnedLock = service.lockDiagram(diagramId, user2);
 
-        assertThrows(IllegalStateException.class, () -> {
-            service.lockDiagram(diagramId, user2);
-        });
+        assertNotNull(firstLock);
+        assertNotNull(returnedLock);
+        assertEquals(user1, returnedLock.getUsername());
+        assertEquals(firstLock.getLockId(), returnedLock.getLockId());
+        assertEquals(firstLock.getDiagramDbId(), returnedLock.getDiagramDbId());
     }
 
     @Test
@@ -65,6 +68,26 @@ class DiagramLockServiceTest {
         assertNotNull(lock1);
         assertNotNull(lock2);
         assertEquals(lock1.getDiagramDbId(), lock2.getDiagramDbId());
+        assertEquals(lock1.getLockId(), lock2.getLockId());
+    }
+
+    @Test
+    @DisplayName("Should keep exactly one lock holder for concurrent lock attempts on same diagram")
+    void testConcurrentLockSameDiagramMutualExclusion() throws InterruptedException {
+        Long diagramId = 12345L;
+
+        Thread t1 = new Thread(() -> service.lockDiagram(diagramId, "curator1"));
+        Thread t2 = new Thread(() -> service.lockDiagram(diagramId, "curator2"));
+
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+
+        DiagramLock lock = service.getLock(diagramId);
+        assertNotNull(lock);
+        assertTrue("curator1".equals(lock.getUsername()) || "curator2".equals(lock.getUsername()));
+        assertEquals(1, service.getAllLockedDiagrams().size());
     }
 
     @Test
