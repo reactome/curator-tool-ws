@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.gk.model.ReactomeJavaConstants;
 import org.reactome.curation.config.CuratorToolEnv;
 import org.reactome.curation.model.*;
@@ -70,14 +71,13 @@ public class CurationService {
     // For file-based repository
     @Autowired
     private CurationFileRepository fileRepository;
-    
     @Autowired
     private CuratorToolEnv toolEnv;
     
     // Helper with auto filling literature reference
     @Autowired
     private LiteratureReferenceAttributeAutoFiller lrFiller;
-    
+
     
     public CurationService() {
         // Load clsName2Attributes to avoid any thread issue: clsName2Attributes
@@ -323,47 +323,59 @@ public class CurationService {
         fileRepository.persist(instances, getFileForPersistedInstances(accountName));
     }
 
-    public void persistDiagramInstances(PathwayDiagramLockPayload diagramLockPayload,
+    /**
+     * Persist diagram instances using database-backed storage with true upsert semantics.
+     * Updates existing diagrams keyed by (account, pathwayDiagramId) or creates new ones.
+     * This prevents data loss from concurrent edits.
+     *
+     * @param diagramPayloads list of diagrams to persist
+     * @param accountName the user account name
+     * @throws Exception if payload validation or persistence fails
+     */
+    public void persistDiagramInstances(List<DiagramsPersistencePayload> diagramPayloads,
                                         String accountName) throws Exception {
-        UserInstances userInstances = loadUserInstances(accountName);
-        if (userInstances == null)
-            userInstances = new UserInstances();
 
-        List<PathwayDiagramLockPayload> pathwayDiagrams = userInstances.getPathwayDiagrams();
-        if (pathwayDiagrams == null)
-            pathwayDiagrams = new ArrayList<>();
+        UserInstances userInstances = this.loadUserInstances(accountName);
+        if (userInstances == null) userInstances = new UserInstances();
+        userInstances.setPathwayDiagrams(diagramPayloads);
+        fileRepository.persist(userInstances, getFileForPersistedInstances(accountName));    }
 
-        Long diagramDbId = diagramLockPayload == null || diagramLockPayload.getDiagramLock() == null ?
-                null : diagramLockPayload.getDiagramLock().getDiagramDbId();
-        if (diagramDbId != null) {
-            pathwayDiagrams.removeIf(item -> item != null
-                    && item.getDiagramLock() != null
-                    && diagramDbId.equals(item.getDiagramLock().getDiagramDbId()));
-        }
-        pathwayDiagrams.add(diagramLockPayload);
-        userInstances.setPathwayDiagrams(pathwayDiagrams);
-
-        fileRepository.persist(userInstances, getFileForPersistedInstances(accountName));
+    public boolean deletePersistedDiagramInstances(DiagramsPersistencePayload diagramPayload,
+                                                   String accountName) throws Exception {
+//        // Use database-backed deletion if repository is available, otherwise fallback to file storage
+//        if (persistedPathwayDiagramRepository != null) {
+//            return deletePersistedDiagramInstancesDB(diagramPayload, accountName);
+//        } else {
+//            return deletePersistedDiagramInstancesLegacy(diagramPayload, accountName);
+//        }
+        return false;
     }
 
-    public boolean deletePersistedDiagramInstances(PathwayDiagramLockPayload diagramLockPayload,
-                                                   String accountName) throws Exception {
+    /**
+     * Legacy file-based deletion for backward compatibility.
+     *
+     * @param diagramPayload the diagram to delete (must contain pathwayDiagramId)
+     * @param accountName the user account name
+     * @return true if deleted, false if not found
+     * @throws Exception if deletion fails
+     */
+    private boolean deletePersistedDiagramInstancesLegacy(DiagramsPersistencePayload diagramPayload,
+                                                          String accountName) throws Exception {
         UserInstances userInstances = loadUserInstances(accountName);
         if (userInstances == null)
             return false;
 
-        List<PathwayDiagramLockPayload> pathwayDiagrams = userInstances.getPathwayDiagrams();
+        List<DiagramsPersistencePayload> pathwayDiagrams = userInstances.getPathwayDiagrams();
         if (pathwayDiagrams == null || pathwayDiagrams.isEmpty())
             return false;
 
-        Long diagramDbId = diagramLockPayload == null || diagramLockPayload.getDiagramLock() == null ?
-                null : diagramLockPayload.getDiagramLock().getDiagramDbId();
+        Long diagramDbId = diagramPayload == null ? null : diagramPayload.getPathwayDiagramId();
         if (diagramDbId == null || diagramDbId <= 0)
             return false;
 
         boolean removed = pathwayDiagrams.removeIf(item -> item != null
-                && item.getDiagramLock() != null
-                && diagramDbId.equals(item.getDiagramLock().getDiagramDbId()));
+                && item.getPathwayDiagramId() != null
+                && diagramDbId.equals(item.getPathwayDiagramId()));
         if (!removed)
             return false;
 

@@ -1,14 +1,7 @@
 package org.reactome.curation.controller;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -20,7 +13,7 @@ import org.reactome.curation.model.DiagramLock;
 import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.NamedReferrerList;
-import org.reactome.curation.model.PathwayDiagramLockPayload;
+import org.reactome.curation.model.DiagramsPersistencePayload;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.model.SimpleSchemaClass;
 import org.reactome.curation.model.UserInstances;
@@ -292,7 +285,7 @@ public class CurationController {
                 return Boolean.FALSE;
             }
             boolean deleted = service.deletePersistedDiagramInstances(
-                    new PathwayDiagramLockPayload(null, diagramLock),
+                    new DiagramsPersistencePayload(null, diagramLock.getDiagramDbId()),
                     scopedAccount);
             if (!deleted) {
                 String error = "No persisted pathway diagram found for the provided lock";
@@ -729,7 +722,7 @@ public class CurationController {
     }
 
     @GetMapping("loadPathwayDiagrams/{account}")
-    public List<PathwayDiagramLockPayload> loadPathwayDiagrams(@PathVariable("account") String account) {
+    public List<DiagramsPersistencePayload> loadPathwayDiagrams(@PathVariable("account") String account) {
         try {
             UserInstances instances = service.loadUserInstances(account);
             if (instances == null || instances.getPathwayDiagrams() == null)
@@ -767,56 +760,49 @@ public class CurationController {
     /**
      * Persist a pathway diagram instance for a user session using the same flow as persistInstances.
      */
-    @PostMapping("persistPathwayDiagram")
-    public Boolean persistPathwayDiagram(@RequestBody JsonNode pathwayDiagramObjects) {
+    @PostMapping("persistPathwayDiagram/{account}")
+    public Boolean persistPathwayDiagram(@RequestBody List<DiagramsPersistencePayload> payload,
+                                         @PathVariable("account") String account) {
         try {
-            if (pathwayDiagramObjects == null || !pathwayDiagramObjects.isArray())
-                throw new IllegalArgumentException("Payload must be an array of objects");
+            if (payload == null || payload.isEmpty())
+                throw new IllegalArgumentException("Payload must be a non-empty array");
 
             String username = getUsername();
-            for (JsonNode payloadItem : pathwayDiagramObjects) {
-                if (payloadItem == null || payloadItem.isNull())
-                    throw new IllegalArgumentException("Each payload item must be an object containing diagramLock and network");
+            if (!Objects.equals(username, account))
+                throw new IllegalArgumentException("Account path variable does not match the authenticated user");
 
-                JsonNode diagramLockNode = payloadItem.get("diagramLock");
-                if (diagramLockNode == null || diagramLockNode.isNull())
-                    throw new IllegalArgumentException("Each payload item must contain a diagramLock object");
+            List<DiagramsPersistencePayload> validatedPayloads = new ArrayList<>(payload.size());
+            for (DiagramsPersistencePayload item : payload) {
+                if (item == null || item.getNode() == null || item.getNode().isNull())
+                    throw new IllegalArgumentException("Each payload item must contain a network JsonNode");
+                Long pathwayDiagramId = item.getPathwayDiagramId();
+                if (pathwayDiagramId == null || pathwayDiagramId <= 0)
+                    throw new IllegalArgumentException("Each payload item must contain a valid pathwayDiagramId");
 
-                JsonNode networkNode = payloadItem.get("network");
-                if (networkNode == null || networkNode.isNull())
-                    throw new IllegalArgumentException("Each payload item must contain a network object");
+                DiagramLock sessionLock = diagramLockService.getLock(pathwayDiagramId);
+                if (sessionLock == null || !username.equals(sessionLock.getUsername()))
+                    throw new IllegalArgumentException("No matching lock found for pathwayDiagramId " + pathwayDiagramId + " and user " + username);
 
-                DiagramLock payloadLock = objectMapper.treeToValue(diagramLockNode, DiagramLock.class);
-                if (payloadLock == null || payloadLock.getLockId() == null || payloadLock.getLockId().trim().isEmpty())
-                    throw new IllegalArgumentException("diagramLock must contain lockId");
-                if (payloadLock.getDiagramDbId() == null || payloadLock.getDiagramDbId() <= 0)
-                    throw new IllegalArgumentException("diagramLock must contain a valid diagramDbId");
-
-                DiagramLock sessionLock = diagramLockService.getLock(payloadLock.getDiagramDbId());
-                if (sessionLock == null || !payloadLock.getLockId().equals(sessionLock.getLockId()))
-                    throw new IllegalArgumentException("No matching lock found for provided lockId and diagramLock");
-
-                SimpleInstance pathwayDiagram = objectMapper.treeToValue(networkNode, SimpleInstance.class);
-                if (pathwayDiagram == null)
-                    throw new IllegalArgumentException("PathwayDiagram instance is required");
-                pathwayDiagram.setDbId(payloadLock.getDiagramDbId()); // Ensure the dbId is set from the lock information
-
-                if (pathwayDiagram.getDbId() == null || pathwayDiagram.getDbId() <= 0) {
-                    throw new IllegalArgumentException("PathwayDiagram instance is required and must have a valid dbId");
-                }
-
-                String scopedAccount = service.getPathwayDiagramAccountName(username, payloadLock.getDiagramDbId()); // Scope by user + diagram so later edits replace the prior staged combo
-                if (scopedAccount == null)
-                    throw new IllegalArgumentException("Cannot build a staged account key for the pathway diagram");
-                PathwayDiagramLockPayload diagramPayload = new PathwayDiagramLockPayload(networkNode, payloadLock);
-                service.persistDiagramInstances(diagramPayload, scopedAccount);
+                validatedPayloads.add(new DiagramsPersistencePayload(item.getNode(), pathwayDiagramId));
             }
+
+            service.persistDiagramInstances(validatedPayloads, account);
             return Boolean.TRUE;
         }
         catch (Exception e) {
             logger.error("CurationController.persistPathwayDiagram: " + e.getMessage(), e);
             return Boolean.FALSE;
         }
+    }
+
+    /**
+     * Persist/update a single pathway diagram instance for a user session.
+     * Uses the same validation and lock checks as the batch endpoint.
+     */
+    @PostMapping("persistSinglePathwayDiagram/{account}")
+    public Boolean persistSinglePathwayDiagram(@RequestBody DiagramsPersistencePayload payload,
+                                               @PathVariable("account") String account) {
+        return persistPathwayDiagram(Collections.singletonList(payload), account);
     }
 
 

@@ -9,7 +9,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 
-import org.reactome.curation.model.PathwayDiagramLockPayload;
+import org.reactome.curation.model.DiagramsPersistencePayload;
 import org.reactome.curation.model.UserInstances;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +40,7 @@ public class CurationFileRepository {
         persistObject(userInstances, fileName);
     }
 
-    public void persist(PathwayDiagramLockPayload payload,
+    public void persist(DiagramsPersistencePayload payload,
                         String fileName) throws Exception {
         persistObject(payload, fileName);
     }

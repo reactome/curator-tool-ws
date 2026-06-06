@@ -21,7 +21,7 @@ public class UserInstances {
     private List<SimpleInstance> updatedInstances;
     private List<SimpleInstance> deletedInstances;
     private List<SimpleInstance> bookmarks;
-    private List<PathwayDiagramLockPayload> pathwayDiagrams;
+    private List<DiagramsPersistencePayload> pathwayDiagrams;
     private SimpleInstance defaultPerson;
 
 }
