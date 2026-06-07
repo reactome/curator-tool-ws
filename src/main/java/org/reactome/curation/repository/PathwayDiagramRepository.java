@@ -38,7 +38,7 @@ public class PathwayDiagramRepository {
     
     /**
      * Check if the diagram JSON file exists for a given file name.
-     * @param fileName
+     * @param dbId
      * @return
      * @throws IOException
      */
@@ -48,7 +48,7 @@ public class PathwayDiagramRepository {
         return file.exists();
     }
     
-    public String loadCytoscapeNetwork(Long pathwayId) throws IOException {
+    public String loadCyNetwork(Long pathwayId) throws IOException {
         File file = new File(toolEnv.getDiagramCytoscapeDir(), pathwayId + ".json");
         if (!file.exists())
             return null;
@@ -56,20 +56,20 @@ public class PathwayDiagramRepository {
         return text;
     }
     
-    public Boolean hasCytoscapeNetwork(Long pathwayId) throws IOException {
+    public Boolean hasCyNetwork(Long pathwayId) throws IOException {
         File file = new File(toolEnv.getDiagramCytoscapeDir(), pathwayId + ".json");
         return file.exists();
     }
     
-    public void saveCytoscapeNetwork(Long pathwayId, String networkJson) throws IOException {
+    public void saveCyNetwork(Long pathwayId, String networkJson) throws IOException {
         logger.debug("Saving cytoscape network for " + pathwayId + "...");
         File file = new File(toolEnv.getDiagramCytoscapeDir(), pathwayId + ".json");
         writeJSON(networkJson, file);
     }
 
-    public void backupCytoscapeNetwork(Long pathwayDiagramId, String networkJson) throws IOException {
+    public void backupCyNetwork(Long pathwayDiagramId, String networkJson) throws IOException {
         logger.debug("Backup cytoscape network for " + pathwayDiagramId + "...");
-        File fileName = new File(getCytoscapeJsonBackupDir(), pathwayDiagramId + ".json");
+        File fileName = new File(getBackupCyNetworkDir(), pathwayDiagramId + ".json");
         writeJSON(networkJson, fileName);
     }
 
@@ -81,17 +81,24 @@ public class PathwayDiagramRepository {
      * @return
      * @throws IOException
      */
-    public Boolean hasEditingCytoscapeNetwork(Long pathwayDiagramId) throws IOException {
-        File fileName = new File(getCytoscapeJsonBackupDir(), pathwayDiagramId + ".json");
+    public Boolean hasBackupCyNetwork(Long pathwayDiagramId) {
+        File fileName = new File(getBackupCyNetworkDir(), pathwayDiagramId + ".json");
         return fileName.exists();
     }
 
-    public String loadEditingCytoscapeNetwork(Long pathwayDiagramId) throws IOException {
-        File fileName = new File(getCytoscapeJsonBackupDir(), pathwayDiagramId + ".json");
+    public String loadBackupCyNetwork(Long pathwayDiagramId) throws IOException {
+        File fileName = new File(getBackupCyNetworkDir(), pathwayDiagramId + ".json");
         if (!fileName.exists())
             return null;
         String text = new String(Files.readAllBytes(fileName.toPath()));
         return text;
+    }
+
+    public void deleteBackupCyNetwork(Long pathwayDiagramId) {
+        File fileName = new File(getBackupCyNetworkDir(), pathwayDiagramId + ".json");
+        if (fileName.exists()) {
+            fileName.delete();
+        }
     }
 
     private void writeJSON(String networkJson, File file) throws IOException {
@@ -102,7 +109,7 @@ public class PathwayDiagramRepository {
         fileWriter.close();
     }
 
-    private String getCytoscapeJsonBackupDir() {
+    private String getBackupCyNetworkDir() {
         File dir = new File(toolEnv.getDiagramCytoscapeDir(), "editing");
         return dir.getAbsolutePath();
     }

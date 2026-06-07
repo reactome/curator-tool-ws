@@ -5,12 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 import java.util.UUID;
 
@@ -37,6 +32,8 @@ public class DiagramLock {
     // Timestamp to keep track
     @Column(nullable = false)
     private String lockedAt;
+    @Transient
+    private Boolean hasBackupDiagram;
 
     @Column(unique = true, nullable = false)
     private String lockId; // Unique identifier for the lock, useful for tracking and unlocking

@@ -86,14 +86,14 @@ public class PathwayDiagramService {
         return this.diagramRepository.hasDiagramJson(dbId);
     }
     
-    public JsonNode loadCytosapeNetwork(Long pathwayId) throws IOException {
-        String text = diagramRepository.loadCytoscapeNetwork(pathwayId);
-        JsonNode jsonNode = mapper.readTree(text); 
+    public JsonNode loadCyNetwork(Long pathwayId) throws IOException {
+        String text = diagramRepository.loadCyNetwork(pathwayId);
+        JsonNode jsonNode = mapper.readTree(text);
         return jsonNode;
     }
     
-    public Boolean hasCytoscapeNetwork(Long pathwayId) throws IOException {
-        return diagramRepository.hasCytoscapeNetwork(pathwayId);
+    public Boolean hasCyNetwork(Long pathwayId) throws IOException {
+        return diagramRepository.hasCyNetwork(pathwayId);
     }
 
     /**
@@ -108,15 +108,15 @@ public class PathwayDiagramService {
      * @param cytoscapeJSON
      * @throws Exception
      */
-    public void saveCytoscapeNetwork(Long pathwayDiagramId, JsonNode cytoscapeJSON) throws Exception {
+    public void saveCyNetwork(Long pathwayDiagramId, JsonNode cytoscapeJSON) throws Exception {
         String text = this.mapper.writeValueAsString(cytoscapeJSON);
-        this.diagramRepository.saveCytoscapeNetwork(pathwayDiagramId, text);
+        this.diagramRepository.saveCyNetwork(pathwayDiagramId, text);
         this.exportPathwayDiagramJSON(pathwayDiagramId, cytoscapeJSON);
     }
 
     // The following three methods are used to handle automatic backup of a cytosacpe diagram under editing.
-    public Boolean hasEditingCytoscapeNetwork(Long pathwayDiagramId) throws Exception {
-        return this.diagramRepository.hasEditingCytoscapeNetwork(pathwayDiagramId);
+    public Boolean hasBackupCyNetwork(Long pathwayDiagramId) {
+        return this.diagramRepository.hasBackupCyNetwork(pathwayDiagramId);
     }
 
     /**
@@ -127,18 +127,22 @@ public class PathwayDiagramService {
      * @param cytoscapeJson
      * @throws Exception
      */
-    public void backupCytoscapeNetwork(Long pathwayDiagramId, JsonNode cytoscapeJson) throws Exception {
+    public void backupCyNetwork(Long pathwayDiagramId, JsonNode cytoscapeJson) throws Exception {
         String text = this.mapper.writeValueAsString(cytoscapeJson);
-        this.diagramRepository.backupCytoscapeNetwork(pathwayDiagramId, text);
+        this.diagramRepository.backupCyNetwork(pathwayDiagramId, text);
     }
 
-    public JsonNode loadEditingCytoscapeNetwork(Long pathwayDiagramId) throws Exception {
-        String text = this.diagramRepository.loadEditingCytoscapeNetwork(pathwayDiagramId);
+    public JsonNode loadBackupCyNetwork(Long pathwayDiagramId) throws Exception {
+        String text = this.diagramRepository.loadBackupCyNetwork(pathwayDiagramId);
         if (text == null) {
             return null;
         }
         JsonNode jsonNode = mapper.readTree(text);
         return jsonNode;
+    }
+
+    public void deleteBackupCyNetwork(Long pathwayDiagramId) {
+        this.diagramRepository.deleteBackupCyNetwork(pathwayDiagramId);
     }
     
     public void exportPathwayDiagramJSON(Long pathwayDiagramId, JsonNode cytoscapeJSON) throws Exception {

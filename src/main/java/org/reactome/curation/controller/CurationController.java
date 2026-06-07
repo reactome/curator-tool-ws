@@ -104,53 +104,85 @@ public class CurationController {
     }
     
     @GetMapping("getCyNetwork/{pathwayId}")
-    public JsonNode loadCytoscapeNetwork(@PathVariable("pathwayId") Long pathwayId) {
+    public JsonNode loadCyNetwork(@PathVariable("pathwayId") Long pathwayId) {
         try {
             // To ensure the returned text is well formated JSON text for the front-end,
             // we will use JsonNode as a proxy for the JSON text.
-            return diagramService.loadCytosapeNetwork(pathwayId);
+            return diagramService.loadCyNetwork(pathwayId);
         }
         catch(IOException e) {
-            logger.error("CurationController.loadCytoscapeNetwork: " + e.getMessage(), e);
+            logger.error("CurationController.loadCyNetwork: " + e.getMessage(), e);
             throw new IllegalStateException(e.getMessage());
         }
     }
     
     @GetMapping("hasCyNetwork/{pathwayId}")
-    public Boolean hasCytoscapeNetwork(@PathVariable("pathwayId") Long pathwayId) throws IOException {
-        return diagramService.hasCytoscapeNetwork(pathwayId);
+    public Boolean hasCyNetwork(@PathVariable("pathwayId") Long pathwayId) throws IOException {
+        return diagramService.hasCyNetwork(pathwayId);
     }
     
     //NB: This method has not been listed in the test!
     @PostMapping("uploadCyNetwork/{pathwayId}")
-    public Boolean saveCytoscapeNetwork(@PathVariable("pathwayId") Long pathwayDiagramId,
+    public Boolean saveCyNetwork(@PathVariable("pathwayId") Long pathwayDiagramId,
                                         @RequestBody JsonNode networkJson) {
         String username = getUsername();
         try {
             JsonNode defaultPersonNode = networkJson == null ? null : networkJson.get("defaultPersonId");
             if (defaultPersonNode == null || !defaultPersonNode.canConvertToLong()) {
-                logger.error("CurationController.saveCytoscapeNetwork: The defaultPersonId is missing or invalid.");
+                logger.error("CurationController.saveCyNetwork: The defaultPersonId is missing or invalid.");
                 return Boolean.FALSE;
             }
             Long dbId = defaultPersonNode.asLong();
             if (dbId <= 0) {
-                logger.error("CurationController.saveCytoscapeNetwork: The defaultPersonId is not in the database.");
+                logger.error("CurationController.saveCyNetwork: The defaultPersonId is not in the database.");
                 return Boolean.FALSE;
             }
             DatabaseObject pdInst = service.findById(pathwayDiagramId);
             if (pdInst == null) {
-                logger.error("CurationController.saveCytoscapeNetwork: Cannot find the PathwayDiagram instance with dbId: {}", pathwayDiagramId);
+                logger.error("CurationController.saveCyNetwork: Cannot find the PathwayDiagram instance with dbId: {}", pathwayDiagramId);
                 return Boolean.FALSE;
             }
             InstanceEdit ie = converter.createInstanceEdit(dbId);
-            diagramService.saveCytoscapeNetwork(pathwayDiagramId, networkJson);
+            diagramService.saveCyNetwork(pathwayDiagramId, networkJson);
+            // Delete the back up if any
+            diagramService.deleteBackupCyNetwork(pathwayDiagramId);
             service.addModifiedIE(pdInst, ie);
             auditLogger.logDiagramUpdate(username, pathwayDiagramId, pdInst.getDisplayName(), true, null);
             return Boolean.TRUE;
         }
         catch(Exception e) {
-            logger.error("CurationController.saveCytoscapeNetwork: " + e.getMessage(), e);
+            logger.error("CurationController.saveCyNetwork: " + e.getMessage(), e);
             auditLogger.logDiagramUpdate(username, pathwayDiagramId, "N/A", false, e.getMessage());
+            return Boolean.FALSE;
+        }
+    }
+
+    /**
+     * Back up a Cytoscape network json under active editing to avoid any loss and also make sure
+     * the user may be able to recover their edits after closing browser and before uploading the diagram
+     * to keep the intermediate changes.
+     * @param pathwayDiagramId
+     * @param lockId
+     * @param networkJson
+     * @return
+     */
+    @PostMapping("backupCyNetwork/{diagramId}/{lockId}")
+    public Boolean backupCyNetwork(@PathVariable("diagramId") Long pathwayDiagramId,
+                                          @PathVariable("lockId") String lockId,
+                                          @RequestBody JsonNode networkJson) {
+        // To backup, the user must be have the lock to avoid overwrite other's changes.
+        String username = getUsername();
+        DiagramLock lock = diagramLockService.getLock(pathwayDiagramId);
+        if (lock == null || !lock.getUsername().equals(username) || !lock.getLockId().equals(lockId)) {
+            logger.error("CurationController.backupCyNetwork: The lockId is empty or invalid.");
+            return Boolean.FALSE;
+        }
+        try {
+            diagramService.backupCyNetwork(pathwayDiagramId, networkJson);
+            return Boolean.TRUE;
+        }
+        catch(Exception e) {
+            logger.error("CurationController.backupCyNetwork: " + e.getMessage(), e);
             return Boolean.FALSE;
         }
     }
@@ -189,17 +221,22 @@ public class CurationController {
             return Boolean.FALSE;
         }
         auditLogger.logDiagramUnlock(username, diagramLock.getDiagramDbId(), true, null);
-        return diagramLockService.unlockDiagram(diagramLock);
+        Boolean unlocked = diagramLockService.unlockDiagram(diagramLock);
+        if (unlocked) {
+            // Unlock a diagram will delete any backup for this diagram
+            diagramService.deleteBackupCyNetwork(diagramLock.getDiagramDbId());
+        }
+        return unlocked;
     }
 
     /**
-     * Checks if a diagram is locked and returns lock information.
+     * Checks if a diagram is locked and returns lock information. If not, null will be returned.
      *
      * @param pathwayDiagramDbId the dbId of a PathwayDiagram instance for lock query.
      * @return DiagramLock object if locked, null otherwise
      */
-    @GetMapping("getDiagramLock/{dbId}")
-    public DiagramLock getDiagramLock(@PathVariable("dbId") Long pathwayDiagramDbId) {
+    @GetMapping("hasDiagramLocked/{dbId}")
+    public DiagramLock hasDiagramLocked(@PathVariable("dbId") Long pathwayDiagramDbId) {
         DiagramLock lock = diagramLockService.getLock(pathwayDiagramDbId);
         if (lock == null)
             return null;
@@ -220,65 +257,15 @@ public class CurationController {
     public List<DiagramLock> getDiagramLocks() {
         String username = getUsername();
         List<DiagramLock> locks = diagramLockService.getUserLocks(username);
+        // Check if any diagrams under editing. Since whenever unlocking a diagram will delete a backup
+        // diagram, this should be safe for state synchronization: this user will not get other users' editing
+        // diagrams
+        if (locks != null && locks.size() > 0) {
+            locks.stream().forEach(lock -> {
+                lock.setHasBackupDiagram(diagramService.hasBackupCyNetwork(lock.getDiagramDbId()));
+            });
+        }
         return locks; // This user will have full DiagramLocks including lock ids so that they can delete it.
-    }
-
-    /**
-     * Unlocks a diagram and removes the matching persisted pathway diagram entry for the current session.
-     *
-     * @param diagramLock lock information for the diagram to delete
-     * @return true if the lock was removed and the persisted entry was deleted, false otherwise
-     */
-    @PostMapping("deletePersistedPathwayDiagram")
-    public Boolean deletePersistedPathwayDiagram(@RequestBody DiagramLock diagramLock) {
-//        String username = getUsername();
-//        if (diagramLock == null || diagramLock.getDiagramDbId() == null || diagramLock.getDiagramDbId() <= 0) {
-//            logger.warn("CurationController.deletePersistedPathwayDiagram: invalid diagramLock payload");
-//            return Boolean.FALSE;
-//        }
-//
-//        try {
-//            DiagramLock sessionLock = diagramLockService.getLock(diagramLock.getDiagramDbId());
-//            if (sessionLock == null || !diagramLock.getLockId().equals(sessionLock.getLockId())) {
-//                String error = "No matching lock found for provided lockId and diagramLock";
-//                auditLogger.logDiagramUnlock(username, diagramLock.getDiagramDbId(), false, error);
-//                logger.warn("CurationController.deletePersistedPathwayDiagram: {}", error);
-//                return Boolean.FALSE;
-//            }
-//
-//            String scopedAccount = service.getPathwayDiagramAccountName(username, diagramLock.getDiagramDbId());
-//            if (scopedAccount == null) {
-//                logger.warn("CurationController.deletePersistedPathwayDiagram: invalid scoped account for user {} and diagram {}", username, diagramLock.getDiagramDbId());
-//                return Boolean.FALSE;
-//            }
-//            boolean deleted = service.deletePersistedDiagramInstances(
-//                    new DiagramsPersistencePayload(null, diagramLock.getDiagramDbId()),
-//                    scopedAccount);
-//            if (!deleted) {
-//                String error = "No persisted pathway diagram found for the provided lock";
-//                auditLogger.logDiagramUnlock(username, diagramLock.getDiagramDbId(), false, error);
-//                logger.warn("CurationController.deletePersistedPathwayDiagram: {}", error);
-//                return Boolean.FALSE;
-//            }
-//
-//            boolean unlocked = diagramLockService.unlockDiagram(diagramLock);
-//            if (unlocked) {
-//                auditLogger.logDiagramUnlock(username, diagramLock.getDiagramDbId(), true, null);
-//                logger.info("CurationController.deletePersistedPathwayDiagram: Diagram {} deleted and unlocked by user {}", diagramLock.getDiagramDbId(), username);
-//                return Boolean.TRUE;
-//            }
-//
-//            String error = "Pathway diagram was removed, but unlock failed";
-//            auditLogger.logDiagramUnlock(username, diagramLock.getDiagramDbId(), false, error);
-//            logger.warn("CurationController.deletePersistedPathwayDiagram: {}", error);
-//            return Boolean.FALSE;
-//        }
-//        catch (Exception e) {
-//            logger.error("CurationController.deletePersistedPathwayDiagram: " + e.getMessage(), e);
-//            auditLogger.logDiagramUnlock(username, diagramLock.getDiagramDbId(), false, e.getMessage());
-//            return Boolean.FALSE;
-//        }
-        return Boolean.TRUE;
     }
 
     @GetMapping("findDatabaseObjectByDbId/{dbId}")
