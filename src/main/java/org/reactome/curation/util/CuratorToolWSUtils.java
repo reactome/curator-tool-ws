@@ -1,6 +1,9 @@
-package org.reactome.curation.model;
+package org.reactome.curation.util;
 
 import java.lang.reflect.Method;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 
@@ -13,6 +16,7 @@ import org.reactome.server.graph.domain.model.DatabaseObject;
  *
  */
 public class CuratorToolWSUtils {
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     
     public static List<String> getStructureRelatedAttributes() {
         return Arrays.asList(
@@ -63,4 +67,9 @@ public class CuratorToolWSUtils {
         return null; // Not found
     }
 
+    public static String getDateTime() {
+        // Use GMT to ensure the same time zone for all curators
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("GMT"));
+        return now.format(DATE_TIME_FORMATTER);
+    }
 }

@@ -113,6 +113,33 @@ public class PathwayDiagramService {
         this.diagramRepository.saveCytoscapeNetwork(pathwayDiagramId, text);
         this.exportPathwayDiagramJSON(pathwayDiagramId, cytoscapeJSON);
     }
+
+    // The following three methods are used to handle automatic backup of a cytosacpe diagram under editing.
+    public Boolean hasEditingCytoscapeNetwork(Long pathwayDiagramId) throws Exception {
+        return this.diagramRepository.hasEditingCytoscapeNetwork(pathwayDiagramId);
+    }
+
+    /**
+     * Back up a pathway diagram under active editing. This is differnt from uploading a pathway diagram
+     * after editing. Therefore, this is called "backup". The front-end should handle it automatically
+     * without users' intervention.
+     * @param pathwayDiagramId
+     * @param cytoscapeJson
+     * @throws Exception
+     */
+    public void backupCytoscapeNetwork(Long pathwayDiagramId, JsonNode cytoscapeJson) throws Exception {
+        String text = this.mapper.writeValueAsString(cytoscapeJson);
+        this.diagramRepository.backupCytoscapeNetwork(pathwayDiagramId, text);
+    }
+
+    public JsonNode loadEditingCytoscapeNetwork(Long pathwayDiagramId) throws Exception {
+        String text = this.diagramRepository.loadEditingCytoscapeNetwork(pathwayDiagramId);
+        if (text == null) {
+            return null;
+        }
+        JsonNode jsonNode = mapper.readTree(text);
+        return jsonNode;
+    }
     
     public void exportPathwayDiagramJSON(Long pathwayDiagramId, JsonNode cytoscapeJSON) throws Exception {
         this.initGraphConvertObjects();

@@ -24,7 +24,7 @@ import org.neo4j.cypherdsl.core.StatementBuilder.OngoingUpdate;
 import org.neo4j.cypherdsl.core.StatementBuilder.OrderableOngoingReadingAndWithWithoutWhere;
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
 import org.reactome.curation.model.CurationAttribute.DefiningAttributeValue;
-import org.reactome.curation.model.CuratorToolWSUtils;
+import org.reactome.curation.util.CuratorToolWSUtils;
 import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.NamedReferrerList;

@@ -67,6 +67,32 @@ public class PathwayDiagramRepository {
         writeJSON(networkJson, file);
     }
 
+    public void backupCytoscapeNetwork(Long pathwayDiagramId, String networkJson) throws IOException {
+        logger.debug("Backup cytoscape network for " + pathwayDiagramId + "...");
+        File fileName = new File(getCytoscapeJsonBackupDir(), pathwayDiagramId + ".json");
+        writeJSON(networkJson, fileName);
+    }
+
+    /**
+     * An editing cytoscape diagram is a back-up of a pathway diagram managed by a PathwayDiagram instance that is
+     * under active editing. This is different from a cytoscape diagram uploaded. Only the user obtains a lock to
+     * this editing diagram can access, which is controlled by the controller.
+     * @param pathwayDiagramId
+     * @return
+     * @throws IOException
+     */
+    public Boolean hasEditingCytoscapeNetwork(Long pathwayDiagramId) throws IOException {
+        File fileName = new File(getCytoscapeJsonBackupDir(), pathwayDiagramId + ".json");
+        return fileName.exists();
+    }
+
+    public String loadEditingCytoscapeNetwork(Long pathwayDiagramId) throws IOException {
+        File fileName = new File(getCytoscapeJsonBackupDir(), pathwayDiagramId + ".json");
+        if (!fileName.exists())
+            return null;
+        String text = new String(Files.readAllBytes(fileName.toPath()));
+        return text;
+    }
 
     private void writeJSON(String networkJson, File file) throws IOException {
         FileWriter fileWriter = new FileWriter(file);
@@ -75,9 +101,14 @@ public class PathwayDiagramRepository {
         bufferedWriter.close();
         fileWriter.close();
     }
-    
+
+    private String getCytoscapeJsonBackupDir() {
+        File dir = new File(toolEnv.getDiagramCytoscapeDir(), "editing");
+        return dir.getAbsolutePath();
+    }
+
     public String getDiagramGraphDir() {
         return toolEnv.getDiagramGraphDir();
-    }    
+    }
 
 }

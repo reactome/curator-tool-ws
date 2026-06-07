@@ -4,11 +4,21 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.reactome.curation.model.DiagramLock;
+import org.reactome.curation.repository.DiagramLockRepository;
+import org.springframework.dao.DataIntegrityViolationException;
 
-import java.util.Collection;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for DiagramLockService
@@ -17,11 +27,54 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("DiagramLockService Tests")
 class DiagramLockServiceTest {
 
+    private DiagramLockRepository mockRepository;
+    private Map<Long, DiagramLock> storage;
     private DiagramLockService service;
 
     @BeforeEach
     void setUp() {
-        service = new DiagramLockService();
+        storage = new HashMap<>();
+        mockRepository = mock(DiagramLockRepository.class);
+
+        when(mockRepository.load(anyLong())).thenAnswer(invocation -> {
+            Long diagramDbId = invocation.getArgument(0);
+            return Optional.ofNullable(storage.get(diagramDbId));
+        });
+        when(mockRepository.load()).thenAnswer(invocation -> new ArrayList<>(storage.values()));
+        when(mockRepository.findByUsername(any(String.class))).thenAnswer(invocation -> {
+            String username = invocation.getArgument(0);
+            List<DiagramLock> locks = new ArrayList<>();
+            for (DiagramLock lock : storage.values()) {
+                if (username.equals(lock.getUsername())) {
+                    locks.add(lock);
+                }
+            }
+            return locks;
+        });
+        when(mockRepository.existsByDiagramDbId(anyLong())).thenAnswer(invocation -> {
+            Long diagramDbId = invocation.getArgument(0);
+            return storage.containsKey(diagramDbId);
+        });
+        when(mockRepository.count()).thenAnswer(invocation -> (long) storage.size());
+        when(mockRepository.add(any(DiagramLock.class))).thenAnswer(invocation -> {
+            DiagramLock lock = invocation.getArgument(0);
+            if (storage.containsKey(lock.getDiagramDbId())) {
+                throw new DataIntegrityViolationException("Duplicate diagram lock for " + lock.getDiagramDbId());
+            }
+            storage.put(lock.getDiagramDbId(), lock);
+            return lock;
+        });
+        doAnswer(invocation -> {
+            Long diagramDbId = invocation.getArgument(0);
+            storage.remove(diagramDbId);
+            return null;
+        }).when(mockRepository).delete(any(Long.class));
+        doAnswer(invocation -> {
+            storage.clear();
+            return null;
+        }).when(mockRepository).deleteAll();
+
+        service = new DiagramLockService(mockRepository);
     }
 
     @Test
@@ -35,7 +88,6 @@ class DiagramLockServiceTest {
         assertNotNull(lock);
         assertEquals(diagramId, lock.getDiagramDbId());
         assertEquals(username, lock.getUsername());
-        assertEquals("LOCKED", lock.getStatus());
         assertNotNull(lock.getLockedAt());
     }
 
@@ -121,59 +173,6 @@ class DiagramLockServiceTest {
             service.lockDiagram(12345L, "");
         });
     }
-
-//    @Test
-//    @DisplayName("Should unlock a diagram successfully")
-//    void testUnlockDiagramSuccess() {
-//        Long diagramId = 12345L;
-//        String username = "curator1";
-//
-//        service.lockDiagram(diagramId, username);
-//        boolean result = service.unlockDiagram(diagramId, username);
-//
-//        assertTrue(result);
-//        assertNull(service.getLock(diagramId));
-//    }
-//
-//    @Test
-//    @DisplayName("Should return false when unlocking by different user")
-//    void testUnlockByDifferentUser() {
-//        Long diagramId = 12345L;
-//        String user1 = "curator1";
-//        String user2 = "curator2";
-//
-//        service.lockDiagram(diagramId, user1);
-//        boolean result = service.unlockDiagram(diagramId, user2);
-//
-//        assertFalse(result);
-//        assertNotNull(service.getLock(diagramId));
-//    }
-//
-//    @Test
-//    @DisplayName("Should return false when unlocking unlocked diagram")
-//    void testUnlockUnlockedDiagram() {
-//        Long diagramId = 12345L;
-//        String username = "curator1";
-//
-//        boolean result = service.unlockDiagram(diagramId, username);
-//
-//        assertFalse(result);
-//    }
-//
-//    @Test
-//    @DisplayName("Should check if diagram is locked")
-//    void testIsLocked() {
-//        Long diagramId = 12345L;
-//        String username = "curator1";
-//
-//        assertFalse(service.isLocked(diagramId));
-//
-//        service.lockDiagram(diagramId, username);
-//        assertTrue(service.isLocked(diagramId));
-//
-//        service.unlockDiagram(diagramId, username);
-//        assertFalse(service.isLocked(diagramId));
-//    }
 
     @Test
     @DisplayName("Should get lock information")

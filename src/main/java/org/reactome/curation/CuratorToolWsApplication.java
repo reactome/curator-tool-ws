@@ -9,7 +9,7 @@ import org.springframework.context.ApplicationContext;
 
 @SpringBootApplication
 @AutoConfiguration
-@EntityScan(basePackages = "org.reactome.curation.user.model")
+@EntityScan(basePackages = {"org.reactome.curation.user.model", "org.reactome.curation.model"})
 public class CuratorToolWsApplication {
 
 	public static void main(String[] args) {

@@ -9,7 +9,6 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 
-import org.reactome.curation.model.DiagramsPersistencePayload;
 import org.reactome.curation.model.UserInstances;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,11 +37,6 @@ public class CurationFileRepository {
     public void persist(UserInstances userInstances,
                         String fileName) throws Exception {
         persistObject(userInstances, fileName);
-    }
-
-    public void persist(DiagramsPersistencePayload payload,
-                        String fileName) throws Exception {
-        persistObject(payload, fileName);
     }
 
     private void persistObject(Object payload,

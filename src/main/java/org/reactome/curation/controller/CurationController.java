@@ -13,7 +13,6 @@ import org.reactome.curation.model.DiagramLock;
 import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.NamedReferrerList;
-import org.reactome.curation.model.DiagramsPersistencePayload;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.model.SimpleSchemaClass;
 import org.reactome.curation.model.UserInstances;
@@ -165,34 +164,14 @@ public class CurationController {
     @PostMapping("lockDiagram")
     public DiagramLock lockDiagram(@RequestBody SimpleInstance instance) {
         String username = getUsername();
-        try {
-            DatabaseObject databaseObject = converter.convert(instance, false);
-            if (databaseObject == null) {
-                logger.error("CurationController.lockDiagram: Cannot find the diagram instance with dbId: {}", instance.getDbId());
-                throw new DatabaseObjectNotFoundException(instance.getDbId());
-            }
-            Long dbId = databaseObject.getDbId();
-            DiagramLock lock = diagramLockService.lockDiagram(dbId, username);
-            if (lock != null && lock.getUsername() != null && !username.equals(lock.getUsername())) {
-                String error = "Diagram is already locked by user " + lock.getUsername();
-                auditLogger.logDiagramLock(username, dbId, false, error);
-                logger.warn("CurationController.lockDiagram: {}", error);
-                return lock;
-            }
-            auditLogger.logDiagramLock(username, dbId, true, null);
-            logger.info("CurationController.lockDiagram: Diagram {} locked by user {}", dbId, username);
-            return lock;
+        DiagramLock lock = diagramLockService.lockDiagram(instance.getDbId(), username);
+        if (lock != null && lock.getUsername() != null && !username.equals(lock.getUsername())) {
+            String error = username + " tried to lock the diagram " + instance.getDbId() + " but it has already been locked.";
+            auditLogger.logDiagramUpdate(username, instance.getDbId(), instance.getDisplayName(), false, error);
+            return null;
         }
-        catch(DatabaseObjectNotFoundException e) {
-            logger.error("CurationController.lockDiagram: " + e.getMessage(), e);
-            auditLogger.logDiagramLock(username, instance.getDbId(), false, e.getMessage());
-            throw e;
-        }
-        catch(Exception e) {
-            logger.error("CurationController.lockDiagram: " + e.getMessage(), e);
-            auditLogger.logDiagramLock(username, instance.getDbId(), false, e.getMessage());
-            throw new IllegalStateException(e.getMessage());
-        }
+        auditLogger.logDiagramLock(username, instance.getDbId(), true, null);
+        return lock;
     }
 
     /**
@@ -204,56 +183,44 @@ public class CurationController {
     @PostMapping("unlockDiagram")
     public Boolean unlockDiagram(@RequestBody DiagramLock diagramLock) {
         String username = getUsername();
-        try {
-
-            boolean unlocked = diagramLockService.unlockDiagram(diagramLock);
-            if (unlocked) {
-                auditLogger.logDiagramUnlock(username, diagramLock.getDiagramDbId(), true, null);
-                logger.info("CurationController.unlockDiagram: Diagram {} unlocked by user {}", diagramLock.getDiagramDbId(), username);
-                return Boolean.TRUE;
-            } else {
-                String error = "Diagram is not locked by current user or is not locked at all";
-                auditLogger.logDiagramUnlock(username, diagramLock.getDiagramDbId(), false, error);
-                logger.warn("CurationController.unlockDiagram: " + error);
-                return Boolean.FALSE;
-            }
-        }
-        catch(Exception e) {
-            logger.error("CurationController.unlockDiagram: " + e.getMessage(), e);
-            auditLogger.logDiagramUnlock(username, diagramLock.getDiagramDbId(), false, e.getMessage());
+        if (diagramLock.getUsername() != null && !username.equals(diagramLock.getUsername())) {
+            String error = username + " tried to unlock a diagram " + diagramLock.getDiagramDbId() + " locked by " + diagramLock.getUsername();
+            auditLogger.logDiagramUnlock(username, diagramLock.getDiagramDbId(), false, error);
             return Boolean.FALSE;
         }
+        auditLogger.logDiagramUnlock(username, diagramLock.getDiagramDbId(), true, null);
+        return diagramLockService.unlockDiagram(diagramLock);
     }
 
     /**
-     * Backup unlock endpoint using diagramDbId and lockId query parameters.
+     * Checks if a diagram is locked and returns lock information.
      *
-     * @param diagramDbId dbId of the diagram to unlock
-     * @param lockId lock identifier to validate unlock ownership
-     * @return true if unlock was successful, false otherwise
+     * @param pathwayDiagramDbId the dbId of a PathwayDiagram instance for lock query.
+     * @return DiagramLock object if locked, null otherwise
      */
-    @GetMapping("unlockDiagram")
-    public Boolean unlockDiagram(@RequestParam("diagramDbId") Long diagramDbId,
-                                 @RequestParam("lockId") String lockId) {
-        String username = getUsername();
-        try {
-            boolean unlocked = diagramLockService.unlockDiagram(diagramDbId, lockId);
-            if (unlocked) {
-                auditLogger.logDiagramUnlock(username, diagramDbId, true, null);
-                logger.info("CurationController.unlockDiagram(GET): Diagram {} unlocked by user {}", diagramDbId, username);
-                return Boolean.TRUE;
-            }
+    @GetMapping("getDiagramLock/{dbId}")
+    public DiagramLock getDiagramLock(@PathVariable("dbId") Long pathwayDiagramDbId) {
+        DiagramLock lock = diagramLockService.getLock(pathwayDiagramDbId);
+        if (lock == null)
+            return null;
+        // Need to remove lockId for security reason in case it is hacked
+        // A DiagramLock without lockId cannot be used to unlock a diagram.
+        DiagramLock copy = new DiagramLock();
+        copy.setDiagramDbId(lock.getDiagramDbId());
+        copy.setUsername(lock.getUsername());
+        copy.setLockedAt(lock.getLockedAt());
+        return copy;
+    }
 
-            String error = "Diagram is not locked by provided lockId or is not locked at all";
-            auditLogger.logDiagramUnlock(username, diagramDbId, false, error);
-            logger.warn("CurationController.unlockDiagram(GET): {}", error);
-            return Boolean.FALSE;
-        }
-        catch (Exception e) {
-            logger.error("CurationController.unlockDiagram(GET): " + e.getMessage(), e);
-            auditLogger.logDiagramUnlock(username, diagramDbId, false, e.getMessage());
-            return Boolean.FALSE;
-        }
+    /**
+     * Get all DiagramLocks for the current user.
+     * @return
+     */
+    @GetMapping("getDiagramLocks")
+    public List<DiagramLock> getDiagramLocks() {
+        String username = getUsername();
+        List<DiagramLock> locks = diagramLockService.getUserLocks(username);
+        return locks; // This user will have full DiagramLocks including lock ids so that they can delete it.
     }
 
     /**
@@ -264,90 +231,56 @@ public class CurationController {
      */
     @PostMapping("deletePersistedPathwayDiagram")
     public Boolean deletePersistedPathwayDiagram(@RequestBody DiagramLock diagramLock) {
-        String username = getUsername();
-        if (diagramLock == null || diagramLock.getDiagramDbId() == null || diagramLock.getDiagramDbId() <= 0) {
-            logger.warn("CurationController.deletePersistedPathwayDiagram: invalid diagramLock payload");
-            return Boolean.FALSE;
-        }
-
-        try {
-            DiagramLock sessionLock = diagramLockService.getLock(diagramLock.getDiagramDbId());
-            if (sessionLock == null || !diagramLock.getLockId().equals(sessionLock.getLockId())) {
-                String error = "No matching lock found for provided lockId and diagramLock";
-                auditLogger.logDiagramUnlock(username, diagramLock.getDiagramDbId(), false, error);
-                logger.warn("CurationController.deletePersistedPathwayDiagram: {}", error);
-                return Boolean.FALSE;
-            }
-
-            String scopedAccount = service.getPathwayDiagramAccountName(username, diagramLock.getDiagramDbId());
-            if (scopedAccount == null) {
-                logger.warn("CurationController.deletePersistedPathwayDiagram: invalid scoped account for user {} and diagram {}", username, diagramLock.getDiagramDbId());
-                return Boolean.FALSE;
-            }
-            boolean deleted = service.deletePersistedDiagramInstances(
-                    new DiagramsPersistencePayload(null, diagramLock.getDiagramDbId()),
-                    scopedAccount);
-            if (!deleted) {
-                String error = "No persisted pathway diagram found for the provided lock";
-                auditLogger.logDiagramUnlock(username, diagramLock.getDiagramDbId(), false, error);
-                logger.warn("CurationController.deletePersistedPathwayDiagram: {}", error);
-                return Boolean.FALSE;
-            }
-
-            boolean unlocked = diagramLockService.unlockDiagram(diagramLock);
-            if (unlocked) {
-                auditLogger.logDiagramUnlock(username, diagramLock.getDiagramDbId(), true, null);
-                logger.info("CurationController.deletePersistedPathwayDiagram: Diagram {} deleted and unlocked by user {}", diagramLock.getDiagramDbId(), username);
-                return Boolean.TRUE;
-            }
-
-            String error = "Pathway diagram was removed, but unlock failed";
-            auditLogger.logDiagramUnlock(username, diagramLock.getDiagramDbId(), false, error);
-            logger.warn("CurationController.deletePersistedPathwayDiagram: {}", error);
-            return Boolean.FALSE;
-        }
-        catch (Exception e) {
-            logger.error("CurationController.deletePersistedPathwayDiagram: " + e.getMessage(), e);
-            auditLogger.logDiagramUnlock(username, diagramLock.getDiagramDbId(), false, e.getMessage());
-            return Boolean.FALSE;
-        }
+//        String username = getUsername();
+//        if (diagramLock == null || diagramLock.getDiagramDbId() == null || diagramLock.getDiagramDbId() <= 0) {
+//            logger.warn("CurationController.deletePersistedPathwayDiagram: invalid diagramLock payload");
+//            return Boolean.FALSE;
+//        }
+//
+//        try {
+//            DiagramLock sessionLock = diagramLockService.getLock(diagramLock.getDiagramDbId());
+//            if (sessionLock == null || !diagramLock.getLockId().equals(sessionLock.getLockId())) {
+//                String error = "No matching lock found for provided lockId and diagramLock";
+//                auditLogger.logDiagramUnlock(username, diagramLock.getDiagramDbId(), false, error);
+//                logger.warn("CurationController.deletePersistedPathwayDiagram: {}", error);
+//                return Boolean.FALSE;
+//            }
+//
+//            String scopedAccount = service.getPathwayDiagramAccountName(username, diagramLock.getDiagramDbId());
+//            if (scopedAccount == null) {
+//                logger.warn("CurationController.deletePersistedPathwayDiagram: invalid scoped account for user {} and diagram {}", username, diagramLock.getDiagramDbId());
+//                return Boolean.FALSE;
+//            }
+//            boolean deleted = service.deletePersistedDiagramInstances(
+//                    new DiagramsPersistencePayload(null, diagramLock.getDiagramDbId()),
+//                    scopedAccount);
+//            if (!deleted) {
+//                String error = "No persisted pathway diagram found for the provided lock";
+//                auditLogger.logDiagramUnlock(username, diagramLock.getDiagramDbId(), false, error);
+//                logger.warn("CurationController.deletePersistedPathwayDiagram: {}", error);
+//                return Boolean.FALSE;
+//            }
+//
+//            boolean unlocked = diagramLockService.unlockDiagram(diagramLock);
+//            if (unlocked) {
+//                auditLogger.logDiagramUnlock(username, diagramLock.getDiagramDbId(), true, null);
+//                logger.info("CurationController.deletePersistedPathwayDiagram: Diagram {} deleted and unlocked by user {}", diagramLock.getDiagramDbId(), username);
+//                return Boolean.TRUE;
+//            }
+//
+//            String error = "Pathway diagram was removed, but unlock failed";
+//            auditLogger.logDiagramUnlock(username, diagramLock.getDiagramDbId(), false, error);
+//            logger.warn("CurationController.deletePersistedPathwayDiagram: {}", error);
+//            return Boolean.FALSE;
+//        }
+//        catch (Exception e) {
+//            logger.error("CurationController.deletePersistedPathwayDiagram: " + e.getMessage(), e);
+//            auditLogger.logDiagramUnlock(username, diagramLock.getDiagramDbId(), false, e.getMessage());
+//            return Boolean.FALSE;
+//        }
+        return Boolean.TRUE;
     }
 
-    /**
-     * Checks if a diagram is locked and returns lock information.
-     *
-     * @param dbId the dbId of the diagram
-     * @return DiagramLock object if locked, null otherwise
-     */
-    @GetMapping("getDiagramLock/{dbId}")
-    public DiagramLock getDiagramLock(@PathVariable("dbId") Long dbId) {
-        try {
-            return diagramLockService.getLock(dbId);
-        }
-        catch(Exception e) {
-            logger.error("CurationController.getDiagramLock: " + e.getMessage(), e);
-            return null;
-        }
-    }
-
-
-    /**
-     * Gets all currently locked diagrams across all users.
-     *
-     * @return map of all locked diagrams (diagramDbId -> DiagramLock)
-     */
-    @GetMapping("getAllLockedDiagrams")
-    public Map<Long, DiagramLock> getAllLockedDiagrams() {
-        try {
-            return diagramLockService.getAllLockedDiagrams();
-        }
-        catch(Exception e) {
-            logger.error("CurationController.getAllLockedDiagrams: " + e.getMessage(), e);
-            return new HashMap<>();
-        }
-    }
-
-    
     @GetMapping("findDatabaseObjectByDbId/{dbId}")
     public DatabaseObject findByDdId(@PathVariable("dbId") Long dbId) {
         DatabaseObject obj = service.findById(dbId);
@@ -721,19 +654,20 @@ public class CurationController {
         }
     }
 
-    @GetMapping("loadPathwayDiagrams/{account}")
-    public List<DiagramsPersistencePayload> loadPathwayDiagrams(@PathVariable("account") String account) {
-        try {
-            UserInstances instances = service.loadUserInstances(account);
-            if (instances == null || instances.getPathwayDiagrams() == null)
-                return new ArrayList<>();
-            return instances.getPathwayDiagrams();
-        }
-        catch (Exception e) {
-            logger.error("CurationController.loadPathwayDiagrams: " + e.getMessage(), e);
-            return new ArrayList<>();
-        }
-    }
+    // @GetMapping("loadPathwayDiagrams/{account}")
+    // COMMENTED OUT: DiagramsPersistencePayload not defined
+    // public List<DiagramsPersistencePayload> loadPathwayDiagrams(@PathVariable("account") String account) {
+    //     try {
+    //         UserInstances instances = service.loadUserInstances(account);
+    //         if (instances == null || instances.getPathwayDiagrams() == null)
+    //             return new ArrayList<>();
+    //         return instances.getPathwayDiagrams();
+    //     }
+    //     catch (Exception e) {
+    //         logger.error("CurationController.loadPathwayDiagrams: " + e.getMessage(), e);
+    //         return new ArrayList<>();
+    //     }
+    // }
 
     //TODO: Need to change the account into a more secure way!!!
     @DeleteMapping("deletePersistedInstances/{account}")
@@ -757,53 +691,55 @@ public class CurationController {
         }
     }
 
-    /**
-     * Persist a pathway diagram instance for a user session using the same flow as persistInstances.
-     */
-    @PostMapping("persistPathwayDiagram/{account}")
-    public Boolean persistPathwayDiagram(@RequestBody List<DiagramsPersistencePayload> payload,
-                                         @PathVariable("account") String account) {
-        try {
-            if (payload == null || payload.isEmpty())
-                throw new IllegalArgumentException("Payload must be a non-empty array");
+    // /**
+    //  * Persist a pathway diagram instance for a user session using the same flow as persistInstances.
+    //  */
+    // @PostMapping("persistPathwayDiagram/{account}")
+    // COMMENTED OUT: DiagramsPersistencePayload not defined, service methods not available
+    // public Boolean persistPathwayDiagram(@RequestBody List<DiagramsPersistencePayload> payload,
+    //                                      @PathVariable("account") String account) {
+    //     try {
+    //         if (payload == null || payload.isEmpty())
+    //             throw new IllegalArgumentException("Payload must be a non-empty array");
+    //
+    //         String username = getUsername();
+    //         if (!Objects.equals(username, account))
+    //             throw new IllegalArgumentException("Account path variable does not match the authenticated user");
+    //
+    //         List<DiagramsPersistencePayload> validatedPayloads = new ArrayList<>(payload.size());
+    //         for (DiagramsPersistencePayload item : payload) {
+    //             if (item == null || item.getNode() == null || item.getNode().isNull())
+    //                 throw new IllegalArgumentException("Each payload item must contain a network JsonNode");
+    //             Long pathwayDiagramId = item.getPathwayDiagramId();
+    //             if (pathwayDiagramId == null || pathwayDiagramId <= 0)
+    //                 throw new IllegalArgumentException("Each payload item must contain a valid pathwayDiagramId");
+    //
+    //             DiagramLock sessionLock = diagramLockService.getLock(pathwayDiagramId);
+    //             if (sessionLock == null || !username.equals(sessionLock.getUsername()))
+    //                 throw new IllegalArgumentException("No matching lock found for pathwayDiagramId " + pathwayDiagramId + " and user " + username);
+    //
+    //             validatedPayloads.add(new DiagramsPersistencePayload(item.getNode(), pathwayDiagramId));
+    //         }
+    //
+    //         service.persistDiagramInstances(validatedPayloads, account);
+    //         return Boolean.TRUE;
+    //     }
+    //     catch (Exception e) {
+    //         logger.error("CurationController.persistPathwayDiagram: " + e.getMessage(), e);
+    //         return Boolean.FALSE;
+    //     }
+    // }
 
-            String username = getUsername();
-            if (!Objects.equals(username, account))
-                throw new IllegalArgumentException("Account path variable does not match the authenticated user");
-
-            List<DiagramsPersistencePayload> validatedPayloads = new ArrayList<>(payload.size());
-            for (DiagramsPersistencePayload item : payload) {
-                if (item == null || item.getNode() == null || item.getNode().isNull())
-                    throw new IllegalArgumentException("Each payload item must contain a network JsonNode");
-                Long pathwayDiagramId = item.getPathwayDiagramId();
-                if (pathwayDiagramId == null || pathwayDiagramId <= 0)
-                    throw new IllegalArgumentException("Each payload item must contain a valid pathwayDiagramId");
-
-                DiagramLock sessionLock = diagramLockService.getLock(pathwayDiagramId);
-                if (sessionLock == null || !username.equals(sessionLock.getUsername()))
-                    throw new IllegalArgumentException("No matching lock found for pathwayDiagramId " + pathwayDiagramId + " and user " + username);
-
-                validatedPayloads.add(new DiagramsPersistencePayload(item.getNode(), pathwayDiagramId));
-            }
-
-            service.persistDiagramInstances(validatedPayloads, account);
-            return Boolean.TRUE;
-        }
-        catch (Exception e) {
-            logger.error("CurationController.persistPathwayDiagram: " + e.getMessage(), e);
-            return Boolean.FALSE;
-        }
-    }
-
-    /**
-     * Persist/update a single pathway diagram instance for a user session.
-     * Uses the same validation and lock checks as the batch endpoint.
-     */
-    @PostMapping("persistSinglePathwayDiagram/{account}")
-    public Boolean persistSinglePathwayDiagram(@RequestBody DiagramsPersistencePayload payload,
-                                               @PathVariable("account") String account) {
-        return persistPathwayDiagram(Collections.singletonList(payload), account);
-    }
+    // /**
+    //  * Persist/update a single pathway diagram instance for a user session.
+    //  * Uses the same validation and lock checks as the batch endpoint.
+    //  */
+    // @PostMapping("persistSinglePathwayDiagram/{account}")
+    // COMMENTED OUT: depends on persistPathwayDiagram which requires DiagramsPersistencePayload
+    // public Boolean persistSinglePathwayDiagram(@RequestBody DiagramsPersistencePayload payload,
+    //                                            @PathVariable("account") String account) {
+    //     return persistPathwayDiagram(Collections.singletonList(payload), account);
+    // }
 
 
 

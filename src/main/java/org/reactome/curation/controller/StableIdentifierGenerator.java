@@ -4,7 +4,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
-import org.reactome.curation.model.CuratorToolWSUtils;
+import org.reactome.curation.util.CuratorToolWSUtils;
 import org.reactome.curation.service.CurationService;
 import org.reactome.server.graph.domain.model.*;
 import org.slf4j.Logger;

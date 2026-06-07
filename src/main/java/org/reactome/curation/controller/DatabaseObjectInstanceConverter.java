@@ -13,7 +13,7 @@ import java.util.Set;
 
 import org.gk.model.InstanceNotFoundException;
 import org.reactome.curation.model.CurationAttribute;
-import org.reactome.curation.model.CuratorToolWSUtils;
+import org.reactome.curation.util.CuratorToolWSUtils;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.service.CurationService;
 import org.reactome.curation.service.InstanceEditManager;
