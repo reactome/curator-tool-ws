@@ -68,7 +68,7 @@ class CurationControllerDiagramLockTest {
 
         when(curationService.findById(diagramId)).thenReturn(diagram);
         when(diagramLockService.lockDiagram(diagramId, username)).thenReturn(
-            new DiagramLock(diagramId, username, now.format(FORMATTER))
+            new DiagramLock(diagramId, diagram.getDisplayName(), username, now.format(FORMATTER))
         );
 
         // Note: In real test, you would need to mock getUsername() or use SecurityContextHolder
@@ -98,7 +98,7 @@ class CurationControllerDiagramLockTest {
         DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("GMT"));
 
-        DiagramLock lock = new DiagramLock(diagramId, username, now.format(FORMATTER));
+        DiagramLock lock = new DiagramLock(diagramId, "", username, now.format(FORMATTER));
 
         when(diagramLockService.getLock(diagramId)).thenReturn(lock);
 
@@ -130,8 +130,8 @@ class CurationControllerDiagramLockTest {
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("GMT"));
         DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-        expectedMap.put(12345L, new DiagramLock(12345L, "curator1", now.format(FORMATTER)));
-        expectedMap.put(12346L, new DiagramLock(12346L, "curator2", now.format(FORMATTER)));
+        expectedMap.put(12345L, new DiagramLock(12345L, "", "curator1", now.format(FORMATTER)));
+        expectedMap.put(12346L, new DiagramLock(12346L, "", "curator2", now.format(FORMATTER)));
 
         when(diagramLockService.getAllLockedDiagrams()).thenReturn(expectedMap);
 

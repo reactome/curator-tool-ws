@@ -39,7 +39,7 @@ class DiagramLockRepositoryIntegrationTest {
     @Test
     void saveAndFindByDiagramDbIdShouldRoundTrip() {
         Long diagramDbId = 990001L;
-        DiagramLock lock = new DiagramLock(diagramDbId, "integration_tester", "2026-06-07 12:00:00");
+        DiagramLock lock = new DiagramLock(diagramDbId,"", "integration_tester", "2026-06-07 12:00:00");
 
         DiagramLock saved = diagramLockRepository.save(lock);
         assertNotNull(saved.getId(), "Saved lock should have generated id");

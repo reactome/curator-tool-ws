@@ -132,7 +132,7 @@ public class PathwayDiagramService {
         this.diagramRepository.backupCyNetwork(pathwayDiagramId, text);
     }
 
-    public JsonNode loadBackupCyNetwork(Long pathwayDiagramId) throws Exception {
+    public JsonNode loadBackupCyNetwork(Long pathwayDiagramId) throws IOException {
         String text = this.diagramRepository.loadBackupCyNetwork(pathwayDiagramId);
         if (text == null) {
             return null;

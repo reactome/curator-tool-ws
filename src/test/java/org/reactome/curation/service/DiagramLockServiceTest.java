@@ -1,12 +1,14 @@
 package org.reactome.curation.service;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.reactome.curation.model.DiagramLock;
 import org.reactome.curation.repository.DiagramLockRepository;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -243,5 +245,18 @@ class DiagramLockServiceTest {
     void testGetAllLockedDiagramsEmpty() {
         Map<Long, DiagramLock> allLocked = service.getAllLockedDiagrams();
         assertTrue(allLocked.isEmpty());
+    }
+
+    @Test
+    @DisplayName("Should keep DiagramLockService transactional for delete operations")
+    void testDiagramLockServiceIsTransactional() {
+        assertNotNull(DiagramLockService.class.getAnnotation(Transactional.class));
+    }
+
+    @Test
+    @DisplayName("Should keep repository deleteByDiagramDbId transactional")
+    void testDeleteByDiagramDbIdIsTransactional() throws NoSuchMethodException {
+        Method method = DiagramLockRepository.class.getMethod("deleteByDiagramDbId", Long.class);
+        assertNotNull(method.getAnnotation(Transactional.class));
     }
 }

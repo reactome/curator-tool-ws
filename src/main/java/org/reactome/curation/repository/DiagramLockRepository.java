@@ -2,6 +2,7 @@ package org.reactome.curation.repository;
 
 import org.reactome.curation.model.DiagramLock;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -11,6 +12,7 @@ public interface DiagramLockRepository extends JpaRepository<DiagramLock, Long> 
 
     List<DiagramLock> findByUsername(String username);
 
+    @Transactional
     void deleteByDiagramDbId(Long diagramDbId);
 
     boolean existsByDiagramDbId(Long diagramDbId);

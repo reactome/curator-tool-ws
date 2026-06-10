@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
  * Handles locking/unlocking diagrams, validating permissions, and tracking lock ownership.
  */
 @Service
+@Transactional
 public class DiagramLockService {
     private static final Logger logger = LoggerFactory.getLogger(DiagramLockService.class);
     private static final long MIN_DIAGRAM_ID = 1L;
@@ -54,7 +56,7 @@ public class DiagramLockService {
             return lock;
         }
 
-        DiagramLock newLock = new DiagramLock(diagramDbId, username, CuratorToolWSUtils.getDateTime());
+        DiagramLock newLock = new DiagramLock(diagramDbId, "", username, CuratorToolWSUtils.getDateTime());
         DiagramLock persistedLock = insertLockWithRaceHandling(newLock);
 
         logger.info("Diagram {} locked by user {}", diagramDbId, username);
@@ -176,7 +178,7 @@ public class DiagramLockService {
     public DiagramLock insertLock(Long diagramDbId, String username) {
         validateDiagramDbId(diagramDbId);
         validateUsername(username);
-        return insertLock(new DiagramLock(diagramDbId, username, CuratorToolWSUtils.getDateTime()));
+        return insertLock(new DiagramLock(diagramDbId, "", username, CuratorToolWSUtils.getDateTime()));
     }
 
     /**
@@ -222,8 +224,21 @@ public class DiagramLockService {
         }
 
         deleteLock(diagramDbId);
+        if (!isLockRemovalConfirmed(diagramDbId, lockId)) {
+            logger.error("Failed to remove lock {} for diagram {}", lockId, diagramDbId);
+            return false;
+        }
+
         logger.info("Diagram {} unlocked by user {}", diagramDbId, lock.getUsername());
         return true;
+    }
+
+    /**
+     * Confirms the specific lock was removed. A new lock with a different id may exist due to concurrent re-locking.
+     */
+    private boolean isLockRemovalConfirmed(Long diagramDbId, String removedLockId) {
+        Optional<DiagramLock> remainingLock = loadLock(diagramDbId);
+        return remainingLock.isEmpty() || !removedLockId.equals(remainingLock.get().getLockId());
     }
 
     /**

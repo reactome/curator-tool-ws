@@ -102,11 +102,13 @@ public class PathwayDiagramRepository {
     }
 
     private void writeJSON(String networkJson, File file) throws IOException {
-        FileWriter fileWriter = new FileWriter(file);
-        BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
-        bufferedWriter.write(networkJson);
-        bufferedWriter.close();
-        fileWriter.close();
+        File parent = file.getParentFile();
+        if (parent != null && !parent.exists()) {
+            Files.createDirectories(parent.toPath());
+        }
+        try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(file))) {
+            bufferedWriter.write(networkJson);
+        }
     }
 
     private String getBackupCyNetworkDir() {

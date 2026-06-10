@@ -26,6 +26,9 @@ public class DiagramLock {
     // id of the PathwayDiagram instance
     @Column(unique = true, nullable = false)
     private Long diagramDbId;
+    // Keep the display name to reduce api traffic.
+    @Column(nullable = false)
+    private String diagramDisplayName;
     // The user. This should be the user who logs in. It is not the default person.
     @Column(nullable = false)
     private String username;
@@ -38,8 +41,9 @@ public class DiagramLock {
     @Column(unique = true, nullable = false)
     private String lockId; // Unique identifier for the lock, useful for tracking and unlocking
 
-    public DiagramLock(Long diagramDbId, String username, String lockedAt) {
+    public DiagramLock(Long diagramDbId, String diagramDisplayName, String username, String lockedAt) {
         this.diagramDbId = diagramDbId;
+        this.diagramDisplayName = diagramDisplayName;
         this.username = username;
         this.lockedAt = lockedAt;
         this.lockId = UUID.randomUUID().toString(); // Generate a unique lock ID

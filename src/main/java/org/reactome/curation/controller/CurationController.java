@@ -109,9 +109,30 @@ public class CurationController {
             // To ensure the returned text is well formated JSON text for the front-end,
             // we will use JsonNode as a proxy for the JSON text.
             return diagramService.loadCyNetwork(pathwayId);
+        } catch (IOException e) {
+            logger.error("CurationController.loadCyNetwork: " + e.getMessage(), e);
+            throw new IllegalStateException(e.getMessage());
+        }
+    }
+
+//    @GetMapping("getUserLocks/{username}")
+//    public List<DiagramLock> getUserLocks(@PathVariable("username") String username) {
+//        try {
+//            return diagramLockService.getUserLocks(username);
+//        }
+//        catch(Exception e) {
+//            logger.error("CurationController.getUserLocks: " + e.getMessage(), e);
+//            return new ArrayList<>(); // Just return an empty list
+//        }
+//    }
+
+    @GetMapping("loadBackupCyNetwork/{pathwayId}")
+    public JsonNode loadBackupCyNetwork(@PathVariable("pathwayId") Long pathwayId) {
+        try {
+            return diagramService.loadBackupCyNetwork(pathwayId);
         }
         catch(IOException e) {
-            logger.error("CurationController.loadCyNetwork: " + e.getMessage(), e);
+            logger.error("CurationController.loadBackupCyNetwork: " + e.getMessage(), e);
             throw new IllegalStateException(e.getMessage());
         }
     }
@@ -179,6 +200,7 @@ public class CurationController {
         }
         try {
             diagramService.backupCyNetwork(pathwayDiagramId, networkJson);
+            lock.setHasBackupDiagram(true);
             return Boolean.TRUE;
         }
         catch(Exception e) {
@@ -193,6 +215,7 @@ public class CurationController {
      *
      * @return DiagramLock object containing lock information
      */
+    // TODO: change simpleIstance to use pathwayDiagramId
     @PostMapping("lockDiagram")
     public DiagramLock lockDiagram(@RequestBody SimpleInstance instance) {
         String username = getUsername();
