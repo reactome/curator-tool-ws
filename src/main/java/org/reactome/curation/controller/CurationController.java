@@ -215,17 +215,21 @@ public class CurationController {
      *
      * @return DiagramLock object containing lock information
      */
-    // TODO: change simpleIstance to use pathwayDiagramId
-    @PostMapping("lockDiagram")
-    public DiagramLock lockDiagram(@RequestBody SimpleInstance instance) {
+    @GetMapping("lockDiagram/{dbId}")
+    public DiagramLock lockDiagram(@PathVariable("dbId") Long pathwayDiagramDbId) {
         String username = getUsername();
-        DiagramLock lock = diagramLockService.lockDiagram(instance.getDbId(), username);
+        DiagramLock lock = diagramLockService.lockDiagram(pathwayDiagramDbId, username);
+        String displayName = "N/A";
+        DatabaseObject pathwayDiagram = service.findById(pathwayDiagramDbId);
+        if (pathwayDiagram != null && pathwayDiagram.getDisplayName() != null) {
+            displayName = pathwayDiagram.getDisplayName();
+        }
         if (lock != null && lock.getUsername() != null && !username.equals(lock.getUsername())) {
-            String error = username + " tried to lock the diagram " + instance.getDbId() + " but it has already been locked.";
-            auditLogger.logDiagramUpdate(username, instance.getDbId(), instance.getDisplayName(), false, error);
+            String error = username + " tried to lock the diagram " + pathwayDiagramDbId + " but it has already been locked.";
+            auditLogger.logDiagramUpdate(username, pathwayDiagramDbId, displayName, false, error);
             return null;
         }
-        auditLogger.logDiagramLock(username, instance.getDbId(), true, null);
+        auditLogger.logDiagramLock(username, pathwayDiagramDbId, true, null);
         return lock;
     }
 
