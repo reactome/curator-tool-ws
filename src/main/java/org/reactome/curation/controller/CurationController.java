@@ -168,12 +168,12 @@ public class CurationController {
             // Delete the back up if any
             diagramService.deleteBackupCyNetwork(pathwayDiagramId);
             service.addModifiedIE(pdInst, ie);
-            auditLogger.logDiagramUpdate(username, pathwayDiagramId, pdInst.getDisplayName(), true, null);
+            auditLogger.logDiagramUpdate(username, pathwayDiagramId, true, null);
             return Boolean.TRUE;
         }
         catch(Exception e) {
             logger.error("CurationController.saveCyNetwork: " + e.getMessage(), e);
-            auditLogger.logDiagramUpdate(username, pathwayDiagramId, "N/A", false, e.getMessage());
+            auditLogger.logDiagramUpdate(username, pathwayDiagramId, false, e.getMessage());
             return Boolean.FALSE;
         }
     }
@@ -219,14 +219,9 @@ public class CurationController {
     public DiagramLock lockDiagram(@PathVariable("dbId") Long pathwayDiagramDbId) {
         String username = getUsername();
         DiagramLock lock = diagramLockService.lockDiagram(pathwayDiagramDbId, username);
-        String displayName = "N/A";
-        DatabaseObject pathwayDiagram = service.findById(pathwayDiagramDbId);
-        if (pathwayDiagram != null && pathwayDiagram.getDisplayName() != null) {
-            displayName = pathwayDiagram.getDisplayName();
-        }
         if (lock != null && lock.getUsername() != null && !username.equals(lock.getUsername())) {
             String error = username + " tried to lock the diagram " + pathwayDiagramDbId + " but it has already been locked.";
-            auditLogger.logDiagramUpdate(username, pathwayDiagramDbId, displayName, false, error);
+            auditLogger.logDiagramUpdate(username, pathwayDiagramDbId, false, error);
             return null;
         }
         auditLogger.logDiagramLock(username, pathwayDiagramDbId, true, null);
