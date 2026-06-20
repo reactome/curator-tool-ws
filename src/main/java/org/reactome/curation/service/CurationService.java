@@ -15,7 +15,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.gk.model.ReactomeJavaConstants;
 import org.reactome.curation.config.CuratorToolEnv;
 import org.reactome.curation.model.*;
@@ -24,6 +23,7 @@ import org.reactome.curation.model.CurationAttribute.DefiningType;
 import org.reactome.curation.repository.CurationFileRepository;
 import org.reactome.curation.repository.CurationRepository;
 //import org.reactome.server.graph.aop.LazyFetchAspect;
+import org.reactome.curation.service.autofill.LiteratureReferenceAttributeAutoFiller;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.domain.model.Deleted;
 import org.reactome.server.graph.domain.model.InstanceEdit;
@@ -94,7 +94,7 @@ public class CurationService {
             logger.info("Cannot load clsName2Attributes: " + e.getMessage(), e);
         }
     }
-    
+
     private Map<String, Map<String, CurationAttribute>> initMapForClassDefinitions(Map<String, List<CurationAttribute>> clsName2Attributes) {
         Map<String, Map<String, CurationAttribute>> clsName2attName2Att = new HashMap<>();
         for (String clsName : clsName2Attributes.keySet()) {
