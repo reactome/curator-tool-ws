@@ -12,6 +12,7 @@ import java.util.Set;
 import org.gk.model.ReactomeJavaConstants;
 import org.junit.jupiter.api.Test;
 import org.reactome.curation.model.CurationAttribute;
+import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.service.CurationService;
 import org.reactome.server.graph.domain.model.Complex;
 import org.reactome.server.graph.domain.model.DatabaseObject;
@@ -40,6 +41,15 @@ class ServiceTests {
 
     @Test
     void contextLoads() {
+    }
+
+    @Test
+    public void testAutoFillRefSequence() throws Exception {
+        SimpleInstance reference = new SimpleInstance();
+        reference.setDbId(-1L);
+        reference.setSchemaClassName(ReactomeJavaConstants.ReferenceGeneProduct);
+        reference.setAttribute(ReactomeJavaConstants.identifier, "P10963");
+        reference = curationService.fillReferenceSequence(reference);
     }
 
     @Test

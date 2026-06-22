@@ -4,37 +4,46 @@
  */
 package org.reactome.curation.service.autofill;
 
-import java.awt.Component;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
-import javax.swing.JOptionPane;
-
-import org.gk.database.AttributeAutoFiller;
-import org.gk.model.GKInstance;
-import org.gk.model.InstanceDisplayNameGenerator;
-import org.gk.model.PersistenceAdaptor;
 import org.gk.model.ReactomeJavaConstants;
-import org.gk.persistence.MySQLAdaptor;
-import org.gk.persistence.PersistenceManager;
-import org.gk.persistence.XMLFileAdaptor;
-import org.reactome.curation.config.CuratorToolEnv;
+import org.reactome.curation.model.InstanceList;
+import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.repository.CurationRepository;
 import org.reactome.server.graph.repository.AdvancedDatabaseObjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * This is a template for concrete implementation of AttributeAutoFiller.
- * @author guanming
+ * Base class for concrete AttributeAutoFiller implementations in the web service.
+ * Provides access to the shared Spring-managed repositories.
  *
+ * @author guanming
  */
 public abstract class AbstractAttributeAutoFiller {
+
     @Autowired
     protected CurationRepository curationRepository;
     @Autowired
     protected AdvancedDatabaseObjectRepository objectRepository;
-    @Autowired
-    protected CuratorToolEnv config;
-    
+
+    /**
+     * Perform the auto-filling process for the given instance.
+     *
+     * @param instance the SimpleInstance to populate with fetched data
+     * @throws Exception if fetching or applying attribute data fails
+     */
+    public abstract void process(SimpleInstance instance) throws Exception;
+
+    /**
+     * A helper method to get a ReferenceDatabase instance for the specified instance.
+     * @param dbName
+     * @return
+     * @throws Exception
+     */
+    protected SimpleInstance getReferenceDatabase(String dbName) throws Exception {
+        // Using _displayName can fetch local shell instances.
+        InstanceList list = curationRepository.listInstances(ReactomeJavaConstants.ReferenceDatabase, 0, 1, dbName);
+        if (list != null && !list.isEmpty())
+            return list.getInstances().get(0);
+        return null;
+    }
+
 }

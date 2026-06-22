@@ -24,6 +24,7 @@ import org.reactome.curation.repository.CurationFileRepository;
 import org.reactome.curation.repository.CurationRepository;
 //import org.reactome.server.graph.aop.LazyFetchAspect;
 import org.reactome.curation.service.autofill.LiteratureReferenceAttributeAutoFiller;
+import org.reactome.curation.service.autofill.ReferenceGeneProductAutoFiller;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.domain.model.Deleted;
 import org.reactome.server.graph.domain.model.InstanceEdit;
@@ -77,6 +78,9 @@ public class CurationService {
     // Helper with auto filling literature reference
     @Autowired
     private LiteratureReferenceAttributeAutoFiller lrFiller;
+    // Helper with auto filling UniProt-backed reference sequence instances
+    @Autowired
+    private ReferenceGeneProductAutoFiller rpsFiller;
 
     
     public CurationService() {
@@ -243,9 +247,9 @@ public class CurationService {
     
     /**
      * Automatically fill the attributes of a LiteratureReference instance based on its PMID.
-     * @param instance
-     * @return
-     * @throws Exception
+     * @param instance the LiteratureReference SimpleInstance to populate
+     * @return the same instance with attributes filled from PubMed
+     * @throws Exception if PubMed fetch or parsing fails
      */
     public SimpleInstance fillLiteratureReference(SimpleInstance instance) throws Exception {
         if (!instance.getSchemaClassName().equals(ReactomeJavaConstants.LiteratureReference))
@@ -253,7 +257,30 @@ public class CurationService {
         lrFiller.process(instance);
         return instance;
     }
-    
+
+    /**
+     * Automatically fill the attributes of a UniProt-backed reference sequence instance
+     * (e.g. ReferenceGeneProduct, ReferencePeptideSequence, ReferenceRNASequence)
+     * based on its UniProt identifier.
+     *
+     * @param instance the reference sequence SimpleInstance to populate
+     * @return the same instance with attributes filled from UniProt
+     * @throws Exception if the UniProt fetch or parsing fails
+     */
+    public SimpleInstance fillReferenceSequence(SimpleInstance instance) throws Exception {
+        String cls = instance.getSchemaClassName();
+        if (cls == null)
+            throw new IllegalArgumentException("The passed instance has no schema class name.");
+        // Accept the standard UniProt-backed schema classes
+        if (!cls.equals(ReactomeJavaConstants.ReferenceGeneProduct) &&
+            !cls.equals(ReactomeJavaConstants.ReferencePeptideSequence) &&
+            !cls.equals(ReactomeJavaConstants.ReferenceRNASequence) &&
+            !cls.equals(ReactomeJavaConstants.ReferenceIsoform))
+            throw new IllegalArgumentException("The passed instance (" + cls + ") is not a supported reference sequence type.");
+        rpsFiller.process(instance);
+        return instance;
+    }
+
     /**
      * A helper method to count instances for each class and then add to its respective 
      * class object.

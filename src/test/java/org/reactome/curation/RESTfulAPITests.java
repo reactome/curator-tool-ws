@@ -9,6 +9,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.gk.model.ReactomeJavaConstants;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -759,15 +760,51 @@ class RESTfulAPITests {
         reference.setAttribute(ReactomeJavaConstants.pubMedIdentifier, 21794845);
         String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(reference);
         logger.info("Reaction in JSON:\n" + json);
-        
+
+        String jwt = getJWT();
+
         // Store
-        String rtn = mockMvc.perform(post(url).contentType(MediaType.APPLICATION_JSON)
+        String rtn = mockMvc.perform(post(url).header("Authorization", "Bearer " + jwt).contentType(MediaType.APPLICATION_JSON)
                 .content(json))
                 .andExpect(status().isOk())
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
         logger.info("Done filling a reference: " + rtn);
+    }
+
+    @Test
+    public void testFillRefReference() throws Exception {
+        assertNotNull(mockMvc);
+
+        String url = BASE_URL + "fillRefSequence";
+        logger.info("URL: " + url);
+
+        ObjectMapper mapper = CurationWSTestHelper.createObjectMapper();
+
+        SimpleInstance reference = new SimpleInstance();
+        reference.setDbId(-1L);
+        reference.setSchemaClassName(ReactomeJavaConstants.ReferenceGeneProduct);
+        reference.setAttribute(ReactomeJavaConstants.identifier, "P10963");
+        String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(reference);
+        logger.info("ReferenceGeneProduct in JSON:\n" + json);
+
+        // Store
+        String jwt = getJWT();
+        String rtn = mockMvc.perform(post(url).header("Authorization", "Bearer " + jwt).contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        logger.info("Done filling a reference: " + rtn);
+        prettyPrintSimpleInstance(rtn, mapper);
+    }
+
+    private void prettyPrintSimpleInstance(String json,
+                                           ObjectMapper mapper) throws JsonProcessingException {
+        SimpleInstance instance = mapper.readValue(json, SimpleInstance.class);
+        System.out.println("SimpleInstance from JSON:\n" + mapper.writerWithDefaultPrettyPrinter().writeValueAsString(instance));
     }
     
     @Test

@@ -1,6 +1,6 @@
 spring.neo4j.uri=${NEO4J_URI:bolt://localhost:7687}
-spring.neo4j.authentication.username={}}
-spring.neo4j.authentication.password={}}
+spring.neo4j.authentication.username={}
+spring.neo4j.authentication.password={}
 
 
 # For SchemaRepository: Make sure the graph database name is correct
@@ -30,6 +30,11 @@ spring.main.allow-bean-definition-overriding=true
 # Used to fetch pubmed detailed information
 pubmedUrl1=https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&retmode=xml&id=
 pubmedUrl2=
+
+# Used to fetch UniProt detailed information
+uniprotDownloadUrl=https://www.uniprot.org/uniprot/
+uniprotXmlFormat=.xml
+uniprotFlatFormat=.txt
 
 ## Used to persist instances worked by curators
 file_repo_dir=/Users/wug/git/reactome/curator-tool-ws/file_repo
@@ -77,8 +82,8 @@ server.port=9090
 # Don't lock the file so that we can test at local dev
 spring.datasource.url=${DATASOURCE_URL:jdbc:h2:file:./data/reactome_h2;DB_CLOSE_DELAY=-1;FILE_LOCK=NO}
 spring.datasource.driver-class-name=org.h2.Driver
-spring.datasource.username={}}
-spring.datasource.password={}}
+spring.datasource.username={}
+spring.datasource.password={}
 spring.h2.console.enabled=true
 spring.jpa.hibernate.ddl-auto=update
 # JPA (Hibernate) configuration

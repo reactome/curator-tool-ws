@@ -361,6 +361,25 @@ public class CurationController {
         } 
     }
 
+    /**
+     * Call this method to fill the attributes for a UniProt-backed reference sequence instance
+     * (ReferenceGeneProduct, ReferencePeptideSequence, ReferenceRNASequence, or ReferenceIsoform)
+     * based on its UniProt identifier.
+     *
+     * @param instance the reference sequence SimpleInstance containing an {@code identifier} attribute
+     * @return the same instance with attributes filled from UniProt
+     */
+    @PostMapping("fillRefSequence")
+    public SimpleInstance fillSequence(@RequestBody SimpleInstance instance) {
+        try {
+            return service.fillReferenceSequence(instance);
+        }
+        catch (Exception e) {
+            logger.error("CurationController.fillSequence: " + e.getMessage(), e);
+            throw new IllegalStateException(e.getMessage());
+        }
+    }
+
     //TODO: The error handling needs to be updated
     // See: https://www.toptal.com/java/spring-boot-rest-api-error-handling  
     /**

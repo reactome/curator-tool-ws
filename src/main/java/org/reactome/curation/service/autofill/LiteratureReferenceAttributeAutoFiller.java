@@ -22,12 +22,9 @@ import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.input.SAXBuilder;
 import org.jdom.output.XMLOutputter;
-import org.reactome.curation.config.CuratorToolEnv;
 import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.SimpleInstance;
-import org.reactome.curation.repository.CurationRepository;
-import org.reactome.server.graph.repository.AdvancedDatabaseObjectRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
@@ -39,6 +36,12 @@ import org.springframework.stereotype.Component;
 @Component
 public class LiteratureReferenceAttributeAutoFiller extends AbstractAttributeAutoFiller{
 
+    @Value("${pubmedUrl1}")
+    private String pubmedUrl1;
+
+    @Value("${pubmedUrl2}")
+    private String pubmedUrl2;
+
     public LiteratureReferenceAttributeAutoFiller() {
     }
 
@@ -49,7 +52,6 @@ public class LiteratureReferenceAttributeAutoFiller extends AbstractAttributeAut
         Reference ref = fetchInfo(Long.valueOf(pmid));
         if (ref == null)
             return;
-        List<SimpleInstance> autoCreatedInstances = new ArrayList<>();
         instance.setAttribute("title", ref.getTitle());
         // Get the digital from string
         String vol = ref.getVolume();
@@ -74,7 +76,7 @@ public class LiteratureReferenceAttributeAutoFiller extends AbstractAttributeAut
         List<Person> persons = ref.getAuthors();
         if (persons != null && persons.size() > 0) {
             for (Person person : persons) {
-                SimpleInstance authorInstance = queryPerson(person, autoCreatedInstances);
+                SimpleInstance authorInstance = queryPerson(person);
                 authors.add(authorInstance);
             }
             instance.setAttribute(ReactomeJavaConstants.author, authors);
@@ -89,8 +91,7 @@ public class LiteratureReferenceAttributeAutoFiller extends AbstractAttributeAut
      * @return a SimpleInstance representing the person
      * @throws Exception if query fails
      */
-    private SimpleInstance queryPerson(Person person,
-                                       List<SimpleInstance> autoCreatedInstances) throws Exception {
+    private SimpleInstance queryPerson(Person person) throws Exception {
         // For the time being, we do a display name based search. But the final logic should be based on 
         // the original Java desktop version implementation (see the code there).
         String displayName = person.getLastName() == null ? "" : person.getLastName();
@@ -131,13 +132,11 @@ public class LiteratureReferenceAttributeAutoFiller extends AbstractAttributeAut
         authorInstance.setAttribute(ReactomeJavaConstants.firstname,
                                     person.getFirstName());
         // Leave display name and dbId empty and have the front-end to handle these two slots.
-        if (autoCreatedInstances != null)
-            autoCreatedInstances.add(authorInstance);
         return authorInstance;
     }
 
     public Reference fetchInfo(Long pmid) throws Exception {
-        String url = config.getPubmedUrl1() + pmid + config.getPubmedUrl2();
+        String url = pubmedUrl1 + pmid + pubmedUrl2;
         URL pubmed = new URL(url);
         URLConnection connection = pubmed.openConnection();
         InputStream is = connection.getInputStream();
