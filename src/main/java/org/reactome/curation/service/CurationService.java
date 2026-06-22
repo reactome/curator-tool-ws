@@ -25,6 +25,7 @@ import org.reactome.curation.repository.CurationFileRepository;
 import org.reactome.curation.repository.CurationRepository;
 //import org.reactome.server.graph.aop.LazyFetchAspect;
 import org.reactome.curation.service.autofill.LiteratureReferenceAttributeAutoFiller;
+import org.reactome.curation.service.autofill.ReferenceGeneProductAutoFiller;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.domain.model.Deleted;
 import org.reactome.server.graph.domain.model.InstanceEdit;
@@ -78,6 +79,9 @@ public class CurationService {
     // Helper with auto filling literature reference
     @Autowired
     private LiteratureReferenceAttributeAutoFiller lrFiller;
+    // Helper with auto filling PsiMOD instances from OLS
+    @Autowired
+    private PsiModAttributeAutoFiller psiModFiller;
     // Helper with auto filling UniProt-backed reference sequence instances
     @Autowired
     private ReferenceGeneProductAutoFiller rpsFiller;
@@ -255,6 +259,18 @@ public class CurationService {
         if (!instance.getSchemaClassName().equals(ReactomeJavaConstants.LiteratureReference))
             throw new IllegalArgumentException("The passed instance is not a LiteratureReference.");
         lrFiller.process(instance);
+        return instance;
+    }
+
+    /**
+     * Automatically fill attributes of a PsiMOD instance based on its ontology identifier.
+     *
+     * @param instance the PsiMOD SimpleInstance to populate
+     * @return the same instance with PsiMOD data applied
+     * @throws Exception if ontology fetch or parsing fails
+     */
+    public SimpleInstance fillPsiMod(SimpleInstance instance) throws Exception {
+        psiModFiller.process(instance);
         return instance;
     }
 
