@@ -53,6 +53,16 @@ class ServiceTests {
     }
 
     @Test
+    public void testAutoExternalOntology() throws Exception {
+        SimpleInstance reference = new SimpleInstance();
+        reference.setDbId(-1L);
+        reference.setSchemaClassName(ReactomeJavaConstants.PsiMod);
+        reference.setAttribute(ReactomeJavaConstants.identifier, "00130");
+        reference = curationService.fillPsiMod(reference);
+        System.out.println(reference);
+    }
+
+    @Test
     public void testFindById() throws JsonProcessingException {
         assertNotNull(curationService);
         Long[] dbIds = {

@@ -1,54 +1,70 @@
-spring.neo4j.uri=bolt://localhost:7687
-spring.neo4j.authentication.username=neo4j
-spring.neo4j.authentication.password=outside-edgar-derby-oscar-plasma-4182
+spring.neo4j.uri=${NEO4J_URI:bolt://localhost:7687}
+spring.neo4j.authentication.username={}}
+spring.neo4j.authentication.password={}}
+
 
 # For SchemaRepository: Make sure the graph database name is correct
-# usually graph.db or neo4j. Make sure it is the same as the database
+# usually graph.db or neo4j. Make sure it is the same as the database 
 # used in the above neo4j.uri!
 #spring.data.neo4j.database=neo4j
 spring.data.neo4j.database=graph.db
-server.port=9090
 
-logging.level.org.springframework.data.neo4j=DEBUG
+logging.level.org.springframework.data.neo4j=INFO
+logging.level.org.springframework.security=INFO
+logging.level.org.reactome.server.tools.reaction.exporter=INFO
+# Directory for the rolling log file (used by logback-spring.xml)
+logging.dir=logs
 
 clientUrl=http://localhost:4200
-jwt.header=Authorization
-jwt.secret=8fhgeigayuf64oq8ltw36pi84wl87trf8afpw7ty934t7fwaeGTFyugfldlsjfdglja
 
 # The following is copied from content-service
 #The bean 'lazyFetchAspect', defined in graph core Main.class
 spring.main.allow-bean-definition-overriding=true
 
-# This is used to avoid exporting null in JSON. See
+# This is used to avoid exporting null in JSON. See 
 # https://docs.spring.io/spring-boot/docs/1.5.x/reference/html/howto-spring-mvc.html#howto-customize-the-jackson-objectmapper
 # and https://stackoverflow.com/questions/51261809/spring-boot-jackson-non-null-property-not-working
 # Apparently the following cannot work reliably. Follow the example to use a class level configuration.
 #spring.jackson.default-property-inclusion=NON_NULL
 
+# Used to fetch ontology terms from the EBI OLS REST API
+ols.base-url=http://www.ebi.ac.uk/ols/api/ontologies/
+
 # Used to fetch pubmed detailed information
 pubmedUrl1=https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&retmode=xml&id=
 pubmedUrl2=
 
-# Used to persist instances worked by curators
-file_repo_dir=/Users/beaversd/git/reactome/curator-tool-ws/file_repo
+# Used to fetch UniProt detailed information
+uniprotDownloadUrl=https://www.uniprot.org/uniprot/
+uniprotXmlFormat=.xml
+uniprotFlatFormat=.txt
 
-# Used for handling pathway diagrams
-diagram_graph_dir=/Users/beaversd/diagram/graph
-diagram_cytoscape_dir=/Users/beaversd/diagram/cytoscape
+## Used to persist instances worked by curators
+file_repo_dir=/Users/wug/git/reactome/curator-tool-ws/file_repo
+#
+## Used for handling pathway diagrams
+diagram_graph_dir=/Users/wug/Documents/web_curator_tool/diagram/graph
+##diagram_graph_dir=/Users/wug/Documents/web_curator_tool/diagram/PathwayDiagram
+diagram_cytoscape_dir=/Users/wug/Documents/web_curator_tool/diagram/cytoscape
+# To control the time for reusing InstanceEdit (time unit: second)
+instance_edit_duration=60
+# Root directory for storing files related to figure generation. This is used by the figure generation module to store temporary files and generated figures. Make sure this directory exists and has write permissions.
+figure_root_dir=/Users/wug/Documents/web_curator_tool
+
 # JWT Token Configuration (time unit: milliseconds)
 # 5 minutes
 jwt.access-token-time=300000
 # 20 seconds for testing
 #jwt.access-token-time=20000
-# 20 minutes
-jwt.idle-token-time=1200000
+# 20 minutes 
+jwt.idle-token-time=1200000 
 # 24 hours. Nobody will use the refresh token to get a new access token after 24 hours. So it is basically the same as the access token time.
-jwt.refresh-token-time=86400000
+jwt.refresh-token-time=86400000 
 
 # File backup configuration - maximum number of backup files to keep
 staged-file.backup.max-count=50
 
-# a flag to control whether the application is running at local development environment.
+# a flag to control whether the application is running at local development environment. 
 # his is used to control some configurations that are only suitable for local development
 isProduction=false
 #isProduction=true
@@ -60,17 +76,18 @@ isProduction=false
 #diagram_graph_dir=/home/gwu/curator-tool-ws/diagram/graph
 #diagram_cytoscape_dir=/home/gwu/curator-tool-ws/diagram/cytoscape
 
+server.port=9090
 
 # Used to manage the user database in an embedded h2 database
-# Make sure this is changed at the server!
+# Make sure this is changed at the server: There is no need to change this. Just make sure
+# the files in data are copied to the server.
 #spring.datasource.url=jdbc:h2:file:./data/reactome_h
 # Don't lock the file so that we can test at local dev
-spring.datasource.url=jdbc:h2:file:./data/reactome_h2;DB_CLOSE_DELAY=-1;FILE_LOCK=NO
+spring.datasource.url=${DATASOURCE_URL:jdbc:h2:file:./data/reactome_h2;DB_CLOSE_DELAY=-1;FILE_LOCK=NO}
 spring.datasource.driver-class-name=org.h2.Driver
-spring.datasource.username=reactome
-spring.datasource.password=web_tool_h2_er
+spring.datasource.username={}}
+spring.datasource.password={}}
 spring.h2.console.enabled=true
 spring.jpa.hibernate.ddl-auto=update
 # JPA (Hibernate) configuration
 spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect
-

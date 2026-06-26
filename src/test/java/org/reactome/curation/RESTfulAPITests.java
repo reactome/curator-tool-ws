@@ -12,6 +12,7 @@ import java.util.List;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.gk.model.ReactomeJavaConstants;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.reactome.curation.controller.DatabaseObjectInstanceConverter;
@@ -19,6 +20,7 @@ import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.user.model.User;
+import org.reactome.curation.user.service.UserService;
 import org.reactome.server.graph.domain.model.*;
 import org.reactome.server.graph.utils.ReactomeGraphCore;
 import org.slf4j.Logger;
@@ -47,10 +49,21 @@ class RESTfulAPITests {
     private DatabaseObjectInstanceConverter converter;
     @Autowired
     private ApplicationContext applicationContext;
+    @Autowired
+    private UserService userService;
 
     @BeforeAll
     void setReactomeGraphCoreContextForTests() {
         ReactomeGraphCore.setContext(applicationContext);
+    }
+
+    @BeforeEach
+    void setupTestUser() {
+        try {
+            userService.saveUser("test", "password");
+        } catch (IllegalArgumentException e) {
+            // User already exists, that's okay
+        }
     }
 
     @Test
@@ -788,6 +801,34 @@ class RESTfulAPITests {
         reference.setAttribute(ReactomeJavaConstants.identifier, "P10963");
         String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(reference);
         logger.info("ReferenceGeneProduct in JSON:\n" + json);
+
+        // Store
+        String jwt = getJWT();
+        String rtn = mockMvc.perform(post(url).header("Authorization", "Bearer " + jwt).contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        logger.info("Done filling a reference: " + rtn);
+        prettyPrintSimpleInstance(rtn, mapper);
+    }
+
+    @Test
+    public void testFillExternalOntology() throws Exception {
+        assertNotNull(mockMvc);
+
+        String url = BASE_URL + "fillPsiMod";
+        logger.info("URL: " + url);
+
+        ObjectMapper mapper = CurationWSTestHelper.createObjectMapper();
+
+        SimpleInstance reference = new SimpleInstance();
+        reference.setDbId(-1L);
+        reference.setSchemaClassName(ReactomeJavaConstants.PsiMod);
+        reference.setAttribute(ReactomeJavaConstants.identifier, "00130");
+        String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(reference);
+        logger.info("PsiMod in JSON:\n" + json);
 
         // Store
         String jwt = getJWT();

@@ -12,24 +12,30 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.net.http.HttpClient.Version;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 /**
  * Helper for reading ontology terms from the EBI OLS REST API.
  */
-public final class PsiModOlsUtil {
-    private static final String OLS_BASE_URL = "https://www.ebi.ac.uk/ols/api/ontologies/";
+@Component
+public class OLSUtil {
+
+    @Value("${ols.base-url:http://www.ebi.ac.uk/ols/api/ontologies/}")
+    private String olsBaseUrl;
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final HttpClient CLIENT = HttpClient.newBuilder()
+            .version(Version.HTTP_1_1)
             .connectTimeout(Duration.ofSeconds(10))
+            .followRedirects(HttpClient.Redirect.NORMAL)
             .build();
 
-    private PsiModOlsUtil() {
-    }
-
-    public static String getTermById(String termId, String ontologyName) {
+    public String getTermById(String termId, String ontologyName) {
         JsonNode termNode = fetchTermNode(termId, ontologyName);
         if (termNode == null) {
             return "";
@@ -38,7 +44,7 @@ public final class PsiModOlsUtil {
         return label == null ? "" : label.asText("");
     }
 
-    public static Map<String, String> getTermXrefs(String termId, String ontologyName) {
+    public Map<String, String> getTermXrefs(String termId, String ontologyName) {
         JsonNode termNode = fetchTermNode(termId, ontologyName);
         if (termNode == null) {
             return new LinkedHashMap<>();
@@ -46,7 +52,7 @@ public final class PsiModOlsUtil {
         return extractXrefs(termNode);
     }
 
-    public static Map<String, String> getTermMetadata(String termId, String ontologyName) {
+    public Map<String, String> getTermMetadata(String termId, String ontologyName) {
         JsonNode termNode = fetchTermNode(termId, ontologyName);
         if (termNode == null) {
             return new LinkedHashMap<>();
@@ -70,33 +76,57 @@ public final class PsiModOlsUtil {
     static Map<String, String> extractMetadata(JsonNode termNode) {
         Map<String, String> meta = new LinkedHashMap<>();
 
+        // Extract formula if present
+        JsonNode oboSynonymNode = termNode.path("obo_synonym");
+        if (oboSynonymNode.isArray()) {
+            for (JsonNode syn : oboSynonymNode) {
+                if (syn.path("type").asText("").equals("FORMULA")) {
+                    String formula = syn.path("name").asText();
+                    if (formula != null && !formula.isBlank()) {
+                        meta.put("FORMULA_synonym", formula);
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Extract definition
         String definition = firstTextValue(termNode.path("description"));
         if (definition != null && !definition.isBlank()) {
             meta.put("definition", definition);
         }
 
+        // Extract synonyms from multiple sources
         List<String> synonyms = new ArrayList<>();
+        String label = termNode.path("label").asText();
+
         collectTextLeaves(termNode.path("synonyms"), synonyms);
         collectTextLeaves(termNode.path("annotation").path("has_related_synonym"), synonyms);
         collectTextLeaves(termNode.path("annotation").path("related_synonym"), synonyms);
         collectTextLeaves(termNode.path("annotation").path("exact_synonym"), synonyms);
 
-        int index = 0;
-        for (String synonym : synonyms) {
-            if (synonym == null || synonym.isBlank()) {
-                continue;
-            }
-            meta.put("related_" + index + "_synonym", synonym);
-            index++;
+        // Remove duplicates and the label itself
+        Set<String> uniqueSynonyms = new java.util.LinkedHashSet<>(synonyms);
+        uniqueSynonyms.remove(label);
+        uniqueSynonyms.removeIf(s -> s == null || s.isBlank());
+
+        // Store synonyms with multiple key formats for backward compatibility
+        int i = 0;
+        for (String synonym : uniqueSynonyms) {
+            meta.put(i + "_related_synonym", synonym);
+            meta.put("related_synonym_" + i, synonym);
+            meta.put("exact_synonym_" + i, synonym);
+            i++;
         }
+
         return meta;
     }
 
-    static URI buildTermUri(String termId, String ontologyName) {
-        return URI.create(OLS_BASE_URL + encode(ontologyName) + "/terms?obo_id=" + encode(termId));
+    URI buildTermUri(String termId, String ontologyName) {
+        return URI.create(olsBaseUrl + encode(ontologyName) + "/terms?obo_id=" + encode(termId));
     }
 
-    static JsonNode fetchTermNode(String termId, String ontologyName) {
+    JsonNode fetchTermNode(String termId, String ontologyName) {
         try {
             HttpRequest request = HttpRequest.newBuilder(buildTermUri(termId, ontologyName))
                     .timeout(Duration.ofSeconds(20))
@@ -114,10 +144,21 @@ public final class PsiModOlsUtil {
             }
             return terms.get(0);
         }
-        catch (IOException | InterruptedException e) {
-            if (e instanceof InterruptedException) {
-                Thread.currentThread().interrupt();
+        catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return null;
+        }
+        catch (IOException e) {
+            // Handle connection errors including GOAWAY, connection reset, etc.
+            if (e.getMessage() != null && (e.getMessage().contains("GOAWAY") ||
+                    e.getMessage().contains("Connection reset") ||
+                    e.getMessage().contains("connection reset by peer"))) {
+                return null;
             }
+            return null;
+        }
+        catch (Exception e) {
+            // Catch any other unexpected exceptions
             return null;
         }
     }

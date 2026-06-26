@@ -1,12 +1,12 @@
 package org.reactome.curation.service.autofill;
 
-import java.awt.Component;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import org.gk.model.ReactomeJavaConstants;
 import org.reactome.curation.model.SimpleInstance;
+import org.springframework.beans.factory.annotation.Autowired;
 
 
 /**
@@ -16,6 +16,9 @@ import org.reactome.curation.model.SimpleInstance;
  */
 @org.springframework.stereotype.Component
 public class PsiModAttributeAutoFiller extends AbstractAttributeAutoFiller {
+
+    @Autowired
+    protected OLSUtil olsUtil;
 
     protected String ONTOLOGY_NAME = "MOD";
     protected String displayOntologyName = "PsiMod";
@@ -50,7 +53,7 @@ public class PsiModAttributeAutoFiller extends AbstractAttributeAutoFiller {
             }
         }
         String termId = ONTOLOGY_NAME + ":" + identifier;
-        String term = PsiModOlsUtil.getTermById(termId,ONTOLOGY_NAME);
+        String term = olsUtil.getTermById(termId,ONTOLOGY_NAME);
 //        if (term == null || term.isBlank()) {
 //            return;
 //        }
@@ -78,7 +81,7 @@ public class PsiModAttributeAutoFiller extends AbstractAttributeAutoFiller {
 
     protected void mapMetaToAttributes(SimpleInstance instance,
                                        String termId) throws Exception {
-        Map<String, String> meta = PsiModOlsUtil.getTermMetadata(termId, ONTOLOGY_NAME);
+        Map<String, String> meta = olsUtil.getTermMetadata(termId, ONTOLOGY_NAME);
         if (meta == null || meta.isEmpty())
             return;
         for (String key : meta.keySet()) {
