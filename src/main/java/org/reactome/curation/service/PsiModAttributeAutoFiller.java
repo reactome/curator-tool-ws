@@ -13,9 +13,9 @@ import org.reactome.curation.util.PsiModOlsUtil;
 /**
  * This class is used to fetch attributes for PsiMOD instances directly from the EBI ontology web service.
  * @author wgm
- *
+ * @deprecated Use {@link org.reactome.curation.service.autofill.PsiModAttributeAutoFiller} instead.
  */
-@org.springframework.stereotype.Component
+@Deprecated
 public class PsiModAttributeAutoFiller {
 
     protected String ONTOLOGY_NAME = "MOD";

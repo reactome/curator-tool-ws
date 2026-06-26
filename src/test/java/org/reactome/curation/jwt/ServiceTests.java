@@ -36,7 +36,7 @@ class ServiceTests {
     @Test
     void createUser() {
         // There is another test user: test and password
-        String username = "guanming";
+        String username = "deidre";
         String password = "password";
 //        String username = "test";
 //        String password = "password";

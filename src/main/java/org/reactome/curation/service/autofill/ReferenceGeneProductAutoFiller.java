@@ -79,7 +79,7 @@ public class ReferenceGeneProductAutoFiller extends AbstractAttributeAutoFiller 
         if (nameNode != null)
             addToListAttribute(instance, "secondaryIdentifier", nameNode.getText());
 
-        path = "*[local-name()='protein']/*[local-name()='name']/text()";
+        path = "*[local-name()='protein']/*[local-name()='recommendedName']/*[local-name()='fullName']/text()";
         List<?> proteinNameNodes = XPath.selectNodes(entry, path);
         for (Object obj : proteinNameNodes) {
             Text text = (Text) obj;

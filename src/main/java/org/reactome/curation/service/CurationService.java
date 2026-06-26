@@ -86,8 +86,6 @@ public class CurationService {
     // Helper with auto filling UniProt-backed reference sequence instances
     @Autowired
     private ReferenceGeneProductAutoFiller rpsFiller;
-    @Autowired
-    private PsiModAttributeAutoFiller psiModFiller;
 
     
     public CurationService() {
@@ -265,17 +263,7 @@ public class CurationService {
         return instance;
     }
 
-    /**
-     * Automatically fill attributes of a PsiMOD instance based on its ontology identifier.
-     *
-     * @param instance the PsiMOD SimpleInstance to populate
-     * @return the same instance with PsiMOD data applied
-     * @throws Exception if ontology fetch or parsing fails
-     */
-    public SimpleInstance fillPsiMod(SimpleInstance instance) throws Exception {
-        psiModFiller.process(instance);
-        return instance;
-    }
+
 
     /**
      * Automatically fill the attributes of a UniProt-backed reference sequence instance
