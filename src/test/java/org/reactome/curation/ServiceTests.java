@@ -64,6 +64,21 @@ class ServiceTests {
     }
 
     @Test
+    public void testAutoFillChEBI() throws Exception {
+        // CHEBI:15422 is adenosine 5'-triphosphate (ATP), a well-known compound with formula and synonyms
+        SimpleInstance reference = new SimpleInstance();
+        reference.setDbId(-1L);
+        reference.setSchemaClassName(ReactomeJavaConstants.ReferenceMolecule);
+        // ReferenceMolecule dbId = 2395915 at the database
+        reference.setAttribute(ReactomeJavaConstants.identifier, "65119");
+        reference = curationService.fillChEBI(reference);
+        System.out.println("ChEBI result: " + reference);
+        System.out.println("Attributes: " + reference.getAttributes());
+        assertNotNull(reference.getDisplayName(), "Display name should be set after ChEBI fill");
+        assertNotNull(reference.getAttribute("formula"), "Formula should be set after ChEBI fill");
+    }
+
+    @Test
     public void testFindById() throws JsonProcessingException {
         assertNotNull(curationService);
         Long[] dbIds = {

@@ -28,8 +28,8 @@ public class OLSUtil {
 
     @Value("${ols.base-url:http://www.ebi.ac.uk/ols/api/ontologies/}")
     private String olsBaseUrl;
-    private static final ObjectMapper MAPPER = new ObjectMapper();
-    private static final HttpClient CLIENT = HttpClient.newBuilder()
+    private final ObjectMapper MAPPER = new ObjectMapper();
+    private final HttpClient CLIENT = HttpClient.newBuilder()
             .version(Version.HTTP_1_1)
             .connectTimeout(Duration.ofSeconds(10))
             .followRedirects(HttpClient.Redirect.NORMAL)
@@ -60,7 +60,7 @@ public class OLSUtil {
         return extractMetadata(termNode);
     }
 
-    static Map<String, String> extractXrefs(JsonNode termNode) {
+    private Map<String, String> extractXrefs(JsonNode termNode) {
         JsonNode xrefNode = termNode.path("annotation").path("database_cross_reference");
         List<String> xrefs = new ArrayList<>();
         collectTextLeaves(xrefNode, xrefs);
@@ -73,22 +73,8 @@ public class OLSUtil {
         return rtn;
     }
 
-    static Map<String, String> extractMetadata(JsonNode termNode) {
+    private Map<String, String> extractMetadata(JsonNode termNode) {
         Map<String, String> meta = new LinkedHashMap<>();
-
-        // Extract formula if present
-        JsonNode oboSynonymNode = termNode.path("obo_synonym");
-        if (oboSynonymNode.isArray()) {
-            for (JsonNode syn : oboSynonymNode) {
-                if (syn.path("type").asText("").equals("FORMULA")) {
-                    String formula = syn.path("name").asText();
-                    if (formula != null && !formula.isBlank()) {
-                        meta.put("FORMULA_synonym", formula);
-                        break;
-                    }
-                }
-            }
-        }
 
         // Extract definition
         String definition = firstTextValue(termNode.path("description"));
@@ -104,6 +90,13 @@ public class OLSUtil {
         collectTextLeaves(termNode.path("annotation").path("has_related_synonym"), synonyms);
         collectTextLeaves(termNode.path("annotation").path("related_synonym"), synonyms);
         collectTextLeaves(termNode.path("annotation").path("exact_synonym"), synonyms);
+
+        // For ChEBI's formula
+        JsonNode formulaNode = termNode.path("annotation").path("generalized_empirical_formula");
+        String formula = firstTextValue(formulaNode);
+        if (formula != null && !formula.isBlank()) {
+            meta.put("FORMULA_synonym", formula);
+        }
 
         // Remove duplicates and the label itself
         Set<String> uniqueSynonyms = new java.util.LinkedHashSet<>(synonyms);
@@ -122,11 +115,11 @@ public class OLSUtil {
         return meta;
     }
 
-    URI buildTermUri(String termId, String ontologyName) {
+    private URI buildTermUri(String termId, String ontologyName) {
         return URI.create(olsBaseUrl + encode(ontologyName) + "/terms?obo_id=" + encode(termId));
     }
 
-    JsonNode fetchTermNode(String termId, String ontologyName) {
+    private JsonNode fetchTermNode(String termId, String ontologyName) {
         try {
             HttpRequest request = HttpRequest.newBuilder(buildTermUri(termId, ontologyName))
                     .timeout(Duration.ofSeconds(20))
@@ -163,7 +156,7 @@ public class OLSUtil {
         }
     }
 
-    static void collectTextLeaves(JsonNode node, List<String> values) {
+    private void collectTextLeaves(JsonNode node, List<String> values) {
         if (node == null || node.isMissingNode() || node.isNull()) {
             return;
         }
@@ -183,12 +176,16 @@ public class OLSUtil {
     }
 
     private static String firstTextValue(JsonNode node) {
-        List<String> values = new ArrayList<>();
-        collectTextLeaves(node, values);
-        return values.isEmpty() ? null : values.get(0);
+        if (node == null || node.isMissingNode() || node.isNull())
+            return null;
+        if (node.isTextual())
+            return node.asText();
+        if (node.isArray() && !node.isEmpty())
+            return firstTextValue(node.get(0));
+        return null;
     }
 
-    private static String encode(String value) {
+    private String encode(String value) {
         if (value == null) {
             return "";
         }

@@ -394,6 +394,20 @@ public class CurationController {
         }
     }
 
+    /**
+     * Fill ChEBI ReferenceMolecule attributes from the EBI ontology service.
+     */
+    @PostMapping("fillChEBI")
+    public SimpleInstance fillChEBI(@RequestBody SimpleInstance instance) {
+        try {
+            return service.fillChEBI(instance);
+        }
+        catch (Exception e) {
+            logger.error("CurationController.fillChEBI: " + e.getMessage(), e);
+            throw new IllegalStateException(e.getMessage());
+        }
+    }
+
     //TODO: The error handling needs to be updated
     // See: https://www.toptal.com/java/spring-boot-rest-api-error-handling  
     /**

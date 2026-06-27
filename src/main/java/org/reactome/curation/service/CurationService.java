@@ -24,6 +24,7 @@ import org.reactome.curation.model.CurationAttribute.DefiningType;
 import org.reactome.curation.repository.CurationFileRepository;
 import org.reactome.curation.repository.CurationRepository;
 //import org.reactome.server.graph.aop.LazyFetchAspect;
+import org.reactome.curation.service.autofill.ChEBIAttributeAutoFiller;
 import org.reactome.curation.service.autofill.LiteratureReferenceAttributeAutoFiller;
 import org.reactome.curation.service.autofill.PsiModAttributeAutoFiller;
 import org.reactome.curation.service.autofill.ReferenceGeneProductAutoFiller;
@@ -39,6 +40,7 @@ import org.reactome.server.graph.service.util.DatabaseObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -82,7 +84,11 @@ public class CurationService {
     private LiteratureReferenceAttributeAutoFiller lrFiller;
     // Helper with auto filling PsiMOD instances from OLS
     @Autowired
+    @Qualifier("psiModAttributeAutoFiller")
     private PsiModAttributeAutoFiller psiModFiller;
+    // Helper with auto filling ChEBI ReferenceMolecule instances from OLS
+    @Autowired
+    private ChEBIAttributeAutoFiller chebiFiller;
     // Helper with auto filling UniProt-backed reference sequence instances
     @Autowired
     private ReferenceGeneProductAutoFiller rpsFiller;
@@ -297,6 +303,18 @@ public class CurationService {
      */
     public SimpleInstance fillPsiMod(SimpleInstance instance) throws Exception {
         psiModFiller.process(instance);
+        return instance;
+    }
+
+    /**
+     * Automatically fill attributes of a ReferenceMolecule instance based on its ChEBI identifier.
+     *
+     * @param instance the ReferenceMolecule SimpleInstance to populate
+     * @return the same instance with ChEBI data applied
+     * @throws Exception if ontology fetch or parsing fails
+     */
+    public SimpleInstance fillChEBI(SimpleInstance instance) throws Exception {
+        chebiFiller.process(instance);
         return instance;
     }
 

@@ -844,6 +844,39 @@ class RESTfulAPITests {
         prettyPrintSimpleInstance(rtn, mapper);
     }
 
+    @Test
+    public void testFillChEBI() throws Exception {
+        assertNotNull(mockMvc);
+
+        String url = BASE_URL + "fillChEBI";
+        logger.info("URL: " + url);
+
+        ObjectMapper mapper = CurationWSTestHelper.createObjectMapper();
+
+        SimpleInstance reference = new SimpleInstance();
+        reference.setDbId(-1L);
+        reference.setSchemaClassName(ReactomeJavaConstants.ReferenceMolecule);
+        reference.setAttribute(ReactomeJavaConstants.identifier, "65119");
+        String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(reference);
+        logger.info("ReferenceMolecule in JSON:\n" + json);
+
+        String jwt = getJWT();
+        String rtn = mockMvc.perform(post(url).header("Authorization", "Bearer " + jwt)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        logger.info("Done filling ChEBI: " + rtn);
+        prettyPrintSimpleInstance(rtn, mapper);
+
+        SimpleInstance result = mapper.readValue(rtn, SimpleInstance.class);
+        assertNotNull(result.getDisplayName(), "Display name should be set after ChEBI fill");
+        assertNotNull(result.getAttribute(ReactomeJavaConstants.formula), "Formula should be set after ChEBI fill");
+        assertNotNull(result.getAttribute(ReactomeJavaConstants.name), "Name should be set after ChEBI fill");
+    }
+
     private void prettyPrintSimpleInstance(String json,
                                            ObjectMapper mapper) throws JsonProcessingException {
         SimpleInstance instance = mapper.readValue(json, SimpleInstance.class);

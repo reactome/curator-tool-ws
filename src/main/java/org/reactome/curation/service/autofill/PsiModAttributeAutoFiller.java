@@ -58,7 +58,10 @@ public class PsiModAttributeAutoFiller extends AbstractAttributeAutoFiller {
 //            return;
 //        }
         instance.setDisplayName(term);
-        instance.setAttribute(ReactomeJavaConstants.name, term);
+        // Name should be a list
+        List<String> names = new ArrayList<>();
+        names.add(term);
+        instance.setAttribute(ReactomeJavaConstants.name, names);
         mapMetaToAttributes(instance, termId);
         mapCrossReference(instance, termId);
     }
