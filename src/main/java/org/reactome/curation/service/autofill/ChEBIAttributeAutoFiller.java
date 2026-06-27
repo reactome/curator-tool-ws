@@ -18,14 +18,18 @@ import java.util.regex.Pattern;
  */
 @Component
 public class ChEBIAttributeAutoFiller extends ExternalOntologyAutoFiller {
+    private final String CHEBI = "CHEBI";
 
     public ChEBIAttributeAutoFiller() {
-        ontologyName = "CHEBI";
+    }
+
+    public void process(SimpleInstance instance) throws Exception {
+        process(instance, CHEBI);
     }
 
     @Override
-    protected void mapMetaToAttributes(SimpleInstance instance, String termId) throws Exception {
-        SimpleInstance dbRef = getReferenceDatabase("ChEBI");
+    protected void mapMetaToAttributes(SimpleInstance instance, String termId, String ontologyName) throws Exception {
+        SimpleInstance dbRef = getReferenceDatabase(CHEBI);
         if (dbRef != null)
             instance.setAttribute(ReactomeJavaConstants.referenceDatabase, dbRef);
         Map<String, String> meta = olsUtil.getTermMetadata(termId, ontologyName);
@@ -49,7 +53,7 @@ public class ChEBIAttributeAutoFiller extends ExternalOntologyAutoFiller {
 
     @Override
     protected void mapCrossReference(SimpleInstance instance, String termId) {
-        Map<String, String> xrefs = olsUtil.getTermXrefs(termId, ontologyName);
+        Map<String, String> xrefs = olsUtil.getTermXrefs(termId, CHEBI);
         if (xrefs == null || xrefs.isEmpty())
             return;
         // Only need to cross-reference to KEGG COMPOUND here. All other cross-references

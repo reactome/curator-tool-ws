@@ -59,7 +59,7 @@ class ServiceTests {
         reference.setDbId(-1L);
         reference.setSchemaClassName(ReactomeJavaConstants.PsiMod);
         reference.setAttribute(ReactomeJavaConstants.identifier, "00130");
-        reference = curationService.fillPsiMod(reference);
+        reference = curationService.fillExternalOntology(reference);
         System.out.println(reference);
     }
 

@@ -42,8 +42,13 @@ public abstract class AbstractAttributeAutoFiller {
      */
     protected SimpleInstance getReferenceDatabase(String dbName) throws Exception {
         // Using _displayName can fetch local shell instances.
-        SimpleInstance refdbInst = curationRepository.findInstance(dbName,
-                Collections.singletonList(ReactomeJavaConstants.ReferenceDatabase));
+        SimpleInstance refdbInst = curationRepository.findInstance(dbName, Collections.singletonList(ReactomeJavaConstants.ReferenceDatabase));
+        if (refdbInst == null) {
+            refdbInst = new SimpleInstance();
+            refdbInst.setSchemaClassName(ReactomeJavaConstants.ReferenceDatabase);
+            refdbInst.setDisplayName(dbName);
+            refdbInst.setAttribute(ReactomeJavaConstants.name, dbName);
+        }
         return refdbInst;
     }
 

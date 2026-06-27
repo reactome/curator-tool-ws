@@ -17,10 +17,18 @@ public class ExternalOntologyAutoFiller extends AbstractAttributeAutoFiller {
 
     @Autowired
     protected OLSUtil olsUtil;
-    // Used as the default since MOD is the original supclass.
-    protected String ontologyName = "MOD";
+    // Configuration to map a class to its Ontology
+    // We may externalize this configuration to a properties file in the future.
+    private Map<String, String> clsToOntologyMap;
 
     public ExternalOntologyAutoFiller() {
+        clsToOntologyMap = new HashMap<>();
+        clsToOntologyMap.put("PsiMod", "MOD");
+        clsToOntologyMap.put("Anatomy", "UBERON");
+        clsToOntologyMap.put("CellType", "CL");
+        clsToOntologyMap.put("Disease", "DOID");
+        clsToOntologyMap.put("EvidenceType", "ECO");
+        clsToOntologyMap.put("SequenceOntology", "SO");
     }
 
     protected Object getRequiredAttribute(SimpleInstance instance) {
@@ -28,6 +36,15 @@ public class ExternalOntologyAutoFiller extends AbstractAttributeAutoFiller {
     }
 
     public void process(SimpleInstance instance) throws Exception {
+        String className = instance.getSchemaClassName();
+        String ontologyName = clsToOntologyMap.get(className);
+        if (ontologyName == null) {
+            return;
+        }
+        process(instance, ontologyName);
+    }
+
+    protected void process(SimpleInstance instance, String ontologyName) throws Exception {
         String identifier = (String) getRequiredAttribute(instance);
         if (identifier == null || identifier.isBlank()) {
             return;
@@ -41,15 +58,12 @@ public class ExternalOntologyAutoFiller extends AbstractAttributeAutoFiller {
         }
         String termId = ontologyName + ":" + identifier;
         String term = olsUtil.getTermById(termId, ontologyName);
-//        if (term == null || term.isBlank()) {
-//            return;
-//        }
         instance.setDisplayName(term);
         // Name should be a list
         List<String> names = new ArrayList<>();
         names.add(term);
         instance.setAttribute(ReactomeJavaConstants.name, names);
-        mapMetaToAttributes(instance, termId);
+        mapMetaToAttributes(instance, termId, ontologyName);
         mapCrossReference(instance, termId);
     }
 
@@ -70,23 +84,20 @@ public class ExternalOntologyAutoFiller extends AbstractAttributeAutoFiller {
 
 
     protected void mapMetaToAttributes(SimpleInstance instance,
-                                       String termId) throws Exception {
+                                       String termId,
+                                       String ontologyName) throws Exception {
         Map<String, String> meta = olsUtil.getTermMetadata(termId, ontologyName);
         if (meta == null || meta.isEmpty())
             return;
-        for (String key : meta.keySet()) {
-            String value = meta.get(key);
-            if (key == null)
-                continue; // Sometime there is a null as a key, which may not be correct!
-//            System.out.println(key + ": " + value);
-            if (key.equals("definition")) {
-                instance.setAttribute(ReactomeJavaConstants.definition, value);
-            }
+        String definition = meta.get("definition");
+        if (definition != null && !definition.isBlank()) {
+            instance.setAttribute(ReactomeJavaConstants.definition, definition);
         }
+        // Call a method since this method is used in other places too.
         List<String> synonyms = extractSynonym(meta);
         if (!synonyms.isEmpty())
             instance.setAttribute(ReactomeJavaConstants.synonym, synonyms);
-        instance.setAttribute(ReactomeJavaConstants.referenceDatabase, getReferenceDatabase());
+        instance.setAttribute(ReactomeJavaConstants.referenceDatabase, getReferenceDatabase(ontologyName));
     }
 
     protected List<String> extractSynonym(Map<String, String> meta) {
@@ -96,17 +107,6 @@ public class ExternalOntologyAutoFiller extends AbstractAttributeAutoFiller {
         if (synonyms == null)
             return Collections.emptyList();
         return Arrays.asList(synonyms.split(",\\s*"));
-    }
-
-    private SimpleInstance getReferenceDatabase() throws Exception {
-        SimpleInstance referenceDatabase = getReferenceDatabase(ontologyName);
-        if (referenceDatabase != null)
-            return referenceDatabase;
-        SimpleInstance referenceDb = new SimpleInstance();
-        referenceDb.setSchemaClassName(ReactomeJavaConstants.ReferenceDatabase);
-        referenceDb.setDisplayName(ontologyName);
-        referenceDb.setAttribute(ReactomeJavaConstants.name, ontologyName);
-        return referenceDb;
     }
 
 }

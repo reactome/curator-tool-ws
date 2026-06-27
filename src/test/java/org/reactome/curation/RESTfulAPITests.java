@@ -820,11 +820,11 @@ class RESTfulAPITests {
     public void testFillExternalOntology() throws Exception {
         assertNotNull(mockMvc);
 
-        String url = BASE_URL + "fillPsiMod";
+        String url = BASE_URL + "fillExternalOntology";
         logger.info("URL: " + url);
 
         ObjectMapper mapper = CurationWSTestHelper.createObjectMapper();
-
+        // PsiMod
         SimpleInstance reference = new SimpleInstance();
         reference.setDbId(-1L);
         reference.setSchemaClassName(ReactomeJavaConstants.PsiMod);
@@ -835,6 +835,24 @@ class RESTfulAPITests {
         // Store
         String jwt = getJWT();
         String rtn = mockMvc.perform(post(url).header("Authorization", "Bearer " + jwt).contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        logger.info("Done filling a reference: " + rtn);
+        prettyPrintSimpleInstance(rtn, mapper);
+
+        // DiseaseOntology
+        reference = new SimpleInstance();
+        reference.setDbId(-2L);
+        reference.setSchemaClassName(ReactomeJavaConstants.Disease);
+        reference.setAttribute(ReactomeJavaConstants.identifier, "0080600");
+        json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(reference);
+        logger.info("PsiMod in JSON:\n" + json);
+
+        // Store
+        rtn = mockMvc.perform(post(url).header("Authorization", "Bearer " + jwt).contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isOk())
                 .andReturn()

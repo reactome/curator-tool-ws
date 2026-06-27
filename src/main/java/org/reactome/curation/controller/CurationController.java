@@ -383,13 +383,13 @@ public class CurationController {
     /**
      * Fill PsiMOD attributes from the EBI ontology service.
      */
-    @PostMapping("fillPsiMod")
-    public SimpleInstance fillPsiMod(@RequestBody SimpleInstance instance) {
+    @PostMapping("fillExternalOntology")
+    public SimpleInstance fillExternalOntology(@RequestBody SimpleInstance instance) {
         try {
-            return service.fillPsiMod(instance);
+            return service.fillExternalOntology(instance);
         }
         catch (Exception e) {
-            logger.error("CurationController.fillPsiMod: " + e.getMessage(), e);
+            logger.error("CurationController.fillExternalOntology: " + e.getMessage(), e);
             throw new IllegalStateException(e.getMessage());
         }
     }

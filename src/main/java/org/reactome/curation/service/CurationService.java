@@ -84,7 +84,7 @@ public class CurationService {
     // Helper with auto filling PsiMOD instances from OLS
     @Autowired
     @Qualifier("externalOntologyAutoFiller")
-    private ExternalOntologyAutoFiller psiModFiller;
+    private ExternalOntologyAutoFiller externalOntologyAutoFiller;
     // Helper with auto filling ChEBI ReferenceMolecule instances from OLS
     @Autowired
     private ChEBIAttributeAutoFiller chebiFiller;
@@ -300,8 +300,8 @@ public class CurationService {
      * @return the same instance with PsiMOD data applied
      * @throws Exception if ontology fetch or parsing fails
      */
-    public SimpleInstance fillPsiMod(SimpleInstance instance) throws Exception {
-        psiModFiller.process(instance);
+    public SimpleInstance fillExternalOntology(SimpleInstance instance) throws Exception {
+        externalOntologyAutoFiller.process(instance);
         return instance;
     }
 
