@@ -15,7 +15,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.gk.model.ReactomeJavaConstants;
 import org.reactome.curation.config.CuratorToolEnv;
 import org.reactome.curation.model.*;
@@ -26,7 +25,7 @@ import org.reactome.curation.repository.CurationRepository;
 //import org.reactome.server.graph.aop.LazyFetchAspect;
 import org.reactome.curation.service.autofill.ChEBIAttributeAutoFiller;
 import org.reactome.curation.service.autofill.LiteratureReferenceAttributeAutoFiller;
-import org.reactome.curation.service.autofill.PsiModAttributeAutoFiller;
+import org.reactome.curation.service.autofill.ExternalOntologyAutoFiller;
 import org.reactome.curation.service.autofill.ReferenceGeneProductAutoFiller;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.domain.model.Deleted;
@@ -84,8 +83,8 @@ public class CurationService {
     private LiteratureReferenceAttributeAutoFiller lrFiller;
     // Helper with auto filling PsiMOD instances from OLS
     @Autowired
-    @Qualifier("psiModAttributeAutoFiller")
-    private PsiModAttributeAutoFiller psiModFiller;
+    @Qualifier("externalOntologyAutoFiller")
+    private ExternalOntologyAutoFiller psiModFiller;
     // Helper with auto filling ChEBI ReferenceMolecule instances from OLS
     @Autowired
     private ChEBIAttributeAutoFiller chebiFiller;

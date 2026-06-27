@@ -1,8 +1,6 @@
 package org.reactome.curation.service.autofill;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.gk.model.ReactomeJavaConstants;
 import org.reactome.curation.model.SimpleInstance;
@@ -15,26 +13,15 @@ import org.springframework.beans.factory.annotation.Autowired;
  *
  */
 @org.springframework.stereotype.Component
-public class PsiModAttributeAutoFiller extends AbstractAttributeAutoFiller {
+public class ExternalOntologyAutoFiller extends AbstractAttributeAutoFiller {
 
     @Autowired
     protected OLSUtil olsUtil;
+    // Used as the default since MOD is the original supclass.
+    protected String ontologyName = "MOD";
 
-    protected String ONTOLOGY_NAME = "MOD";
-    protected String displayOntologyName = "PsiMod";
-
-    public PsiModAttributeAutoFiller() {
-
+    public ExternalOntologyAutoFiller() {
     }
-
-    public void setOntologyName(String name) {
-        this.ONTOLOGY_NAME = name;
-    }
-
-    public void setDisplayOntologyName(String name) {
-        this.displayOntologyName = name;
-    }
-
 
     protected Object getRequiredAttribute(SimpleInstance instance) {
         return instance.getAttribute(ReactomeJavaConstants.identifier);
@@ -45,15 +32,15 @@ public class PsiModAttributeAutoFiller extends AbstractAttributeAutoFiller {
         if (identifier == null || identifier.isBlank()) {
             return;
         }
-        if (identifier.startsWith(ONTOLOGY_NAME)) {
+        if (identifier.startsWith(ontologyName)) {
             int index = identifier.indexOf(":");
             if (index >= 0) {
                 identifier = identifier.substring(index + 1).trim();
                 instance.setAttribute(getIdentifierAttributeName(), identifier);
             }
         }
-        String termId = ONTOLOGY_NAME + ":" + identifier;
-        String term = olsUtil.getTermById(termId,ONTOLOGY_NAME);
+        String termId = ontologyName + ":" + identifier;
+        String term = olsUtil.getTermById(termId, ontologyName);
 //        if (term == null || term.isBlank()) {
 //            return;
 //        }
@@ -84,7 +71,7 @@ public class PsiModAttributeAutoFiller extends AbstractAttributeAutoFiller {
 
     protected void mapMetaToAttributes(SimpleInstance instance,
                                        String termId) throws Exception {
-        Map<String, String> meta = olsUtil.getTermMetadata(termId, ONTOLOGY_NAME);
+        Map<String, String> meta = olsUtil.getTermMetadata(termId, ontologyName);
         if (meta == null || meta.isEmpty())
             return;
         for (String key : meta.keySet()) {
@@ -99,27 +86,26 @@ public class PsiModAttributeAutoFiller extends AbstractAttributeAutoFiller {
         List<String> synonyms = extractSynonym(meta);
         if (!synonyms.isEmpty())
             instance.setAttribute(ReactomeJavaConstants.synonym, synonyms);
-        instance.setAttribute(ReactomeJavaConstants.referenceDatabase, getPsiModInstance());
+        instance.setAttribute(ReactomeJavaConstants.referenceDatabase, getReferenceDatabase());
     }
 
     protected List<String> extractSynonym(Map<String, String> meta) {
-        List<String> synonyms = new ArrayList<>();
-        for (String key : meta.keySet()) {
-            String value = meta.get(key);
-            if (key == null)
-                continue; // Sometime there is a null as a key, which may not be correct!
-            if (key.endsWith("_synonym")) { // Based on the format used in the web service. I guess this may not be true in the future.
-                synonyms.add(value);
-            }
-        }
-        return synonyms;
+        // Updated on June 27, 2026 based on the returned values
+        // There is a term for "synonyms"
+        String synonyms = meta.get("synonyms");
+        if (synonyms == null)
+            return Collections.emptyList();
+        return Arrays.asList(synonyms.split(",\\s*"));
     }
 
-    private SimpleInstance getPsiModInstance() {
+    private SimpleInstance getReferenceDatabase() throws Exception {
+        SimpleInstance referenceDatabase = getReferenceDatabase(ontologyName);
+        if (referenceDatabase != null)
+            return referenceDatabase;
         SimpleInstance referenceDb = new SimpleInstance();
         referenceDb.setSchemaClassName(ReactomeJavaConstants.ReferenceDatabase);
-        referenceDb.setDisplayName(displayOntologyName);
-        referenceDb.setAttribute(ReactomeJavaConstants.name, displayOntologyName);
+        referenceDb.setDisplayName(ontologyName);
+        referenceDb.setAttribute(ReactomeJavaConstants.name, ontologyName);
         return referenceDb;
     }
 

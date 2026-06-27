@@ -17,11 +17,10 @@ import java.util.regex.Pattern;
  * Fills attributes for ReferenceMolecule instances backed by the EBI ChEBI ontology.
  */
 @Component
-public class ChEBIAttributeAutoFiller extends PsiModAttributeAutoFiller {
+public class ChEBIAttributeAutoFiller extends ExternalOntologyAutoFiller {
 
     public ChEBIAttributeAutoFiller() {
-        ONTOLOGY_NAME = "CHEBI";
-        displayOntologyName = "ReferenceMolecule";
+        ontologyName = "CHEBI";
     }
 
     @Override
@@ -29,7 +28,7 @@ public class ChEBIAttributeAutoFiller extends PsiModAttributeAutoFiller {
         SimpleInstance dbRef = getReferenceDatabase("ChEBI");
         if (dbRef != null)
             instance.setAttribute(ReactomeJavaConstants.referenceDatabase, dbRef);
-        Map<String, String> meta = olsUtil.getTermMetadata(termId, ONTOLOGY_NAME);
+        Map<String, String> meta = olsUtil.getTermMetadata(termId, ontologyName);
         if (meta == null || meta.isEmpty())
             return;
         List<String> names = (List<String>) instance.getAttribute(ReactomeJavaConstants.name);
@@ -37,22 +36,20 @@ public class ChEBIAttributeAutoFiller extends PsiModAttributeAutoFiller {
             names = new ArrayList<>();
             instance.setAttribute(ReactomeJavaConstants.name, names);
         }
-        for (Map.Entry<String, String> entry : meta.entrySet()) {
-            String key = entry.getKey();
-            String value = entry.getValue();
-            if (value == null || value.isEmpty())
-                continue;
-            if (key.startsWith("related_synonym_")) {
-                names.add(value);
-            } else if (key.equals("FORMULA_synonym")) {
-                instance.setAttribute(ReactomeJavaConstants.formula, value);
-            }
+        List<String> synonyms = extractSynonym(meta);
+        for (String synonym : synonyms) {
+            if (!names.contains(synonym))
+                names.add(synonym);
         }
+        // Set formula
+        String formula = meta.get("FORMULA_synonym");
+        if (formula != null && !formula.isEmpty())
+            instance.setAttribute(ReactomeJavaConstants.formula, formula);
     }
 
     @Override
     protected void mapCrossReference(SimpleInstance instance, String termId) {
-        Map<String, String> xrefs = olsUtil.getTermXrefs(termId, ONTOLOGY_NAME);
+        Map<String, String> xrefs = olsUtil.getTermXrefs(termId, ontologyName);
         if (xrefs == null || xrefs.isEmpty())
             return;
         // Only need to cross-reference to KEGG COMPOUND here. All other cross-references

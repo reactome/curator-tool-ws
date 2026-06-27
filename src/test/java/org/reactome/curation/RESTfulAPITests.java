@@ -828,7 +828,7 @@ class RESTfulAPITests {
         SimpleInstance reference = new SimpleInstance();
         reference.setDbId(-1L);
         reference.setSchemaClassName(ReactomeJavaConstants.PsiMod);
-        reference.setAttribute(ReactomeJavaConstants.identifier, "00130");
+        reference.setAttribute(ReactomeJavaConstants.identifier, "00835");
         String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(reference);
         logger.info("PsiMod in JSON:\n" + json);
 

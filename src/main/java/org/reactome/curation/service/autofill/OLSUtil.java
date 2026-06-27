@@ -103,13 +103,8 @@ public class OLSUtil {
         uniqueSynonyms.remove(label);
         uniqueSynonyms.removeIf(s -> s == null || s.isBlank());
 
-        // Store synonyms with multiple key formats for backward compatibility
-        int i = 0;
-        for (String synonym : uniqueSynonyms) {
-            meta.put(i + "_related_synonym", synonym);
-            meta.put("related_synonym_" + i, synonym);
-            meta.put("exact_synonym_" + i, synonym);
-            i++;
+        if (!uniqueSynonyms.isEmpty()) {
+            meta.put("synonyms", String.join(", ", uniqueSynonyms));
         }
 
         return meta;
