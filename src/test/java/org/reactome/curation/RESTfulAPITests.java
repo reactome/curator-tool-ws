@@ -798,7 +798,9 @@ class RESTfulAPITests {
         SimpleInstance reference = new SimpleInstance();
         reference.setDbId(-1L);
         reference.setSchemaClassName(ReactomeJavaConstants.ReferenceGeneProduct);
-        reference.setAttribute(ReactomeJavaConstants.identifier, "P10963");
+//        reference.setAttribute(ReactomeJavaConstants.identifier, "P10963");
+        // Expect multiple isoformIds
+        reference.setAttribute(ReactomeJavaConstants.identifier, "P38398");
         String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(reference);
         logger.info("ReferenceGeneProduct in JSON:\n" + json);
 

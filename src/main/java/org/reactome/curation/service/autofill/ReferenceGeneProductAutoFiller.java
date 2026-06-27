@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.gk.model.ReactomeJavaConstants;
@@ -140,26 +141,13 @@ public class ReferenceGeneProductAutoFiller extends AbstractAttributeAutoFiller 
 
     private void generateReferenceIsoforms(List isoformIds,
                                            SimpleInstance refGeneProduct) throws Exception {
-        // Create instances for other alternative
-        List<SimpleInstance> isoforms = new ArrayList<>();
-        for (int i = 0; i < isoformIds.size(); i++) {
-            String isoformID = ((Text) isoformIds.get(i)).getText();
-            // Make sure isoformId and identifier should be the same in a RefereneIsoform instance
-            // Make sure this should be handled first to ensure the correct parent and child relationship
-            int index = isoformID.indexOf("-");
-            String childId = isoformID.substring(0, index);
-            String parentId = (String) refGeneProduct.getAttribute(ReactomeJavaConstants.identifier);
-            SimpleInstance isoform = refGeneProduct.cloneInstance();
-            isoform.setSchemaClassName(ReactomeJavaConstants.ReferenceIsoform);
-            isoform.setAttribute(ReactomeJavaConstants.variantIdentifier, isoformID);
-            isoform.setAttribute(ReactomeJavaConstants.isoformParent, refGeneProduct);
-            // Leave display name and dbId empty for the front-end app to handle
-            // But we need to attach it to the parent so that the front-end can get it
-            isoforms.add(isoform);
+        List<String> idText = new ArrayList<>();
+        for (Object obj : isoformIds) {
+            if (obj instanceof Text) {
+                idText.add(((Text) obj).getText());
+            }
         }
-        if (isoforms.size() > 0) {
-            refGeneProduct.setAttribute("isoforms", isoforms);
-        }
+        refGeneProduct.setAttribute("isoformIds", idText);
     }
 
     /**

@@ -48,8 +48,9 @@ class ServiceTests {
         SimpleInstance reference = new SimpleInstance();
         reference.setDbId(-1L);
         reference.setSchemaClassName(ReactomeJavaConstants.ReferenceGeneProduct);
-        reference.setAttribute(ReactomeJavaConstants.identifier, "P10963");
+        reference.setAttribute(ReactomeJavaConstants.identifier, "P38398");
         reference = curationService.fillReferenceSequence(reference);
+        System.out.println(reference + ": " + reference.getAttributes());
     }
 
     @Test
