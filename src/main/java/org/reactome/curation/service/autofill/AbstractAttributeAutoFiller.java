@@ -11,6 +11,8 @@ import org.reactome.curation.repository.CurationRepository;
 import org.reactome.server.graph.repository.AdvancedDatabaseObjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.Collections;
+
 /**
  * Base class for concrete AttributeAutoFiller implementations in the web service.
  * Provides access to the shared Spring-managed repositories.
@@ -40,10 +42,9 @@ public abstract class AbstractAttributeAutoFiller {
      */
     protected SimpleInstance getReferenceDatabase(String dbName) throws Exception {
         // Using _displayName can fetch local shell instances.
-        InstanceList list = curationRepository.listInstances(ReactomeJavaConstants.ReferenceDatabase, 0, 1, dbName);
-        if (list != null && !list.isEmpty())
-            return list.getInstances().get(0);
-        return null;
+        SimpleInstance refdbInst = curationRepository.findInstance(dbName,
+                Collections.singletonList(ReactomeJavaConstants.ReferenceDatabase));
+        return refdbInst;
     }
 
 }
