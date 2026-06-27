@@ -1,0 +1,26 @@
+version: "3.3"
+
+services:
+  neo4j:
+    image: neo4j:4.4-community
+    container_name: neo4j_reactome_curator
+    ports:
+      - "17687:7687"    # Bolt protocol
+      - "17474:7474"    # HTTP Browser
+    environment:
+      # Make sure to change the password below to a secure one
+      # Better to avoid using special characters in the password as it may cause issues with docker-compose
+      # e.g. definitely not #.
+      NEO4J_AUTH: "neo4j/{}"
+      NEO4J_dbms_default__database: graph.db
+      NEO4J_dbms_recovery_fail__on__missing__files: "false"
+      NEO4J_unsupported_dbms_tx__log_fail__on__corrupted__log__files: "false"
+      NEO4J_PLUGINS: '["apoc"]'
+      NEO4J_apoc_export_file_enabled: "true"
+      NEO4J_apoc_import_file_enabled: "true"
+      NEO4J_dbms_security_procedures_unrestricted: "apoc.*"
+      NEO4J_dbms_security_procedures_allowlist: "apoc.*"
+    volumes:
+      - /home/gwu/docker/neo4j/data:/data
+      - /home/gwu/docker/neo4j/logs:/logs
+    restart: unless-stopped
