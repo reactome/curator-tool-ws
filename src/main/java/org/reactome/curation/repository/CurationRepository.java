@@ -19,9 +19,7 @@ import org.neo4j.cypherdsl.core.Cypher;
 import org.neo4j.cypherdsl.core.Functions;
 import org.neo4j.cypherdsl.core.Node;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReading;
-import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReadingWithoutWhere;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingUpdate;
-import org.neo4j.cypherdsl.core.StatementBuilder.OrderableOngoingReadingAndWithWithoutWhere;
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
 import org.reactome.curation.model.CurationAttribute.DefiningAttributeValue;
 import org.reactome.curation.util.CuratorToolWSUtils;
@@ -694,10 +692,10 @@ public class CurationRepository {
     }
 
     /**
-     * Get a list of objects in SimpleInstance.
-     * TODO: The performance may be slow with multiple match. Need to 
-     * pay attention to the speed.
-     * TODO: Better to use raw Cypher query directly. cypher dsl is just too complicated, unncessary!
+     * Get a list of SimpleInstance objects matching the given filter criteria.
+     * Primitive-attribute conditions become WHERE clauses; relationship-attribute
+     * IS_NULL checks use a NOT-exists pattern predicate; all other relationship
+     * conditions become additional MATCH clauses.
      */
     public InstanceList listInstances(String className,
                                       int skip,
@@ -706,129 +704,137 @@ public class CurationRepository {
                                       List<String> attributeTypes,
                                       List<ListOperand> operands,
                                       List<String> searchKeys) {
-        // Make sure the four arrays have the same lengths
-        if (attributes.size() != attributeTypes.size() || 
-                attributes.size() != operands.size()  || 
+        if (attributes.size() != attributeTypes.size() ||
+                attributes.size() != operands.size()  ||
                 attributes.size() != searchKeys.size()) {
-            // Handle the case where the arrays are not of the same length
             throw new IllegalArgumentException("All arrays must have the same length");
         }
 
-        // Start with instances for the query class
-        var instance = Cypher.node(className).named("inst");
-        OngoingReading query = Cypher.match(instance);
+        StringBuilder cypher = new StringBuilder();
+        Map<String, Object> params = new HashMap<>();
 
-        List<Condition> attributeConditions = new ArrayList<>();
-        List<org.neo4j.cypherdsl.core.Relationship> relationships = new ArrayList<>();
-        List<Condition> relationshipConditions = new ArrayList<>();
-        // Check if optional match should be used
-        List<Boolean> optionalRelationships = new ArrayList<>();
-        List<String> optionalWiths = new ArrayList<>();
+        cypher.append("MATCH (inst:").append(className).append(") ");
+
+        List<String> whereClauses = new ArrayList<>();
+        List<String> relMatchClauses = new ArrayList<>();
 
         for (int i = 0; i < attributes.size(); i++) {
-            if (attributeTypes.get(i).equals("instance")) {
-                // Use DatabaseObject as the generic class to avoid type checking
-                // attributes should be unique
-                var attributeNode = Cypher.node("DatabaseObject").named(attributes.get(i));
-                // For the time being, we don't care about the direction
-                // TODO: check that attribute names match their schema class. The attribute name
-                // may not be the same as the relationship name!!!
-                // check attribute with stoichiometry: input/output/hasComponent.
-                // Need to give the relationship different name
-                var relName = "r_" + i;
-                var relationship = instance.relationshipBetween(attributeNode, attributes.get(i)).named(relName);
-                relationships.add(relationship);
-                if (operands.get(i) == ListOperand.IS_NULL || operands.get(i) == ListOperand.IS_NOT_NULL) {
-                    // Special relationship condition
-                    var relationShipCondition = operands.get(i) == ListOperand.IS_NULL ? 
-                            Cypher.name(relName).isNull() :
-                                Cypher.name(relName).isNotNull();
-                    relationshipConditions.add(relationShipCondition);
+            String attr = attributes.get(i);
+            String attrType = attributeTypes.get(i);
+            ListOperand operand = operands.get(i);
+            String key = searchKeys.get(i);
+            String paramName = "p" + i;
+            String nodeAlias = "n" + i;
 
-                    if (operands.get(i) == ListOperand.IS_NULL) {
-                        optionalRelationships.add(true); 
-                        optionalWiths.add(relName);
-                    }
-                    else {
-                        optionalRelationships.add(false);
-                        optionalWiths.add(null);
-                    }
+            if ("instance".equals(attrType)) {
+                switch (operand) {
+                    case IS_NULL:
+                        // Pattern-existence predicate: no OPTIONAL MATCH needed
+                        whereClauses.add("NOT (inst)-[:`" + attr + "`]-()");
+                        break;
+                    case IS_NOT_NULL:
+                        relMatchClauses.add("MATCH (inst)-[:`" + attr + "`]-()");
+                        break;
+                    case CONTAINS:
+                        params.put(paramName, "(?i).*" + key + ".*");
+                        relMatchClauses.add("MATCH (inst)-[:`" + attr + "`]-(" + nodeAlias
+                                + ") WHERE " + nodeAlias + ".displayName =~ $" + paramName);
+                        break;
+                    case EQUAL:
+                        params.put(paramName, key);
+                        relMatchClauses.add("MATCH (inst)-[:`" + attr + "`]-(" + nodeAlias
+                                + ") WHERE " + nodeAlias + ".displayName = $" + paramName);
+                        break;
+                    case NOT_EQUAL:
+                        params.put(paramName, key);
+                        relMatchClauses.add("MATCH (inst)-[:`" + attr + "`]-(" + nodeAlias
+                                + ") WHERE " + nodeAlias + ".displayName <> $" + paramName);
+                        break;
+                    default:
+                        break;
                 }
-                else {
-                    relationshipConditions
-                    .add(createQueryCondition("displayName", operands.get(i), searchKeys.get(i), attributeNode));
-                    optionalRelationships.add(false);
-                    optionalWiths.add(null);
+            } else if ("list".equals(attrType)) {
+                // List-valued primitive properties (e.g. geneName: ["TP53", "P53"]).
+                // toString() throws a TypeError on arrays in Neo4j 4.x, so we use ANY().
+                switch (operand) {
+                    case CONTAINS:
+                        params.put(paramName, "(?i).*" + key + ".*");
+                        whereClauses.add("inst." + attr + " IS NOT NULL AND ANY(x IN inst." + attr + " WHERE x IS NOT NULL AND toString(x) =~ $" + paramName + ")");
+                        break;
+                    case EQUAL:
+                        params.put(paramName, key);
+                        whereClauses.add("inst." + attr + " IS NOT NULL AND ANY(x IN inst." + attr + " WHERE toString(x) = $" + paramName + ")");
+                        break;
+                    case NOT_EQUAL:
+                        params.put(paramName, key);
+                        whereClauses.add("inst." + attr + " IS NOT NULL AND NONE(x IN inst." + attr + " WHERE toString(x) = $" + paramName + ")");
+                        break;
+                    case IS_NOT_NULL:
+                        whereClauses.add("inst." + attr + " IS NOT NULL AND size(inst." + attr + ") > 0");
+                        break;
+                    case IS_NULL:
+                        whereClauses.add("(inst." + attr + " IS NULL OR size(inst." + attr + ") = 0)");
+                        break;
+                    default:
+                        break;
+                }
+            } else {
+                // Scalar primitive attribute conditions
+                switch (operand) {
+                    case EQUAL:
+                        params.put(paramName, key);
+                        whereClauses.add("inst." + attr + " IS NOT NULL AND toString(inst." + attr + ") = $" + paramName);
+                        break;
+                    case NOT_EQUAL:
+                        params.put(paramName, key);
+                        whereClauses.add("inst." + attr + " IS NOT NULL AND toString(inst." + attr + ") <> $" + paramName);
+                        break;
+                    case CONTAINS:
+                        params.put(paramName, "(?i).*" + key + ".*");
+                        whereClauses.add("inst." + attr + " IS NOT NULL AND toString(inst." + attr + ") =~ $" + paramName);
+                        break;
+                    case IS_NOT_NULL:
+                        whereClauses.add("inst." + attr + " IS NOT NULL");
+                        break;
+                    case IS_NULL:
+                        whereClauses.add("inst." + attr + " IS NULL");
+                        break;
+                    default:
+                        break;
                 }
             }
-            else {
-                attributeConditions
-                .add(createQueryCondition(attributes.get(i), operands.get(i), searchKeys.get(i), instance));
-            } 
-
         }
 
-        // Need to combine attribute conditions into a single condition
-        // If we have more than one attribute condition.
-        Condition combinedAttributeConditions = null;
-        for (Condition attCondition : attributeConditions) {
-            if (attCondition != null) {
-                if (combinedAttributeConditions == null) {
-                    combinedAttributeConditions = attCondition;
-                } else {
-                    combinedAttributeConditions = combinedAttributeConditions.and(attCondition);
-                }
-            }
-        }
-        if (combinedAttributeConditions != null) // This is quite danger to cast like this. However, no better way to do that
-            ((OngoingReadingWithoutWhere)query).where(combinedAttributeConditions);
+        if (!whereClauses.isEmpty())
+            cypher.append("WHERE ").append(String.join(" AND ", whereClauses)).append(" ");
 
-        for (int j = 0; j < relationships.size(); j++) {
-            if (optionalRelationships.get(j)) {
-                query.optionalMatch(relationships.get(j));
-                var optionalWith = optionalWiths.get(j);
-                if (optionalWith != null) // Most likely we need to consider using raw cypher directly.
-                    query = query.with(instance, Cypher.name(optionalWith));
-            }
-            else
-                query.match(relationships.get(j));
-            var where = relationshipConditions.get(j);
-            if (where != null) // Usually this should not be null. But just in case.
-                // Quite danger to cast like this. 
-                if (query instanceof OngoingReadingWithoutWhere)
-                    ((OngoingReadingWithoutWhere)query).where(where);
-                else if (query instanceof OrderableOngoingReadingAndWithWithoutWhere)
-                    ((OrderableOngoingReadingAndWithWithoutWhere)query).where(where);
-                else 
-                    logger.error("Have not handled query type for where: " + query.getClass().getName());
-        }
-        // Count the total instances based on these conditions and relationships
-        // Make sure distinct is used to avoid duplicated: e.g. for is not null, multiple relationships
-        // will return the same instance multiple times.
-        query.with(Functions.countDistinct(instance).as("totalCount"), 
-                Functions.collectDistinct(instance).as("instances"))
-        .unwind(Cypher.name("instances")).as(Cypher.name("inst"));
+        for (String relMatch : relMatchClauses)
+            cypher.append(relMatch).append(" ");
 
-        var queryBuild = query
-                .returning(Cypher.name("totalCount"), Cypher.name("inst").property("dbId"),
-                        Cypher.name("inst").property("displayName"), Cypher.name("inst").property("schemaClass"))
-                .orderBy(Cypher.name("inst").property("displayName")).skip(skip).limit(limit).build();
+        // Collect distinct instances first, then paginate with SKIP/LIMIT
+        cypher.append("WITH COUNT(DISTINCT inst) AS totalCount, COLLECT(DISTINCT inst) AS instances ");
+        cypher.append("UNWIND instances AS inst ");
+        cypher.append("RETURN totalCount, inst.dbId AS `inst.dbId`, inst.displayName AS `inst.displayName`, ");
+        cypher.append("inst.schemaClass AS `inst.schemaClass` ");
+        cypher.append("ORDER BY inst.displayName SKIP toInteger($skip) LIMIT toInteger($limit)");
 
-        //        System.out.println("query: " + Renderer.getDefaultRenderer().render(queryBuild));
+        params.put("skip", skip);
+        params.put("limit", limit);
 
-        Collection<Map<String, Object>> all = neo4jClient.query(queryBuild.getCypher()).fetch().all();
+        Collection<Map<String, Object>> all = neo4jClient.query(cypher.toString())
+                .bindAll(params)
+                .fetch().all();
+
         List<SimpleInstance> instances = new ArrayList<>();
         Integer totalCount = null;
         for (Map<String, Object> map : all) {
             if (totalCount == null)
                 totalCount = Integer.parseInt(map.get("totalCount").toString());
-            // This should not occur. However, just in case
             if (map.get("inst.dbId") == null) {
                 logger.error("Return result with dbId = null: " + className + ", " + skip + ", " + limit);
                 continue;
             }
-            SimpleInstance inst = constructInstance(map, className);
-            instances.add(inst);
+            instances.add(constructInstance(map, className));
         }
         InstanceList instanceList = new InstanceList();
         instanceList.setTotalCount(totalCount);

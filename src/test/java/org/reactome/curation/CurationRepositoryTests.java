@@ -2,9 +2,13 @@ package org.reactome.curation;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -356,6 +360,161 @@ class CurationRepositoryTests {
         instances.getInstances().forEach(instance -> System.out.println(instance));
     }
     
+    /**
+     * Tests for the raw-Cypher rewrite of listInstances.
+     */
+    @Test
+    public void testListInstancesNoFilter() {
+        // Basic listing without any filter should return paged results
+        InstanceList result = repository.listInstances("Pathway", 0, 5, Collections.emptyList(),
+                Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
+        assertNotNull(result);
+        assertNotNull(result.getTotalCount());
+        assertTrue(result.getTotalCount() > 0, "Expected non-zero pathway count");
+        assertTrue(result.getInstances().size() <= 5, "Page size should be at most 5");
+        logger.info("Pathways total={}, page={}", result.getTotalCount(), result.getInstances().size());
+    }
+
+    @Test
+    public void testListInstancesTextContains() {
+        // Simple text search delegates to the overloaded method
+        InstanceList result = repository.listInstances("Pathway", 0, 10, "TP53");
+        assertNotNull(result);
+        assertNotNull(result.getTotalCount());
+        result.getInstances().forEach(inst ->
+                assertTrue(inst.getDisplayName().toLowerCase().contains("tp53"),
+                        "displayName should contain TP53 (case-insensitive)"));
+        logger.info("Pathways containing 'TP53': total={}", result.getTotalCount());
+    }
+
+    @Test
+    public void testListInstancesByDbId() {
+        // Numeric text triggers dbId EQUAL search
+        InstanceList result = repository.listInstances("Pathway", 0, 5, "69620");
+        assertNotNull(result);
+        // Should find exactly the pathway with that dbId (or 0 if it doesn't exist)
+        logger.info("Pathway with dbId 69620: total={}", result.getTotalCount());
+        if (result.getTotalCount() != null && result.getTotalCount() > 0)
+            assertEquals(Long.valueOf(69620L), result.getInstances().get(0).getDbId());
+    }
+
+    @Test
+    public void testListInstancesRelationshipIsNull() {
+        // Reactions with no compartment assigned
+        InstanceList result = repository.listInstances("Reaction", 0, 10,
+                List.of("compartment"),
+                List.of("instance"),
+                List.of(ListOperand.IS_NULL),
+                Collections.singletonList(null));
+        assertNotNull(result);
+        assertNotNull(result.getTotalCount());
+        logger.info("Reactions with no compartment: total={}", result.getTotalCount());
+    }
+
+    @Test
+    public void testListInstancesRelationshipIsNotNull() {
+        // Reactions that have at least one input
+        InstanceList result = repository.listInstances("Reaction", 0, 10,
+                List.of("input"),
+                List.of("instance"),
+                List.of(ListOperand.IS_NOT_NULL),
+                Collections.singletonList(null));
+        assertNotNull(result);
+        assertNotNull(result.getTotalCount());
+        assertTrue(result.getTotalCount() > 0, "Should find reactions with input");
+        logger.info("Reactions with input: total={}", result.getTotalCount());
+    }
+
+    @Test
+    public void testListInstancesCombinedFilters() {
+        // Reactions whose displayName contains "phosphorylates" and have no compartment
+        InstanceList result = repository.listInstances("Reaction", 0, 10,
+                List.of("displayName", "compartment"),
+                List.of("string", "instance"),
+                List.of(ListOperand.CONTAINS, ListOperand.IS_NULL),
+                Arrays.asList("phosphorylates", null));
+        assertNotNull(result);
+        assertNotNull(result.getTotalCount());
+        logger.info("Reactions matching 'phosphorylates' with no compartment: total={}", result.getTotalCount());
+    }
+
+    @Test
+    public void testListInstancesPagination() {
+        // Verify skip/limit work: page 0 and page 1 should not overlap
+        InstanceList page0 = repository.listInstances("Pathway", 0, 5, Collections.emptyList(),
+                Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
+        InstanceList page1 = repository.listInstances("Pathway", 5, 5, Collections.emptyList(),
+                Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
+        assertNotNull(page0);
+        assertNotNull(page1);
+        if (page0.getInstances() != null && page1.getInstances() != null && !page1.getInstances().isEmpty()) {
+            Long firstOnPage0 = page0.getInstances().get(0).getDbId();
+            Long firstOnPage1 = page1.getInstances().get(0).getDbId();
+            assertNotEquals(firstOnPage0, firstOnPage1, "Pages should not overlap");
+        }
+        logger.info("Page 0 size={}, page 1 size={}",
+                page0.getInstances() == null ? 0 : page0.getInstances().size(),
+                page1.getInstances() == null ? 0 : page1.getInstances().size());
+    }
+
+    @Test
+    public void testListInstancesRelationshipContains() {
+        // Reactions that have an input whose displayName contains "ATP"
+        InstanceList result = repository.listInstances("Reaction", 0, 10,
+                List.of("input"),
+                List.of("instance"),
+                List.of(ListOperand.CONTAINS),
+                List.of("ATP"));
+        assertNotNull(result);
+        assertNotNull(result.getTotalCount());
+        assertTrue(result.getTotalCount() > 0, "Should find reactions with ATP input");
+        logger.info("Reactions with ATP input: total={}", result.getTotalCount());
+    }
+
+    @Test
+    public void testListInstancesTextWithSpace() {
+        // Spaces in the search key should still work
+        InstanceList result = repository.listInstances("Reaction", 0, 10, "R5C deph");
+        assertNotNull(result);
+        logger.info("Reactions containing 'R5C deph': total={}", result.getTotalCount());
+    }
+
+    @Test
+    public void testListInstancesListAttribute() {
+        // geneName is a List<String> in ReferenceGeneProduct (stored as StringArray in Neo4j).
+        // toString() throws a TypeError on arrays, so the "list" attributeType must use ANY().
+        InstanceList result = repository.listInstances("ReferenceGeneProduct", 0, 10,
+                List.of("geneName"),
+                List.of("list"),
+                List.of(ListOperand.CONTAINS),
+                List.of("TP53"));
+        assertNotNull(result);
+        assertNotNull(result.getTotalCount());
+        assertTrue(result.getTotalCount() > 0, "Should find ReferenceGeneProducts with geneName containing TP53");
+        logger.info("ReferenceGeneProducts with geneName containing 'TP53': total={}", result.getTotalCount());
+
+        // IS_NOT_NULL on a list attribute
+        InstanceList notNull = repository.listInstances("ReferenceGeneProduct", 0, 5,
+                List.of("geneName"),
+                List.of("list"),
+                List.of(ListOperand.IS_NOT_NULL),
+                Collections.singletonList(null));
+        assertNotNull(notNull);
+        assertNotNull(notNull.getTotalCount());
+        assertTrue(notNull.getTotalCount() > 0, "Should find ReferenceGeneProducts that have geneName");
+        logger.info("ReferenceGeneProducts with non-empty geneName: total={}", notNull.getTotalCount());
+    }
+
+    @Test
+    public void testListInstancesNullText() {
+        // Null text should return all instances (paged)
+        InstanceList result = repository.listInstances("Species", 0, 5, (String) null);
+        assertNotNull(result);
+        assertNotNull(result.getTotalCount());
+        assertTrue(result.getTotalCount() > 0, "Should return some species");
+        logger.info("Species total={}", result.getTotalCount());
+    }
+
     @Test
     public void testFetchReactionWithParticipants() throws Exception {
         // This reaction has a catalyst

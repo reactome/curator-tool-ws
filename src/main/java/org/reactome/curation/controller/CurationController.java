@@ -633,7 +633,9 @@ public class CurationController {
             List<String> attributeTypeList = new ArrayList<>(attributeList.size());
             for (String attribute : attributeList) {
                 if (service.isInstanceType(className, attribute))
-                    attributeTypeList.add("instance"); // Doesn't matter whatever this is called.
+                    attributeTypeList.add("instance");
+                else if (service.isListType(className, attribute))
+                    attributeTypeList.add("list");
                 else
                     attributeTypeList.add("property");
             }

@@ -226,7 +226,7 @@ public class CurationService {
     
     public boolean isInstanceType(String clsName, String attName) throws Exception {
         // Have to call this method first to make sure all attributes have been loaded.
-        // In the server env, there should be no performance penality since the map 
+        // In the server env, there should be no performance penality since the map
         // should be loaded anyway
         this.getAttributes(clsName);
         Map<String, CurationAttribute> attName2Att = clsName2attName2Attribute.get(clsName);
@@ -240,6 +240,29 @@ public class CurationService {
                 return true; // We will not mixed two types of attributes together
         }
         return false;
+    }
+
+    /**
+     * Returns true when the named attribute is a list of primitive values (e.g. geneName: List&lt;String&gt;).
+     * Such properties are stored as Neo4j StringArray / LongArray etc., so Cypher must use ANY()
+     * rather than toString() to search them.
+     */
+    public boolean isListType(String clsName, String attName) throws Exception {
+        this.getAttributes(clsName);
+        Map<String, CurationAttribute> attName2Att = clsName2attName2Attribute.get(clsName);
+        if (attName2Att == null || !attName2Att.containsKey(attName))
+            throw new IllegalArgumentException(attName + " is not defined in " + clsName);
+        CurationAttribute att = attName2Att.get(attName);
+        AttributeProperties attProps = att.getProperties();
+        // Cardinality "+" means List<T>; "1" means a single value
+        if (!"+".equals(attProps.getCardinality()))
+            return false;
+        // It is a list — but only primitive lists need ANY(); instance lists are handled as relationships
+        for (AttributeClass attCls : attProps.getAttributeClasses()) {
+            if (attCls.isValueTypeDatabaseObject())
+                return false;
+        }
+        return true;
     }
     
     public SimpleSchemaClass loadSchemaClassTree() throws Exception {
