@@ -2582,7 +2582,7 @@
     "name" : "stId"
   } ],
   "PathwayDiagram" : [ {
-    "definingType" : "ALL_DEFINING",
+    "definingType" : "ANY_DEFINING",
     "category" : "MANDATORY",
     "name" : "representedPathway"
   }, {

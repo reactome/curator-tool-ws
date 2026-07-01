@@ -9,12 +9,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.gk.model.ReactomeJavaConstants;
 import org.junit.jupiter.api.Test;
+import org.reactome.curation.model.CurationAttribute.DefiningAttributeValue;
+import org.reactome.curation.model.CurationAttribute.DefiningType;
 import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.NamedReferrerList;
@@ -554,5 +558,33 @@ class CurationRepositoryTests {
         for(DatabaseObject inst : instances) {
             System.out.println(inst.getDbId() + "\t" + inst.getDisplayName() + "\t" + inst.getSchemaClass());
         }
+    }
+
+    /**
+     * Regression test for the ANY_DEFINING reference bug in
+     * CypherQueryUtilities.findMatchingInstancesByDefiningAttributes().
+     *
+     * Before the fix, OPTIONAL MATCH + WHERE was used for ANY_DEFINING references.
+     * In Neo4j a WHERE placed directly after OPTIONAL MATCH is part of the optional
+     * pattern: when the condition fails, the alias is set to null instead of the outer
+     * row being excluded, so every PathwayDiagram was returned.
+     *
+     * After the fix (EXISTS subquery), only the one PathwayDiagram whose
+     * representedPathway.dbId = 382556 should be returned.
+     */
+    @Test
+    public void testFindMatchingInstancesByDefiningAttributes_AnyDefiningRef() {
+        logger.info("Test findMatchingInstancesByDefiningAttributes with ANY_DEFINING reference...");
+        Long pathwayDbId = 382556L;
+        Map<String, DefiningAttributeValue> definingAttributes = new HashMap<>();
+        definingAttributes.put("representedPathway",
+                new DefiningAttributeValue(pathwayDbId, DefiningType.ANY_DEFINING, true));
+
+        List<SimpleInstance> matched = repository.findMatchedInstances("PathwayDiagram", definingAttributes);
+        logger.info("Matched PathwayDiagram instances for representedPathway dbId={}: {}", pathwayDbId, matched.size());
+        matched.forEach(inst -> logger.info("  dbId={}, displayName={}", inst.getDbId(), inst.getDisplayName()));
+
+        assertEquals(1, matched.size(),
+                "Expected exactly one PathwayDiagram for representedPathway dbId=" + pathwayDbId);
     }
 }

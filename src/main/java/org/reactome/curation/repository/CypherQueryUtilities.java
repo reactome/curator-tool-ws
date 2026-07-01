@@ -387,20 +387,28 @@ public class CypherQueryUtilities {
             
             String whereClause;
             if (isReference) {
-                // Reference attributes: the pattern must live in a MATCH clause because
-                // Neo4j does not allow new node variables to be introduced in WHERE.
-                // Use a unique alias per attribute so multiple reference attributes
-                // can coexist in the same query.
                 String refAlias = "ref_" + attName;
                 String paramName = attName + "_dbId";
-                // ALL_DEFINING → MATCH (must exist), ANY_DEFINING → OPTIONAL MATCH
-                // with a null-check in WHERE so the absence of one is allowed.
-                boolean isAll = defValue.getDefiningType() == org.reactome.curation.model.CurationAttribute.DefiningType.ALL_DEFINING;
-                String matchKeyword = isAll ? "MATCH" : "OPTIONAL MATCH";
-                refMatchClauses.add(matchKeyword + " (n)-[:" + attName + "]->(" + refAlias + ":DatabaseObject)");
                 parameters.put(paramName, value);
-                // The WHERE condition simply constrains the already-bound alias.
-                whereClause = refAlias + ".dbId = $" + paramName;
+                boolean isAll = defValue.getDefiningType() == org.reactome.curation.model.CurationAttribute.DefiningType.ALL_DEFINING;
+                if (isAll) {
+                    // ALL_DEFINING: a required MATCH guarantees the relationship exists.
+                    // Use a unique alias per attribute so multiple ALL_DEFINING references
+                    // can coexist in the same query.
+                    refMatchClauses.add("MATCH (n)-[:" + attName + "]->(" + refAlias + ":DatabaseObject)");
+                    whereClause = value instanceof Collection
+                            ? refAlias + ".dbId IN $" + paramName
+                            : refAlias + ".dbId = $" + paramName;
+                } else {
+                    // ANY_DEFINING: use an EXISTS subquery so the check is a true post-filter
+                    // on the outer row.  OPTIONAL MATCH + WHERE does NOT work here: Neo4j
+                    // treats a WHERE placed directly after OPTIONAL MATCH as part of the
+                    // optional pattern — when the condition fails, Neo4j returns null for
+                    // the alias instead of excluding the outer row, so ALL nodes pass through.
+                    whereClause = value instanceof Collection
+                            ? "EXISTS { (n)-[:" + attName + "]->(ref:DatabaseObject) WHERE ref.dbId IN $" + paramName + " }"
+                            : "EXISTS { (n)-[:" + attName + "]->(ref:DatabaseObject) WHERE ref.dbId = $" + paramName + " }";
+                }
             } else {
                 // For simple attributes, match directly
                 String paramName = attName + "_value";

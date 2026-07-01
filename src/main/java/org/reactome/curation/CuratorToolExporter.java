@@ -196,8 +196,11 @@ public class CuratorToolExporter {
                 }
                 
                 // Disable all manual editing for PathwayDiagram except referencePathway
-                if (cls.getName().equals(ReactomeJavaConstants.PathwayDiagram) && !attName.equals(ReactomeJavaConstants.representedPathway)) {
-                    curationAtt.setCategory(CurationAttribute.Category.NOMANUALEDIT);
+                if (cls.getName().equals(ReactomeJavaConstants.PathwayDiagram)) {
+                    if (!attName.equals(ReactomeJavaConstants.representedPathway))
+                        curationAtt.setCategory(CurationAttribute.Category.NOMANUALEDIT);
+                    else // To fix a bug in the data model finition
+                        curationAtt.setDefiningType(DefiningType.ANY_DEFINING);
                 }
                 
                 // Some manual fixes for Deleted class
