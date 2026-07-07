@@ -53,8 +53,8 @@ public class SimpleInstance extends DatabaseObject {
         return newInstOld2NewId;
     }
 
-    public Boolean isStructureModified() {
-        return isStructureModified;
+    public boolean isStructureModified() {
+        return isStructureModified == null ? false : isStructureModified;
     }
 
     public void setStructureModified(boolean isStructureModified) {
@@ -73,8 +73,8 @@ public class SimpleInstance extends DatabaseObject {
         return this.defaultPersonId;
     }
 
-    public Boolean isStableIdentifierModified() {
-        return isStableIdentifierModified;
+    public boolean isStableIdentifierModified() {
+        return isStableIdentifierModified == null ? false : isStableIdentifierModified;
     }
 
     public void setStableIdentifierModified(Boolean stableIdentifierModified) {
