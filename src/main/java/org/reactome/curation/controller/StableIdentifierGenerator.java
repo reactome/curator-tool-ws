@@ -89,7 +89,6 @@ public class StableIdentifierGenerator {
      * Create a StableIdentifier instance for the passed GKInstance object.
      *
      * @param instance Instance for which to create stable id instance
-     * @param created  Created instance edit instance to attach to newly created stable id instance
      * @return Stable identifier instance
      * @throws Exception Thrown if unable to generate an identifier for the instance or if unable to set attribute
      *                   values for the newly created StableIdentifier instance
@@ -170,7 +169,7 @@ public class StableIdentifierGenerator {
 
     private String getSpeciesFromPhysicalEntity(DatabaseObject physicalEntity) throws Exception {
         Set<Taxon> speciesSet = getSpeciesFromPE(physicalEntity);
-        if (speciesSet.size() == 0)
+        if (speciesSet == null || speciesSet.size() == 0)
             return ALL_SPECIES;
         else if (speciesSet.size() > 1)
             return NUL_SPECIES;
