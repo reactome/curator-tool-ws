@@ -244,7 +244,7 @@ public class CypherQueryUtilities {
      * 2). Create a new modified relationship to the passed InstanceEdit.
      * 3). Create a new modifiedList relationship to the passed InstanceEdit with rank = maxRank + 1.
      * @param instance
-     * @param ieNode
+     * @param neo4jClient
      * @param ie
      */
     public void addModifiedIE(DatabaseObject instance, 
@@ -364,7 +364,6 @@ public class CypherQueryUtilities {
         
         // Build the Cypher query
         StringBuilder matchBuilder  = new StringBuilder();
-        StringBuilder whereBuilder  = new StringBuilder();
         matchBuilder.append("MATCH (n:").append(schemaClass).append(") ");
         
         // Separate ALL_DEFINING and ANY_DEFINING attributes
@@ -387,19 +386,44 @@ public class CypherQueryUtilities {
             
             String whereClause;
             if (isReference) {
-                String refAlias = "ref_" + attName;
                 String paramName = attName + "_dbId";
-                parameters.put(paramName, value);
                 boolean isAll = defValue.getDefiningType() == org.reactome.curation.model.CurationAttribute.DefiningType.ALL_DEFINING;
                 if (isAll) {
-                    // ALL_DEFINING: a required MATCH guarantees the relationship exists.
-                    // Use a unique alias per attribute so multiple ALL_DEFINING references
-                    // can coexist in the same query.
-                    refMatchClauses.add("MATCH (n)-[:" + attName + "]->(" + refAlias + ":DatabaseObject)");
-                    whereClause = value instanceof Collection
-                            ? refAlias + ".dbId IN $" + paramName
-                            : refAlias + ".dbId = $" + paramName;
+                    if (value instanceof Collection) {
+                        // ALL_DEFINING with multiple reference values: every value in the
+                        // collection must have its own matching relationship. A single
+                        // required MATCH + "dbId IN $param" (the old approach) only demands
+                        // that ONE relationship target be in the list, i.e. ANY_DEFINING
+                        // semantics. Emit one required MATCH per value instead - Neo4j 4.x
+                        // does not allow an EXISTS{} subquery to be nested inside ALL(),
+                        // so that would not work here.
+                        Collection<?> values = (Collection<?>) value;
+                        if (values.isEmpty()) {
+                            continue;
+                        }
+                        int i = 0;
+                        for (Object v : values) {
+                            String refAlias = "ref_" + attName + "_" + i;
+                            String valueParamName = paramName + "_" + i;
+                            parameters.put(valueParamName, v);
+                            refMatchClauses.add("MATCH (n)-[:" + attName + "]->(" + refAlias
+                                    + ":DatabaseObject {dbId: $" + valueParamName + "})");
+                            i++;
+                        }
+                        // Existence of every value is already enforced by the required
+                        // MATCH clauses above; no additional WHERE predicate is needed.
+                        continue;
+                    } else {
+                        // ALL_DEFINING: a required MATCH guarantees the relationship exists.
+                        // Use a unique alias per attribute so multiple ALL_DEFINING references
+                        // can coexist in the same query.
+                        parameters.put(paramName, value);
+                        String refAlias = "ref_" + attName;
+                        refMatchClauses.add("MATCH (n)-[:" + attName + "]->(" + refAlias + ":DatabaseObject)");
+                        whereClause = refAlias + ".dbId = $" + paramName;
+                    }
                 } else {
+                    parameters.put(paramName, value);
                     // ANY_DEFINING: use an EXISTS subquery so the check is a true post-filter
                     // on the outer row.  OPTIONAL MATCH + WHERE does NOT work here: Neo4j
                     // treats a WHERE placed directly after OPTIONAL MATCH as part of the
@@ -414,12 +438,14 @@ public class CypherQueryUtilities {
                 String paramName = attName + "_value";
                 
                 if (value instanceof Collection) {
-                    // For multi-valued attributes, check if all/any values match
+                    // For multi-valued attributes, ALL_DEFINING requires every provided
+                    // value to be present, ANY_DEFINING requires at least one.
                     Collection<?> values = (Collection<?>) value;
                     if (values.isEmpty()) {
                         continue;
                     }
-                    whereClause = "ALL(v IN $" + paramName + " WHERE v IN n." + attName + ")";
+                    boolean isAllNonRef = defValue.getDefiningType() == org.reactome.curation.model.CurationAttribute.DefiningType.ALL_DEFINING;
+                    whereClause = (isAllNonRef ? "ALL" : "ANY") + "(v IN $" + paramName + " WHERE v IN n." + attName + ")";
                     parameters.put(paramName, new ArrayList<>(values));
                 } else {
                     // For single-valued attributes

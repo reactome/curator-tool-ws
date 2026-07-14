@@ -23,6 +23,7 @@ To run `UserManager` from the command line (make sure the jar file name is corre
 ```bash
 java -jar target/curator-tool-ws-0.0.1-SNAPSHOT-usermanager.jar help
 java -jar target/curator-tool-ws-0.0.1-SNAPSHOT-usermanager.jar create <username> <password> [role]
+java -jar target/curator-tool-ws-0.0.1-SNAPSHOT-usermanager.jar list
 java -jar target/curator-tool-ws-0.0.1-SNAPSHOT-usermanager.jar change-password <username> <newPassword>
 java -jar target/curator-tool-ws-0.0.1-SNAPSHOT-usermanager.jar delete <username>
 ```

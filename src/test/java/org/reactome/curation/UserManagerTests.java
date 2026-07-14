@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.util.Arrays;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.reactome.curation.UserManager;
@@ -47,6 +49,21 @@ class UserManagerTests {
     }
 
     @Test
+    void shouldListUsersWithRoles() {
+        StubUserService userService = new StubUserService();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PrintStream originalOut = System.out;
+        System.setOut(new PrintStream(baos));
+        try {
+            UserManager.execute(new String[] {"list"}, userService);
+        }
+        finally {
+            System.setOut(originalOut);
+        }
+        assertEquals("Username\tRole\nalice\tcurator\nbob\t-", baos.toString().trim());
+    }
+
+    @Test
     void shouldChangePassword() {
         StubUserService userService = new StubUserService();
         UserManager.execute(new String[] {"change-password", "cli-user", "new-secret"}, userService);
@@ -61,6 +78,19 @@ class UserManagerTests {
         private String deletedUsername;
         private String changedUsername;
         private String changedPassword;
+
+        @Override
+        public List<User> findAllUsers() {
+            User alice = new User();
+            alice.setUsername("alice");
+            alice.setRole("curator");
+
+            User bob = new User();
+            bob.setUsername("bob");
+            bob.setRole(null);
+
+            return Arrays.asList(alice, bob);
+        }
 
         @Override
         public User saveUser(String username, String rawPassword, String role) {

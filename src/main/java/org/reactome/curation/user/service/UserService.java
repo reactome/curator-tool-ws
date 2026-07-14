@@ -1,5 +1,6 @@
 package org.reactome.curation.user.service;
 import java.util.Optional;
+import java.util.List;
 
 import org.reactome.curation.user.model.User;
 import org.reactome.curation.user.repository.UserRepository;
@@ -8,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Sort;
 
 @Service
 public class UserService {
@@ -55,6 +57,10 @@ public class UserService {
 
     public Optional<User> findUserByUsername(String username) {
         return userRepository.findByUsername(username);
+    }
+
+    public List<User> findAllUsers() {
+        return userRepository.findAll(Sort.by(Sort.Direction.ASC, "username"));
     }
     
     public User changePassword(String username, String rawPassword) {

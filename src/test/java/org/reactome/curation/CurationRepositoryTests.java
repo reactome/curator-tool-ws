@@ -587,4 +587,73 @@ class CurationRepositoryTests {
         assertEquals(1, matched.size(),
                 "Expected exactly one PathwayDiagram for representedPathway dbId=" + pathwayDbId);
     }
+
+    /**
+     * Regression test for the ALL_DEFINING reference-collection bug in
+     * CypherQueryUtilities.findMatchingInstancesByDefiningAttributes().
+     *
+     * Before the fix, a Collection value for an ALL_DEFINING reference attribute was
+     * matched with a single required MATCH plus "dbId IN $param", which only demands
+     * that ONE of the relationship targets be in the list - i.e. ANY_DEFINING semantics.
+     * After the fix (ALL()+EXISTS), every value in the collection must have its own
+     * matching relationship.
+     *
+     * Complex 444551 has exactly two hasComponent relationships: to 444505 and 444506.
+     */
+    @Test
+    public void testFindMatchingInstancesByDefiningAttributes_AllDefiningRefCollection() {
+        logger.info("Test findMatchingInstancesByDefiningAttributes with ALL_DEFINING reference collection...");
+        Long complexDbId = 444551L;
+
+        // All of the Complex's actual components: should match.
+        Map<String, DefiningAttributeValue> allPresent = new HashMap<>();
+        allPresent.put("hasComponent",
+                new DefiningAttributeValue(List.of(444505L, 444506L), DefiningType.ALL_DEFINING, true));
+        List<SimpleInstance> matched = repository.findMatchedInstances("Complex", allPresent);
+        assertTrue(matched.stream().anyMatch(inst -> complexDbId.equals(inst.getDbId())),
+                "Expected Complex " + complexDbId + " to match when all its components are given");
+
+        // One real component plus one that is not a component of this Complex: must NOT match,
+        // since ALL_DEFINING requires every listed value to be present.
+        Map<String, DefiningAttributeValue> oneMissing = new HashMap<>();
+        oneMissing.put("hasComponent",
+                new DefiningAttributeValue(List.of(444505L, -1L), DefiningType.ALL_DEFINING, true));
+        List<SimpleInstance> notMatched = repository.findMatchedInstances("Complex", oneMissing);
+        assertTrue(notMatched.stream().noneMatch(inst -> complexDbId.equals(inst.getDbId())),
+                "Expected Complex " + complexDbId + " NOT to match when one listed component is not actually a component");
+    }
+
+    /**
+     * Regression test for the ANY_DEFINING non-reference-collection bug in
+     * CypherQueryUtilities.findMatchingInstancesByDefiningAttributes().
+     *
+     * Before the fix, a Collection value for a simple (non-reference) attribute always
+     * built an ALL(...) clause regardless of defining type, so ANY_DEFINING was enforced
+     * as if it were ALL_DEFINING. After the fix, ANY_DEFINING uses ANY(...) so at least
+     * one listed value matching is sufficient.
+     *
+     * Complex 374150 has name = ["GPER1:ESTG", "GPER1:Estrogen"].
+     */
+    @Test
+    public void testFindMatchingInstancesByDefiningAttributes_AnyDefiningNonRefCollection() {
+        logger.info("Test findMatchingInstancesByDefiningAttributes with ANY_DEFINING non-reference collection...");
+        Long complexDbId = 374150L;
+
+        // Only one of the two listed names is real; the other does not exist for this Complex.
+        // ANY_DEFINING should still match since at least one value is present.
+        Map<String, DefiningAttributeValue> oneMatches = new HashMap<>();
+        oneMatches.put("name",
+                new DefiningAttributeValue(List.of("GPER1:ESTG", "Not A Real Name"), DefiningType.ANY_DEFINING, false));
+        List<SimpleInstance> matched = repository.findMatchedInstances("Complex", oneMatches);
+        assertTrue(matched.stream().anyMatch(inst -> complexDbId.equals(inst.getDbId())),
+                "Expected Complex " + complexDbId + " to match when at least one listed name is present (ANY_DEFINING)");
+
+        // Neither listed name is real: should not match.
+        Map<String, DefiningAttributeValue> noneMatch = new HashMap<>();
+        noneMatch.put("name",
+                new DefiningAttributeValue(List.of("Not A Real Name", "Also Not Real"), DefiningType.ANY_DEFINING, false));
+        List<SimpleInstance> notMatched = repository.findMatchedInstances("Complex", noneMatch);
+        assertTrue(notMatched.stream().noneMatch(inst -> complexDbId.equals(inst.getDbId())),
+                "Expected Complex " + complexDbId + " NOT to match when no listed name is present");
+    }
 }
