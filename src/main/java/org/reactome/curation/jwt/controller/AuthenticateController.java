@@ -79,7 +79,7 @@ public class AuthenticateController {
         return ResponseCookie.from(JwtService.REFRESH_TOKEN_COOKIE_NAME, token)
                 .httpOnly(true)
                 .secure(isProduction) // Set secure flag based on environment
-                .sameSite("Lax")
+                .sameSite(isProduction ? "None" : "Lax")
                 .path("/api")
                 .maxAge(Duration.ofHours(12))
                 .build();
