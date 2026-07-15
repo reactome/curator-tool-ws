@@ -238,7 +238,8 @@ public class CuratorToolExporter {
             if (cls.isa(ReactomeJavaConstants.Pathway)) {
                 CurationAttribute hasDiagramAtt = new CurationAttribute();
                 hasDiagramAtt.setName("hasDiagram");
-                hasDiagramAtt.setCategory(Category.OPTIONAL);
+                // Change this to Non manual editing as of July 15, 2026
+                hasDiagramAtt.setCategory(Category.NOMANUALEDIT);
                 hasDiagramAtt.setDefiningType(DefiningType.NONE_DEFINING);
                 curationAttributes.add(hasDiagramAtt);
             }

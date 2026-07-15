@@ -576,11 +576,12 @@ class RESTfulAPITests {
         assertNotNull(mockMvc);
         String[] clsNames = {
 //                ReactomeJavaConstants.EntityWithAccessionedSequence,
-                ReactomeJavaConstants.Pathway,
+//                ReactomeJavaConstants.Pathway,
 //                ReactomeJavaConstants.Reaction,
 //                ReactomeJavaConstants.ReferenceGeneProduct,
 //                ReactomeJavaConstants.Species
 //                "ReviewStatus" // A new class
+                ReactomeJavaConstants.Cell
         };
         String url = BASE_URL + "getAttributes/";
         for (String clsName : clsNames) {

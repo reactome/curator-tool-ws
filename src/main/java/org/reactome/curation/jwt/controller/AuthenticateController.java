@@ -88,7 +88,7 @@ public class AuthenticateController {
     /**
      * Refresh the access token using a valid refresh token.
      * 
-     * @param refreshTokenRequest the request containing the refresh token
+     * @param refreshToken the request containing the refresh token
      * @return AuthenticationResponse containing a new accessToken and the same refreshToken
      * @throws BadCredentialsException if the refresh token is invalid or expired
      */
