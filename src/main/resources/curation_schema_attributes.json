@@ -165,7 +165,7 @@
     "name" : "doi"
   }, {
     "definingType" : "NONE_DEFINING",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "hasDiagram"
   } ],
   "NegativePrecedingEvent" : [ {
@@ -3659,7 +3659,7 @@
     "name" : "doi"
   }, {
     "definingType" : "NONE_DEFINING",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "hasDiagram"
   } ],
   "PsiMod" : [ {
@@ -4333,7 +4333,7 @@
     "name" : "doi"
   }, {
     "definingType" : "NONE_DEFINING",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "hasDiagram"
   } ],
   "LiteratureReference" : [ {
