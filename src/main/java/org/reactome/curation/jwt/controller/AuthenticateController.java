@@ -81,7 +81,10 @@ public class AuthenticateController {
                 .secure(isProduction) // Set secure flag based on environment
                 .sameSite("Lax")
                 .path("/api")
-                .maxAge(Duration.ofHours(12))
+                // Must match jwt.refresh-token-time; otherwise the browser silently drops the
+                // cookie before the server-side refresh token (and its sliding idle window)
+                // actually expires.
+                .maxAge(Duration.ofMillis(jwtService.getRefreshTokenExpirationTime()))
                 .build();
     }
 
