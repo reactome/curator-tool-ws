@@ -44,8 +44,9 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                                     HttpServletResponse response, 
                                     FilterChain chain)  throws ServletException, IOException {
         // Check if the request is for authenticate or register
-        if (request.getRequestURI().equals("/api/auth/login") || 
-            request.getRequestURI().equals("/api/auth/refresh")) {
+        if (request.getRequestURI().equals("/api/auth/login") ||
+            request.getRequestURI().equals("/api/auth/refresh") ||
+            request.getRequestURI().equals("/api/auth/logout")) {
             chain.doFilter(request, response); // Skip JWT filter
             return;
         }

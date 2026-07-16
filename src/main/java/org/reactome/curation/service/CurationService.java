@@ -155,7 +155,12 @@ public class CurationService {
         // e.g the new Person class definition. The modified property may be defined two times, therefore
         // two entries in properties, which use objects.
         for (AttributeProperties prop : properties) {
-            name2prop.put(prop.getName(), prop);
+            String propName = prop.getName();
+            if (propName.equals("rNAMarker")) {
+                propName = "RNAMarker";
+                prop.setName(propName);
+            }
+            name2prop.put(propName, prop);
         }
         attributes.forEach(att -> att.setProperties(name2prop.get(att.getName())));
         return attributes;

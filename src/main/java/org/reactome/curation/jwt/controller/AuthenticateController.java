@@ -81,7 +81,10 @@ public class AuthenticateController {
                 .secure(isProduction) // Set secure flag based on environment
                 .sameSite("Lax")
                 .path("/api")
-                .maxAge(Duration.ofHours(12))
+                // Must match jwt.refresh-token-time; otherwise the browser silently drops the
+                // cookie before the server-side refresh token (and its sliding idle window)
+                // actually expires.
+                .maxAge(Duration.ofMillis(jwtService.getRefreshTokenExpirationTime()))
                 .build();
     }
 
@@ -119,7 +122,7 @@ public class AuthenticateController {
     /**
      * Refresh the access token using a valid refresh token.
      * 
-     * @param refreshTokenRequest the request containing the refresh token
+     * @param refreshToken the request containing the refresh token
      * @return AuthenticationResponse containing a new accessToken and the same refreshToken
      * @throws BadCredentialsException if the refresh token is invalid or expired
      */
@@ -144,5 +147,36 @@ public class AuthenticateController {
         catch(Exception e) {
             throw new BadCredentialsException("Failed to refresh token: " + e.getMessage());
         }
+    }
+
+    /**
+     * Build a cookie that expires the refresh token cookie on the client. All attributes
+     * (name, path, httpOnly, secure, sameSite) must match {@link #addRefreshToCookie} so the
+     * browser recognizes it as the same cookie and removes it; maxAge(0) triggers deletion.
+     */
+    private ResponseCookie clearRefreshCookie() {
+        return ResponseCookie.from(JwtService.REFRESH_TOKEN_COOKIE_NAME, "")
+                .httpOnly(true)
+                .secure(isProduction)
+                .sameSite("Lax")
+                .path("/api")
+                .maxAge(0)
+                .build();
+    }
+
+    /**
+     * Log the user out: revoke the server-side refresh token (if present) and expire the
+     * HttpOnly refresh cookie on the client. The refresh cookie is HttpOnly, so it can only
+     * be cleared server-side; a client-only logout leaves a stale cookie that later gets
+     * replayed on /refresh. This is idempotent — it succeeds even when no cookie is sent.
+     */
+    @PostMapping("/logout")
+    public void logout(@CookieValue(name = JwtService.REFRESH_TOKEN_COOKIE_NAME, required = false) String refreshToken,
+                       HttpServletResponse response) {
+        if (refreshToken != null && !refreshToken.trim().isEmpty()) {
+            refreshTokenService.revokeToken(refreshToken);
+        }
+        ResponseCookie cookie = this.clearRefreshCookie();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 }
