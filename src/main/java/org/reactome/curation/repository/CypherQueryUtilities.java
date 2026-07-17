@@ -390,29 +390,40 @@ public class CypherQueryUtilities {
                 boolean isAll = defValue.getDefiningType() == org.reactome.curation.model.CurationAttribute.DefiningType.ALL_DEFINING;
                 if (isAll) {
                     if (value instanceof Collection) {
-                        // ALL_DEFINING with multiple reference values: every value in the
-                        // collection must have its own matching relationship. A single
-                        // required MATCH + "dbId IN $param" (the old approach) only demands
-                        // that ONE relationship target be in the list, i.e. ANY_DEFINING
-                        // semantics. Emit one required MATCH per value instead - Neo4j 4.x
-                        // does not allow an EXISTS{} subquery to be nested inside ALL(),
-                        // so that would not work here.
+                        // ALL_DEFINING with multiple reference values: the candidate's
+                        // relationships for this attribute must equal the given values
+                        // exactly, including multiplicity (e.g. a homodimer-like list with
+                        // the same target dbId twice must match a candidate with exactly two
+                        // edges to that target, not one). A MATCH clause per list entry
+                        // cannot enforce this: separate MATCH statements are not required to
+                        // bind to distinct relationships, so two "dbId: X" MATCH clauses can
+                        // both silently reuse the same single edge. Instead, check size() per
+                        // DISTINCT value (exact per-value multiplicity) plus a total size()
+                        // check (rejects extra, unlisted relationships) - both entirely in the
+                        // WHERE clause, so no MATCH-clause aliasing/cartesian concerns.
                         Collection<?> values = (Collection<?>) value;
                         if (values.isEmpty()) {
                             continue;
                         }
-                        int i = 0;
+                        Map<Object, Integer> countByValue = new HashMap<>();
                         for (Object v : values) {
-                            String refAlias = "ref_" + attName + "_" + i;
+                            countByValue.merge(v, 1, Integer::sum);
+                        }
+                        List<String> perValueClauses = new ArrayList<>();
+                        int i = 0;
+                        for (Map.Entry<Object, Integer> countEntry : countByValue.entrySet()) {
                             String valueParamName = paramName + "_" + i;
-                            parameters.put(valueParamName, v);
-                            refMatchClauses.add("MATCH (n)-[:" + attName + "]->(" + refAlias
-                                    + ":DatabaseObject {dbId: $" + valueParamName + "})");
+                            String valueCountParamName = valueParamName + "_count";
+                            parameters.put(valueParamName, countEntry.getKey());
+                            parameters.put(valueCountParamName, countEntry.getValue());
+                            perValueClauses.add("size((n)-[:" + attName + "]->(:DatabaseObject {dbId: $"
+                                    + valueParamName + "})) = $" + valueCountParamName);
                             i++;
                         }
-                        // Existence of every value is already enforced by the required
-                        // MATCH clauses above; no additional WHERE predicate is needed.
-                        continue;
+                        String totalCountParamName = paramName + "_totalCount";
+                        parameters.put(totalCountParamName, values.size());
+                        perValueClauses.add("size((n)-[:" + attName + "]->(:DatabaseObject)) = $" + totalCountParamName);
+                        whereClause = "(" + String.join(" AND ", perValueClauses) + ")";
                     } else {
                         // ALL_DEFINING: a required MATCH guarantees the relationship exists.
                         // Use a unique alias per attribute so multiple ALL_DEFINING references

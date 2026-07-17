@@ -621,6 +621,28 @@ class CurationRepositoryTests {
         List<SimpleInstance> notMatched = repository.findMatchedInstances("Complex", oneMissing);
         assertTrue(notMatched.stream().noneMatch(inst -> complexDbId.equals(inst.getDbId())),
                 "Expected Complex " + complexDbId + " NOT to match when one listed component is not actually a component");
+
+        // Only one of the Complex's two actual components: must NOT match either, since
+        // ALL_DEFINING means the two sets of components must be equal, not just that the
+        // listed value(s) are a subset of the candidate's actual components.
+        Map<String, DefiningAttributeValue> subsetOnly = new HashMap<>();
+        subsetOnly.put("hasComponent",
+                new DefiningAttributeValue(List.of(444505L), DefiningType.ALL_DEFINING, true));
+        List<SimpleInstance> subsetMatched = repository.findMatchedInstances("Complex", subsetOnly);
+        assertTrue(subsetMatched.stream().noneMatch(inst -> complexDbId.equals(inst.getDbId())),
+                "Expected Complex " + complexDbId + " NOT to match when only a subset of its components is given");
+
+        // A duplicated value (e.g. asking for a homodimer of two copies of 444505) must NOT
+        // match a candidate that actually has one edge to 444505 and one to a DIFFERENT target
+        // (444506) - i.e. a heterodimer. A MATCH-clause-per-list-entry approach can't tell
+        // these apart, since separate MATCH statements aren't required to bind to distinct
+        // relationships; per-distinct-value size() checks are what makes this work.
+        Map<String, DefiningAttributeValue> duplicatedValue = new HashMap<>();
+        duplicatedValue.put("hasComponent",
+                new DefiningAttributeValue(List.of(444505L, 444505L), DefiningType.ALL_DEFINING, true));
+        List<SimpleInstance> duplicateMatched = repository.findMatchedInstances("Complex", duplicatedValue);
+        assertTrue(duplicateMatched.stream().noneMatch(inst -> complexDbId.equals(inst.getDbId())),
+                "Expected Complex " + complexDbId + " (a heterodimer of 444505+444506) NOT to match a query for two copies of 444505");
     }
 
     /**
