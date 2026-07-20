@@ -5,10 +5,13 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.gk.model.ReactomeJavaConstants;
 import org.reactome.server.graph.domain.model.DatabaseObject;
+import org.reactome.server.graph.service.util.DatabaseObjectUtils;
 
 /**
  * A collection of some utility methods that can be used in this project.
@@ -25,6 +28,17 @@ public class CuratorToolWSUtils {
                 ReactomeJavaConstants.input,
                 ReactomeJavaConstants.output
         );
+    }
+
+    public static Map<String, Object> getAllFields(DatabaseObject obj, boolean includeSubObjects) {
+        Map<String, Object> field2value = DatabaseObjectUtils.getAllFields(obj, includeSubObjects);
+        // Some modification regarding using RNAMarker (or rnaMarker, or rNAMakrer)
+        if (field2value.containsKey("rNAMarker")) {
+            Object value = field2value.get("rNAMarker");
+            field2value.remove("rNAMarker");
+            field2value.put("RNAMarker", value);
+        }
+        return field2value;
     }
     
     /**

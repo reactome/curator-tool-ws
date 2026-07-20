@@ -27,6 +27,7 @@ import org.reactome.curation.service.autofill.ChEBIAttributeAutoFiller;
 import org.reactome.curation.service.autofill.LiteratureReferenceAttributeAutoFiller;
 import org.reactome.curation.service.autofill.ExternalOntologyAutoFiller;
 import org.reactome.curation.service.autofill.ReferenceGeneProductAutoFiller;
+import org.reactome.curation.util.CuratorToolWSUtils;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.domain.model.Deleted;
 import org.reactome.server.graph.domain.model.InstanceEdit;
@@ -554,7 +555,7 @@ public class CurationService {
     }
     
     private void grepNewInstances(DatabaseObject obj, Set<DatabaseObject> newInstances) {
-        Map<String, Object> field2value = DatabaseObjectUtils.getAllFields(obj, false);
+        Map<String, Object> field2value = CuratorToolWSUtils.getAllFields(obj, false);
         // Recursive calling to store all new instances
         for (String field : field2value.keySet()) {
             Object value = field2value.get(field);
