@@ -418,7 +418,15 @@ public class CurationService {
     public UserInstances loadUserInstances(String accountName) throws Exception {
         return fileRepository.load(getFileForPersistedInstances(accountName));
     }
-    
+
+    public List<UserInstanceBackupSummary> listUserInstanceBackups(String accountName) {
+        return fileRepository.listBackups(getFileForPersistedInstances(accountName));
+    }
+
+    public UserInstances loadUserInstanceBackup(String accountName, String backupFileName) throws Exception {
+        return fileRepository.loadBackup(getFileForPersistedInstances(accountName), backupFileName);
+    }
+
     private String getFileForPersistedInstances(String accountName) {
         File file = new File(toolEnv.getFileRepoDir() + File.separator + accountName, accountName + ".json");
         return file.getAbsolutePath();

@@ -15,6 +15,7 @@ import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.NamedReferrerList;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.model.SimpleSchemaClass;
+import org.reactome.curation.model.UserInstanceBackupSummary;
 import org.reactome.curation.model.UserInstances;
 import org.reactome.curation.qa.QAService;
 import org.reactome.curation.qa.model.QAReport;
@@ -708,6 +709,38 @@ public class CurationController {
         }
         catch(Exception e) {
             logger.error("CurationController.loadInstances: " + e.getMessage(), e);
+            return new UserInstances();
+        }
+    }
+
+    /**
+     * List the staged-instances backups available for the current user (derived from the JWT,
+     * not a client-supplied account name - unlike the older loadInstances/persistInstances
+     * endpoints above).
+     */
+    @GetMapping("listUserInstanceBackups")
+    public List<UserInstanceBackupSummary> listUserInstanceBackups() {
+        String username = getUsername();
+        try {
+            return service.listUserInstanceBackups(username);
+        }
+        catch(Exception e) {
+            logger.error("CurationController.listUserInstanceBackups: " + e.getMessage(), e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Fetch the content of one specific staged-instances backup belonging to the current user.
+     */
+    @GetMapping("getUserInstanceBackup/{fileName}")
+    public UserInstances getUserInstanceBackup(@PathVariable("fileName") String fileName) {
+        String username = getUsername();
+        try {
+            return service.loadUserInstanceBackup(username, fileName);
+        }
+        catch(Exception e) {
+            logger.error("CurationController.getUserInstanceBackup: " + e.getMessage(), e);
             return new UserInstances();
         }
     }

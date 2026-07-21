@@ -5,10 +5,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
 
+import org.reactome.curation.model.UserInstanceBackupSummary;
 import org.reactome.curation.model.UserInstances;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,7 +86,7 @@ public class CurationFileRepository {
         // Create backup filename with timestamp
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
         String timestamp = dateFormat.format(new Date());
-        
+
         // Get the base name and extension
         String baseName = originalFile.getName();
         String backupFileName;
@@ -94,7 +98,7 @@ public class CurationFileRepository {
         } else {
             backupFileName = baseName + "_backup_" + timestamp;
         }
-        
+
         File backupFile = new File(originalFile.getParent(), backupFileName);
         
         // Copy the file
@@ -116,21 +120,12 @@ public class CurationFileRepository {
         if (parentDir == null || !parentDir.exists()) {
             return;
         }
-        
-        // Get the base name without extension
-        String baseName = originalFile.getName();
-        String baseNameWithoutExt = baseName;
-        int dotIndex = baseName.lastIndexOf('.');
-        if (dotIndex > 0) {
-            baseNameWithoutExt = baseName.substring(0, dotIndex);
-        }
-        
-        // Find all backup files for this base name
-        final String backupPrefix = baseNameWithoutExt + "_backup_";
-        File[] backupFiles = parentDir.listFiles((dir, name) -> 
+
+        final String backupPrefix = getBackupPrefix(originalFile);
+        File[] backupFiles = parentDir.listFiles((dir, name) ->
             name.startsWith(backupPrefix)
         );
-        
+
         if (backupFiles == null || backupFiles.length <= maxBackupCount) {
             return;
         }
@@ -149,6 +144,76 @@ public class CurationFileRepository {
         }
     }
     
+    /**
+     * The prefix shared by all backup files of the given original file, e.g. for
+     * ".../jdoe/jdoe.json" this is "jdoe_backup_" - matches the naming scheme used by backupFile().
+     */
+    private String getBackupPrefix(File originalFile) {
+        String baseName = originalFile.getName();
+        int dotIndex = baseName.lastIndexOf('.');
+        String baseNameWithoutExt = dotIndex > 0 ? baseName.substring(0, dotIndex) : baseName;
+        return baseNameWithoutExt + "_backup_";
+    }
+
+    /**
+     * List the available backups of the given file (most recently modified first).
+     * @param fileName the canonical (non-backup) file whose backups should be listed
+     */
+    public List<UserInstanceBackupSummary> listBackups(String fileName) {
+        File originalFile = new File(fileName);
+        File parentDir = originalFile.getParentFile();
+        if (parentDir == null || !parentDir.exists())
+            return Collections.emptyList();
+
+        final String backupPrefix = getBackupPrefix(originalFile);
+        File[] backupFiles = parentDir.listFiles((dir, name) -> name.startsWith(backupPrefix));
+        if (backupFiles == null || backupFiles.length == 0)
+            return Collections.emptyList();
+
+        List<UserInstanceBackupSummary> summaries = new ArrayList<>();
+        for (File backupFile : backupFiles) {
+            summaries.add(new UserInstanceBackupSummary(backupFile.getName(), backupFile.lastModified()));
+        }
+        summaries.sort((a, b) -> Long.compare(b.getLastModified(), a.getLastModified()));
+        return summaries;
+    }
+
+    /**
+     * Load the content of one specific backup of the given file. To avoid path traversal or
+     * reading another user's backup, backupFileName is validated to be a bare file name (no
+     * path separators) that both matches this file's backup-naming prefix and resolves to a
+     * regular file directly inside the same directory as fileName.
+     * @param fileName the canonical (non-backup) file whose backup directory should be searched
+     * @param backupFileName the backup's file name, as returned by listBackups()
+     * @throws Exception if backupFileName is invalid or the backup cannot be read
+     */
+    public UserInstances loadBackup(String fileName, String backupFileName) throws Exception {
+        File originalFile = new File(fileName);
+        File parentDir = originalFile.getParentFile();
+        if (parentDir == null)
+            throw new IllegalArgumentException("Invalid file: " + fileName);
+
+        String backupPrefix = getBackupPrefix(originalFile);
+        if (backupFileName == null
+                || backupFileName.contains("/")
+                || backupFileName.contains("\\")
+                || !backupFileName.startsWith(backupPrefix)) {
+            throw new IllegalArgumentException("Invalid backup file name: " + backupFileName);
+        }
+
+        File backupFile = new File(parentDir, backupFileName);
+        if (backupFile.getParentFile() == null
+                || !backupFile.getParentFile().getCanonicalFile().equals(parentDir.getCanonicalFile())
+                || !backupFile.exists()
+                || !backupFile.isFile()) {
+            throw new IllegalArgumentException("Backup file not found: " + backupFileName);
+        }
+
+        ObjectMapper mapper = getObjectMapper();
+        TypeReference<UserInstances> typeRef = new TypeReference<>(){};
+        return mapper.readValue(backupFile, typeRef);
+    }
+
     /**
      * Delete the persisted instances for a case like users have committed all changed instances.
      * @param fileName
