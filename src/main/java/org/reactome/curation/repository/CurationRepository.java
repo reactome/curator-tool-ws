@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.gk.model.ReactomeJavaConstants;
@@ -577,7 +578,8 @@ public class CurationRepository {
             else
                 labels = labels.or(instance.hasLabels(clsName));
         }
-        Condition condition = displayNameProp.matches("(?i)" + displayName); // Perform a case insensitive search
+        // Quote so regex metacharacters in the name are matched literally.
+        Condition condition = displayNameProp.matches("(?i)" + Pattern.quote(displayName)); // Perform a case insensitive search
 
         condition = labels.and(condition);
         var query = Cypher.match(instance);
@@ -736,7 +738,9 @@ public class CurationRepository {
                         relMatchClauses.add("MATCH (inst)-[:`" + attr + "`]-()");
                         break;
                     case CONTAINS:
-                        params.put(paramName, "(?i).*" + key + ".*");
+                        // Quote the key so regex metacharacters (e.g. '+', '*', '(') in the
+                        // search term are matched literally instead of being interpreted as regex.
+                        params.put(paramName, "(?i).*" + Pattern.quote(key) + ".*");
                         relMatchClauses.add("MATCH (inst)-[:`" + attr + "`]-(" + nodeAlias
                                 + ") WHERE " + nodeAlias + ".displayName =~ $" + paramName);
                         break;
@@ -758,7 +762,9 @@ public class CurationRepository {
                 // toString() throws a TypeError on arrays in Neo4j 4.x, so we use ANY().
                 switch (operand) {
                     case CONTAINS:
-                        params.put(paramName, "(?i).*" + key + ".*");
+                        // Quote the key so regex metacharacters (e.g. '+', '*', '(') in the
+                        // search term are matched literally instead of being interpreted as regex.
+                        params.put(paramName, "(?i).*" + Pattern.quote(key) + ".*");
                         whereClauses.add("inst." + attr + " IS NOT NULL AND ANY(x IN inst." + attr + " WHERE x IS NOT NULL AND toString(x) =~ $" + paramName + ")");
                         break;
                     case EQUAL:
@@ -790,7 +796,9 @@ public class CurationRepository {
                         whereClauses.add("inst." + attr + " IS NOT NULL AND toString(inst." + attr + ") <> $" + paramName);
                         break;
                     case CONTAINS:
-                        params.put(paramName, "(?i).*" + key + ".*");
+                        // Quote the key so regex metacharacters (e.g. '+', '*', '(') in the
+                        // search term are matched literally instead of being interpreted as regex.
+                        params.put(paramName, "(?i).*" + Pattern.quote(key) + ".*");
                         whereClauses.add("inst." + attr + " IS NOT NULL AND toString(inst." + attr + ") =~ $" + paramName);
                         break;
                     case IS_NOT_NULL:
@@ -1216,7 +1224,8 @@ public class CurationRepository {
         if (text != null) {
             // Find display names containing text using regex
             var displayName = instance.property("displayName");
-            condition = displayName.matches(".*(?i)" + text + ".*");
+            // Quote so regex metacharacters (e.g. '+') in the search text are matched literally.
+            condition = displayName.matches(".*(?i)" + Pattern.quote(text) + ".*");
         }
         return condition;
     }
@@ -1246,7 +1255,7 @@ public class CurationRepository {
                 searchKey = searchKey.toLowerCase(); // Only here to avoid equal check
             condition = attributeProp.isNotNull()
                     .and(Functions.toString(attributeProp)
-                            .matches(".*(?i)" + searchKey + ".*"));
+                            .matches(".*(?i)" + Pattern.quote(searchKey) + ".*"));
             break;
         case IS_NOT_NULL:
             condition = attributeProp.isNotNull();
