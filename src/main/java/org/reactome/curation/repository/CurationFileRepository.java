@@ -5,12 +5,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.reactome.curation.model.UserInstanceBackupSummary;
 import org.reactome.curation.model.UserInstances;
@@ -170,11 +170,10 @@ public class CurationFileRepository {
         if (backupFiles == null || backupFiles.length == 0)
             return Collections.emptyList();
 
-        List<UserInstanceBackupSummary> summaries = new ArrayList<>();
-        for (File backupFile : backupFiles) {
-            summaries.add(new UserInstanceBackupSummary(backupFile.getName(), backupFile.lastModified()));
-        }
-        summaries.sort((a, b) -> Long.compare(b.getLastModified(), a.getLastModified()));
+        List<UserInstanceBackupSummary> summaries = Arrays.stream(backupFiles)
+                .map(backupFile -> new UserInstanceBackupSummary(backupFile.getName(), backupFile.lastModified()))
+                .sorted((a, b) -> Long.compare(b.getLastModified(), a.getLastModified()))
+                .collect(Collectors.toList());
         return summaries;
     }
 
