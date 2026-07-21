@@ -163,7 +163,7 @@ public class CurationRepository {
             deletedInstance.setName(obj.getDisplayName());
             deletedInstance.setCreated(ie); // Don't forget to set created.
             // Check species is there by checking the method
-            Map<String, Object> field2value = DatabaseObjectUtils.getAllFields(obj, true);
+            Map<String, Object> field2value = CuratorToolWSUtils.getAllFields(obj, true);
             if (field2value.containsKey(ReactomeJavaConstants.species)) {
                 Object value = field2value.get(ReactomeJavaConstants.species);
                 if (value instanceof List) {
@@ -293,7 +293,7 @@ public class CurationRepository {
         if (obj.getDbId() == null || obj.getDbId() < 0) 
             obj = storeShell(obj); // Assign a new dbId and create a node for the object.
         // Step 2: Get all fields and their values
-        Map<String, Object> field2value = DatabaseObjectUtils.getAllFields(obj, false); // Use "false" to avoid empty
+        Map<String, Object> field2value = CuratorToolWSUtils.getAllFields(obj, false); // Use "false" to avoid empty
         // fields
         // Step 3: Check if any referred object has been deleted
         // Make sure existing DatabaseObject referred by the passed obj still exists to
