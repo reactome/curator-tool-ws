@@ -4,10 +4,14 @@ import java.lang.reflect.Method;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.gk.model.ReactomeJavaConstants;
 import org.reactome.server.graph.domain.model.DatabaseObject;
@@ -65,10 +69,32 @@ public class CuratorToolWSUtils {
                     if (parameterType.isAssignableFrom(parameterCls)) {
                         return method; // Found the method
                     }
+                    // Handle common collection mismatches (e.g. List value for Set setter).
+                    if (value instanceof Collection &&
+                        (List.class.isAssignableFrom(parameterType) || Set.class.isAssignableFrom(parameterType))) {
+                        return method;
+                    }
                 }
             }
         }
         return null; // Not found
+    }
+
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    public static Object convertValueForSetMethod(Method setMethod, Object value) {
+        if (value == null)
+            return null;
+        Class<?> parameterType = setMethod.getParameterTypes()[0];
+        if (parameterType.isAssignableFrom(value.getClass()))
+            return value;
+        if (!(value instanceof Collection))
+            return value;
+        Collection collection = (Collection) value;
+        if (Set.class.isAssignableFrom(parameterType))
+            return new LinkedHashSet<>(collection);
+        if (List.class.isAssignableFrom(parameterType))
+            return new ArrayList<>(collection);
+        return value;
     }
     
     public static Method getGetMethod(String attributeName,

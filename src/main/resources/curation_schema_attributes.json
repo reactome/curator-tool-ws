@@ -113,7 +113,7 @@
     "name" : "lastUpdatedDate"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "orthologousEvent"
   }, {
     "definingType" : "UNDEFINED",
@@ -539,7 +539,7 @@
     "name" : "reactionType"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "orthologousEvent"
   }, {
     "definingType" : "UNDEFINED",
@@ -1427,7 +1427,7 @@
     "name" : "entityFunctionalStatus"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "orthologousEvent"
   }, {
     "definingType" : "UNDEFINED",
@@ -3066,7 +3066,7 @@
     "name" : "entityFunctionalStatus"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "orthologousEvent"
   }, {
     "definingType" : "UNDEFINED",
@@ -3267,7 +3267,7 @@
     "name" : "entityFunctionalStatus"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "orthologousEvent"
   }, {
     "definingType" : "UNDEFINED",
@@ -3607,7 +3607,7 @@
     "name" : "lastUpdatedDate"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "orthologousEvent"
   }, {
     "definingType" : "UNDEFINED",
@@ -3813,7 +3813,7 @@
     "name" : "stId"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "orthologousEvent"
   }, {
     "definingType" : "UNDEFINED",
@@ -4006,7 +4006,7 @@
     "name" : "entityFunctionalStatus"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "orthologousEvent"
   }, {
     "definingType" : "UNDEFINED",
@@ -4281,7 +4281,7 @@
     "name" : "lastUpdatedDate"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "orthologousEvent"
   }, {
     "definingType" : "UNDEFINED",
@@ -5732,7 +5732,7 @@
     "name" : "reactionType"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "orthologousEvent"
   }, {
     "definingType" : "UNDEFINED",
@@ -6760,7 +6760,7 @@
     "name" : "entityFunctionalStatus"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "orthologousEvent"
   }, {
     "definingType" : "UNDEFINED",
@@ -7279,7 +7279,7 @@
     "name" : "stId"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "orthologousEvent"
   }, {
     "definingType" : "UNDEFINED",
