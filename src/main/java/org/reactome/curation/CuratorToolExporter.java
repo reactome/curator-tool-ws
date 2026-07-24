@@ -225,6 +225,10 @@ public class CuratorToolExporter {
                 if (cls.isa(ReactomeJavaConstants.Event) && attName.equals(ReactomeJavaConstants.orthologousEvent)) {
                     curationAtt.setCategory(Category.NOMANUALEDIT);
                 }
+
+                // Since we have inferredFrom already, lock inferredTo to avoid any edit
+                if (attName.equals(ReactomeJavaConstants.inferredTo))
+                    curationAtt.setCategory(Category.NOMANUALEDIT);
                 
                 curationAttributes.add(curationAtt);
                 // Need to duplicate the modified to the modfiedList
