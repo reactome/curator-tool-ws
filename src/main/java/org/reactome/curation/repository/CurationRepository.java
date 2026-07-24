@@ -330,13 +330,20 @@ public class CurationRepository {
                 continue;
             Relationship rel = field2rel.get(field);
             Object value = field2value.get(field);
-            if (value instanceof List) {
+            // For multi-valued attribute, in rare case the returned value is a set (e.g. inferredFrom)
+            // This should be treated as a bug at the graph data model layer
+            List<?> valueList = null;
+            if (value instanceof Set)
+                valueList = new ArrayList<>((Set)value);
+            else if (value instanceof List) {
+                valueList = (List<?>)value;
+            }
+            if (valueList != null) {
                 // For list, we need to handle for all and stoichiometry for
                 // Complex.hasComponent,
                 // Polymer.repeatedUnit, and ReactionlikeEvent.input, output.
-                List<?> list = (List<?>) value;
-                for (int i = 0; i < list.size(); i++) {
-                    var tmp = list.get(i);
+                for (int i = 0; i < valueList.size(); i++) {
+                    var tmp = valueList.get(i);
                     stat = handleValueObj(objNode, tmp, rel, i, relationships, stat);
                 }
             } 
