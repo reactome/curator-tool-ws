@@ -123,6 +123,47 @@ public class CurationRepository {
     }
 
     /**
+     * Build a Cypher relationship pattern between "(inst)" and the given target alias
+     * (empty string for an anonymous node) for an "instance"-typed attribute used in
+     * {@link #listInstances}, using the actual Neo4j relationship type and direction
+     * from the graph-core domain class's @Relationship annotation rather than assuming
+     * the attribute name IS the relationship type.
+     *
+     * This matters because some attributes are reverse views of a differently-named
+     * relationship - e.g. Event.inferredFrom is declared as the INCOMING direction of the
+     * "inferredTo" relationship (there is no "inferredFrom" relationship in the graph at
+     * all), so a pattern built from the literal attribute name silently matches nothing.
+     * Falls back to the previous behavior (attribute name as an undirected relationship
+     * type) when the domain class or the annotated field can't be resolved, preserving
+     * existing behavior for the common case where the attribute name and relationship
+     * type coincide.
+     */
+    private String buildInstanceRelationshipPattern(String className, String attr, String targetAlias) {
+        String type = attr;
+        String arrowLeft = "-";
+        String arrowRight = "-";
+        try {
+            Class<?> cls = Class.forName(DatabaseObject.class.getPackageName() + "." + className);
+            Relationship rel = getField2rel(cls).get(attr);
+            if (rel != null) {
+                if (!rel.type().isEmpty())
+                    type = rel.type();
+                if (rel.direction() == Relationship.Direction.INCOMING) {
+                    arrowLeft = "<-";
+                    arrowRight = "-";
+                } else {
+                    arrowLeft = "-";
+                    arrowRight = "->";
+                }
+            }
+        } catch (ClassNotFoundException e) {
+            logger.warn("Could not resolve domain class for schema class '{}' while mapping attribute '{}' " +
+                    "to its relationship type; falling back to an undirected pattern: {}", className, attr, e.getMessage());
+        }
+        return "(inst)" + arrowLeft + "[:`" + type + "`]" + arrowRight + "(" + targetAlias + ")";
+    }
+
+    /**
      * Get the next dbId that can be used to create a new DatabaseObject. This is a
      * synchronized method so that it can be accessed by one thread only to avoid
      * any id conflict.
@@ -739,27 +780,27 @@ public class CurationRepository {
                 switch (operand) {
                     case IS_NULL:
                         // Pattern-existence predicate: no OPTIONAL MATCH needed
-                        whereClauses.add("NOT (inst)-[:`" + attr + "`]-()");
+                        whereClauses.add("NOT " + buildInstanceRelationshipPattern(className, attr, ""));
                         break;
                     case IS_NOT_NULL:
-                        relMatchClauses.add("MATCH (inst)-[:`" + attr + "`]-()");
+                        relMatchClauses.add("MATCH " + buildInstanceRelationshipPattern(className, attr, ""));
                         break;
                     case CONTAINS:
                         // Quote the key so regex metacharacters (e.g. '+', '*', '(') in the
                         // search term are matched literally instead of being interpreted as regex.
                         params.put(paramName, "(?i).*" + Pattern.quote(key) + ".*");
-                        relMatchClauses.add("MATCH (inst)-[:`" + attr + "`]-(" + nodeAlias
-                                + ") WHERE " + nodeAlias + ".displayName =~ $" + paramName);
+                        relMatchClauses.add("MATCH " + buildInstanceRelationshipPattern(className, attr, nodeAlias)
+                                + " WHERE " + nodeAlias + ".displayName =~ $" + paramName);
                         break;
                     case EQUAL:
                         params.put(paramName, key);
-                        relMatchClauses.add("MATCH (inst)-[:`" + attr + "`]-(" + nodeAlias
-                                + ") WHERE " + nodeAlias + ".displayName = $" + paramName);
+                        relMatchClauses.add("MATCH " + buildInstanceRelationshipPattern(className, attr, nodeAlias)
+                                + " WHERE " + nodeAlias + ".displayName = $" + paramName);
                         break;
                     case NOT_EQUAL:
                         params.put(paramName, key);
-                        relMatchClauses.add("MATCH (inst)-[:`" + attr + "`]-(" + nodeAlias
-                                + ") WHERE " + nodeAlias + ".displayName <> $" + paramName);
+                        relMatchClauses.add("MATCH " + buildInstanceRelationshipPattern(className, attr, nodeAlias)
+                                + " WHERE " + nodeAlias + ".displayName <> $" + paramName);
                         break;
                     default:
                         break;
