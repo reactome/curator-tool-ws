@@ -242,7 +242,7 @@ public class CurationRepository {
     @Transactional
     public Boolean delete(DatabaseObject obj, InstanceEdit ie) throws Exception {
         // Make sure there is a node having this dbId
-        if (!neo4jTemplate.existsById(obj.getDbId(), obj.getClass())) {
+        if (!existsById(obj.getDbId())) {
             throw new DatabaseObjectNotFoundException(obj);
         }
 
@@ -292,7 +292,7 @@ public class CurationRepository {
     @Transactional
     public DatabaseObject storeShell(DatabaseObject obj) throws Exception {
         // Only instance that has not been in the database can be stored
-        if (obj.getDbId() != null && neo4jTemplate.existsById(obj.getDbId(), obj.getClass())) {
+        if (obj.getDbId() != null && existsById(obj.getDbId())) {
             throw new IllegalStateException(obj + " is in the database and cannot be stored. Call update instead.");
         }
         if (obj.getDbId() == null || obj.getDbId() < 0)
@@ -577,13 +577,13 @@ public class CurationRepository {
             DatabaseObject dObj = (DatabaseObject) value;
             if (dObj.getDbId() == null || dObj.getDbId() < 0)
                 return null;
-            if (!neo4jTemplate.existsById(dObj.getDbId(), DatabaseObject.class))
+            if (!existsById(dObj.getDbId()))
                 return dObj;
         } else if (value instanceof StoichiometryObject) {
             DatabaseObject dObj = ((StoichiometryObject) value).getObject();
             if (dObj.getDbId() == null || dObj.getDbId() < 0)
                 return null;
-            if (!neo4jTemplate.existsById(dObj.getDbId(), DatabaseObject.class))
+            if (!existsById(dObj.getDbId()))
                 return dObj;
         }
         return null; // Don't care
@@ -719,6 +719,9 @@ public class CurationRepository {
         Map<Long, String> id2SchemaClass = new HashMap<>();
         for (Map<String, Object> map : results) {
             Long dbId = Long.parseLong(map.get("dbId").toString());
+            Object clsObj = map.get("schemaClass");
+            if (clsObj == null)
+                continue;
             String clsName = map.get("schemaClass").toString();
             id2SchemaClass.put(dbId, clsName);
         }
@@ -1367,7 +1370,7 @@ public class CurationRepository {
         sb.append("MATCH (n:").append(getNodeLabel(obj)).append(" {dbId: $dbId}) ");
         int i = 0;
         for (String field : field2rel.keySet()) {
-            // We will try to delete an relationship as long as it is defined in the model
+            // We will try to delete a relationship as long as it is defined in the model
             // even though it may not exist in the database for this object
             // By doing this, we don't need to load the object first to find out which relationship exists
             Relationship rel = field2rel.get(field);
@@ -1412,10 +1415,43 @@ public class CurationRepository {
      */
     @Transactional
     public DatabaseObject commit(DatabaseObject obj) throws Exception {
-        if (obj.getDbId() != null && neo4jTemplate.existsById(obj.getDbId(), obj.getClass()))
+        if (obj.getDbId() != null && existsById(obj.getDbId())) {
+            // Check if its class type is switched. If it is, delete it and then do a store.
+            // update()/store() both locate the existing node via a MATCH keyed on obj's
+            // (new) class label - see resetNode() and storeNodeProperties(), both of which
+            // do "MATCH (n:<getNodeLabel(obj)> {dbId: $dbId})". If the stored node still
+            // carries the OLD class's label, that MATCH finds nothing and the whole update
+            // silently no-ops: no exception, no persisted change at all. Deleting the node
+            // by dbId alone (not by label) and letting storeShell() recreate it lets Spring
+            // Data Neo4j's own save() compute the new class's full label set for us, rather
+            // than us having to diff the old and new label sets ourselves.
+            //
+            // Caveat: this deletes and recreates the node, so relationships FROM OTHER
+            // objects INTO this one (e.g. a Pathway's hasEvent pointing at it) are lost -
+            // store() only recreates this object's own attribute relationships. Switching
+            // the class of an object that already has referrers is not supported here.
+            String storedSchemaClass = fetchSchemaClasses(List.of(obj.getDbId())).get(obj.getDbId());
+            if (storedSchemaClass != null && !storedSchemaClass.equals(obj.getSchemaClass())) {
+                deleteNodeByDbId(obj.getDbId());
+                storeShell(obj);
+                return store(obj);
+            }
             return update(obj);
+        }
         else
             return store(obj);
+    }
+
+    /**
+     * Delete a node by dbId alone, matched via the generic DatabaseObject label rather
+     * than a specific schema-class label. Used when the caller no longer agrees with the
+     * node's current specific label (e.g. its class type is being switched via commit()),
+     * so matching by the new class's label would find nothing. Does not preserve or
+     * notify referrers - see commit()'s class-switch handling for that caveat.
+     */
+    private void deleteNodeByDbId(Long dbId) {
+        String cypher = "MATCH (n:DatabaseObject {dbId: $dbId}) DETACH DELETE n";
+        neo4jClient.query(cypher).bind(dbId).to("dbId").run();
     }
 
     /**
