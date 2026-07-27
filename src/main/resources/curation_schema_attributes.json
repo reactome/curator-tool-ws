@@ -113,7 +113,7 @@
     "name" : "lastUpdatedDate"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "orthologousEvent"
   }, {
     "definingType" : "UNDEFINED",
@@ -539,7 +539,7 @@
     "name" : "reactionType"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "orthologousEvent"
   }, {
     "definingType" : "UNDEFINED",
@@ -596,7 +596,7 @@
     "name" : "goCellularComponent"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "inferredTo"
   }, {
     "definingType" : "UNDEFINED",
@@ -1031,7 +1031,7 @@
     "name" : "goCellularComponent"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "inferredTo"
   }, {
     "definingType" : "UNDEFINED",
@@ -1174,7 +1174,7 @@
     "name" : "goCellularComponent"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "inferredTo"
   }, {
     "definingType" : "UNDEFINED",
@@ -1427,7 +1427,7 @@
     "name" : "entityFunctionalStatus"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "orthologousEvent"
   }, {
     "definingType" : "UNDEFINED",
@@ -2043,7 +2043,7 @@
     "name" : "goCellularComponent"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "inferredTo"
   }, {
     "definingType" : "UNDEFINED",
@@ -2372,7 +2372,7 @@
     "name" : "goCellularComponent"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "inferredTo"
   }, {
     "definingType" : "UNDEFINED",
@@ -3066,7 +3066,7 @@
     "name" : "entityFunctionalStatus"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "orthologousEvent"
   }, {
     "definingType" : "UNDEFINED",
@@ -3267,7 +3267,7 @@
     "name" : "entityFunctionalStatus"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "orthologousEvent"
   }, {
     "definingType" : "UNDEFINED",
@@ -3434,7 +3434,7 @@
     "name" : "goCellularComponent"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "inferredTo"
   }, {
     "definingType" : "UNDEFINED",
@@ -3607,7 +3607,7 @@
     "name" : "lastUpdatedDate"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "orthologousEvent"
   }, {
     "definingType" : "UNDEFINED",
@@ -3813,7 +3813,7 @@
     "name" : "stId"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "orthologousEvent"
   }, {
     "definingType" : "UNDEFINED",
@@ -4006,7 +4006,7 @@
     "name" : "entityFunctionalStatus"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "orthologousEvent"
   }, {
     "definingType" : "UNDEFINED",
@@ -4281,7 +4281,7 @@
     "name" : "lastUpdatedDate"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "orthologousEvent"
   }, {
     "definingType" : "UNDEFINED",
@@ -4583,7 +4583,7 @@
     "name" : "tissue"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "inferredTo"
   }, {
     "definingType" : "UNDEFINED",
@@ -4905,7 +4905,7 @@
     "name" : "goCellularComponent"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "inferredTo"
   }, {
     "definingType" : "UNDEFINED",
@@ -5482,7 +5482,7 @@
     "name" : "goCellularComponent"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "inferredTo"
   }, {
     "definingType" : "UNDEFINED",
@@ -5732,7 +5732,7 @@
     "name" : "reactionType"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "orthologousEvent"
   }, {
     "definingType" : "UNDEFINED",
@@ -5789,7 +5789,7 @@
     "name" : "goCellularComponent"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "inferredTo"
   }, {
     "definingType" : "UNDEFINED",
@@ -6319,7 +6319,7 @@
     "name" : "goCellularComponent"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "inferredTo"
   }, {
     "definingType" : "UNDEFINED",
@@ -6760,7 +6760,7 @@
     "name" : "entityFunctionalStatus"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "orthologousEvent"
   }, {
     "definingType" : "UNDEFINED",
@@ -6939,7 +6939,7 @@
     "name" : "goCellularComponent"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "inferredTo"
   }, {
     "definingType" : "UNDEFINED",
@@ -7057,7 +7057,7 @@
     "name" : "goCellularComponent"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "inferredTo"
   }, {
     "definingType" : "UNDEFINED",
@@ -7279,7 +7279,7 @@
     "name" : "stId"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "orthologousEvent"
   }, {
     "definingType" : "UNDEFINED",
@@ -7446,7 +7446,7 @@
     "name" : "goCellularComponent"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "inferredTo"
   }, {
     "definingType" : "UNDEFINED",
@@ -7539,7 +7539,7 @@
     "name" : "goCellularComponent"
   }, {
     "definingType" : "UNDEFINED",
-    "category" : "OPTIONAL",
+    "category" : "NOMANUALEDIT",
     "name" : "inferredTo"
   }, {
     "definingType" : "UNDEFINED",

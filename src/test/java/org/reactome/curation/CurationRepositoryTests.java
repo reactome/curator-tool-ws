@@ -429,6 +429,28 @@ class CurationRepositoryTests {
         logger.info("Reactions with input: total={}", result.getTotalCount());
     }
 
+    /**
+     * Regression test: Event.inferredFrom is declared as the INCOMING direction of the
+     * "inferredTo" relationship (see graph-core's Event.java) - there is no "inferredFrom"
+     * relationship type in the graph at all. Before the fix, listInstances() built its
+     * relationship pattern from the literal attribute name ("inferredFrom"), which matches
+     * nothing, so this always returned zero results even though many Reactions do have
+     * inferredFrom set. After the fix, the actual relationship type/direction is resolved
+     * via the @Relationship annotation on the domain class.
+     */
+    @Test
+    public void testListInstancesReverseAttributeInferredFrom() {
+        InstanceList result = repository.listInstances("Reaction", 0, 10,
+                List.of("inferredFrom"),
+                List.of("instance"),
+                List.of(ListOperand.IS_NOT_NULL),
+                Collections.singletonList(null));
+        assertNotNull(result);
+        assertNotNull(result.getTotalCount());
+        assertTrue(result.getTotalCount() > 0, "Should find Reactions with inferredFrom set");
+        logger.info("Reactions with inferredFrom set: total={}", result.getTotalCount());
+    }
+
     @Test
     public void testListInstancesCombinedFilters() {
         // Reactions whose displayName contains "phosphorylates" and have no compartment

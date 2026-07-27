@@ -401,6 +401,8 @@ public class CypherQueryUtilities {
                         // DISTINCT value (exact per-value multiplicity) plus a total size()
                         // check (rejects extra, unlisted relationships) - both entirely in the
                         // WHERE clause, so no MATCH-clause aliasing/cartesian concerns.
+                        // A bare "size(pattern)" is deprecated by Neo4j in favor of a pattern
+                        // comprehension ("size([pattern | expr])"), which is what's used below.
                         Collection<?> values = (Collection<?>) value;
                         if (values.isEmpty()) {
                             continue;
@@ -416,13 +418,13 @@ public class CypherQueryUtilities {
                             String valueCountParamName = valueParamName + "_count";
                             parameters.put(valueParamName, countEntry.getKey());
                             parameters.put(valueCountParamName, countEntry.getValue());
-                            perValueClauses.add("size((n)-[:" + attName + "]->(:DatabaseObject {dbId: $"
-                                    + valueParamName + "})) = $" + valueCountParamName);
+                            perValueClauses.add("size([(n)-[:" + attName + "]->(:DatabaseObject {dbId: $"
+                                    + valueParamName + "}) | 1]) = $" + valueCountParamName);
                             i++;
                         }
                         String totalCountParamName = paramName + "_totalCount";
                         parameters.put(totalCountParamName, values.size());
-                        perValueClauses.add("size((n)-[:" + attName + "]->(:DatabaseObject)) = $" + totalCountParamName);
+                        perValueClauses.add("size([(n)-[:" + attName + "]->(:DatabaseObject) | 1]) = $" + totalCountParamName);
                         whereClause = "(" + String.join(" AND ", perValueClauses) + ")";
                     } else {
                         // ALL_DEFINING: a required MATCH guarantees the relationship exists.

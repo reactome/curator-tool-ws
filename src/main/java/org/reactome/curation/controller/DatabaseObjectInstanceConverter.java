@@ -239,6 +239,7 @@ public class DatabaseObjectInstanceConverter {
                 logger.error("Cannot find a set method for " + attributeName + " in " + instance.getSchemaClassName());
                 continue;
             }
+            value = CuratorToolWSUtils.convertValueForSetMethod(setMethod, value);
             setMethod.invoke(databaseObject, value);
         }
         return databaseObject;
