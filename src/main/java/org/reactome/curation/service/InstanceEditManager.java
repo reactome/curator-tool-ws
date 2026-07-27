@@ -101,6 +101,13 @@ public class InstanceEditManager {
      * @return true if the cache is still valid, false otherwise
      */
     private boolean isValidCache(InstanceEdit instanceEdit) {
+        if (instanceEdit == null) {
+            return false;
+        }
+        // Just in case there is an error and the instance is not saved
+        // e.g. Due to the transaction management, instanceEdit may get a dbId, but not really saved
+        if (!this.curationService.existsById(instanceEdit.getDbId()))
+            return false;
         String dateTimeStr = instanceEdit.getDateTime();
         if (dateTimeStr == null) {
             return false;

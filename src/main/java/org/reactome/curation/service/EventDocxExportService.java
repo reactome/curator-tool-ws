@@ -1025,7 +1025,7 @@ public class EventDocxExportService {
             return;
         }
 
-        String url = "https://curator.reactome.org/PathwayBrowser/#/" + stableId;
+        String url = "https://newcurator.reactome.org/curatorgraph/PathwayBrowser/" + stableId;
         XWPFParagraph paragraph = document.createParagraph();
 
         XWPFRun textRun = paragraph.createRun();

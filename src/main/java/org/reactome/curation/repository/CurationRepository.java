@@ -1354,6 +1354,40 @@ public class CurationRepository {
     }
 
     /**
+     * (field name, relationship type) pairs resetNode() must never clear, even though
+     * they're present in getField2rel(). Each of these fields is one end of a pair of
+     * differently-named fields that map to the SAME relationship type from opposite
+     * directions - e.g. Event.orthologousEvent (OUTGOING) and Event.inferredFrom
+     * (INCOMING) both map to "inferredTo", just from opposite ends of the identical edge
+     * set, so Neo4j cannot tell "my own attribute" apart from "the other object's reverse
+     * view of their own attribute pointing at me". If a brand-new instance A has
+     * inferredFrom = B and B is later committed on its own (e.g. as a separate top-level
+     * commit after being minted a dbId as a side effect of storing A), resetNode(B) would
+     * delete ALL of B's outgoing "inferredTo" edges - including the one representing
+     * A.inferredFrom - via B's orthologousEvent mapping, and nothing recreates it.
+     *
+     * Only the field NOT exposed to curators in curation_schema_attributes.json is
+     * excluded here (confirmed via CuratorToolExporter's NOMANUALEDIT locking and by
+     * checking the schema JSON directly) - the other, curator-editable field of each pair
+     * (inferredFrom, normalPathway, normalReaction, referenceEntity) is deliberately left
+     * in normal resetNode processing, since excluding it too would leave a stale duplicate
+     * relationship behind whenever a curator actually changes that field's value (Cypher's
+     * CREATE in store()'s relationship step always adds a new relationship; it does not
+     * check for or replace an existing one - only resetNode's delete keeps that in sync).
+     *
+     * The key is (field name + relationship type), not just field name, because a field
+     * name alone can collide across unrelated classes with a different meaning - e.g.
+     * ReferenceEntity.physicalEntity (type "referenceEntity", excluded here) has nothing to
+     * do with PhysicalEntityCellType.physicalEntity or CatalystActivity.physicalEntity
+     * (both type "physicalEntity", NOT excluded - they're ordinary single-owner fields).
+     */
+    private static final Set<String> RESET_NODE_EXCLUDED_FIELD_TYPE_KEYS = Set.of(
+            "orthologousEvent:inferredTo",
+            "diseasePathways:normalPathway",
+            "diseaseReactions:normalReaction",
+            "physicalEntity:referenceEntity");
+
+    /**
      * This method is used to delete all attribute relationships of an object but
      * still keep the object node itself and relationships to other objects by other
      * objects (i.e. referrals). Furthermore, all primitive attributes will be reset to
@@ -1370,10 +1404,12 @@ public class CurationRepository {
         sb.append("MATCH (n:").append(getNodeLabel(obj)).append(" {dbId: $dbId}) ");
         int i = 0;
         for (String field : field2rel.keySet()) {
+            Relationship rel = field2rel.get(field);
+            if (RESET_NODE_EXCLUDED_FIELD_TYPE_KEYS.contains(field + ":" + rel.type()))
+                continue;
             // We will try to delete a relationship as long as it is defined in the model
             // even though it may not exist in the database for this object
             // By doing this, we don't need to load the object first to find out which relationship exists
-            Relationship rel = field2rel.get(field);
             String alias = "r" + (++i);
             // Use OPTIONAL MATCH to avoid any problem if there is no such relationship just in case
             if (rel.direction() == Relationship.Direction.OUTGOING) {
