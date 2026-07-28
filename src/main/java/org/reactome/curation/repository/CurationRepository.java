@@ -2,11 +2,16 @@ package org.reactome.curation.repository;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -1452,25 +1457,20 @@ public class CurationRepository {
     @Transactional
     public DatabaseObject commit(DatabaseObject obj) throws Exception {
         if (obj.getDbId() != null && existsById(obj.getDbId())) {
-            // Check if its class type is switched. If it is, delete it and then do a store.
+            // Check if its class type is switched. If it is, update the node's labels first.
             // update()/store() both locate the existing node via a MATCH keyed on obj's
             // (new) class label - see resetNode() and storeNodeProperties(), both of which
             // do "MATCH (n:<getNodeLabel(obj)> {dbId: $dbId})". If the stored node still
-            // carries the OLD class's label, that MATCH finds nothing and the whole update
-            // silently no-ops: no exception, no persisted change at all. Deleting the node
-            // by dbId alone (not by label) and letting storeShell() recreate it lets Spring
-            // Data Neo4j's own save() compute the new class's full label set for us, rather
-            // than us having to diff the old and new label sets ourselves.
-            //
-            // Caveat: this deletes and recreates the node, so relationships FROM OTHER
-            // objects INTO this one (e.g. a Pathway's hasEvent pointing at it) are lost -
-            // store() only recreates this object's own attribute relationships. Switching
-            // the class of an object that already has referrers is not supported here.
+            // carries only the OLD class's labels, that MATCH finds nothing and the whole
+            // update silently no-ops: no exception, no persisted change at all. Adding the
+            // new class's labels (and removing the old class's labels that no longer apply)
+            // in place - rather than deleting and recreating the node - keeps relationships
+            // FROM OTHER objects INTO this one (e.g. a Pathway's hasEvent pointing at it)
+            // intact, since those relationships are attached to the node itself, not to its
+            // labels.
             String storedSchemaClass = fetchSchemaClasses(List.of(obj.getDbId())).get(obj.getDbId());
             if (storedSchemaClass != null && !storedSchemaClass.equals(obj.getSchemaClass())) {
-                deleteNodeByDbId(obj.getDbId());
-                storeShell(obj);
-                return store(obj);
+                switchNodeLabels(obj);
             }
             return update(obj);
         }
@@ -1479,15 +1479,96 @@ public class CurationRepository {
     }
 
     /**
-     * Delete a node by dbId alone, matched via the generic DatabaseObject label rather
-     * than a specific schema-class label. Used when the caller no longer agrees with the
-     * node's current specific label (e.g. its class type is being switched via commit()),
-     * so matching by the new class's label would find nothing. Does not preserve or
-     * notify referrers - see commit()'s class-switch handling for that caveat.
+     * Adds obj's (new) class's labels to its existing node and removes whichever of the node's
+     * current labels no longer apply, without deleting/recreating the node - see commit()'s
+     * class-switch handling.
+     *
+     * A node's labels are its full class hierarchy, not just the leaf class - e.g. a Reaction
+     * node is labelled DatabaseObject, Event, ReactionLikeEvent, Reaction, Trackable, Deletable,
+     * one label per @Node-annotated superclass/interface in its hierarchy (confirmed live via
+     * "MATCH (n:Reaction) RETURN labels(n)"). That's exactly what Spring Data Neo4j itself
+     * assigns when creating a node of the new class, so it's recomputed here via reflection over
+     * obj.getClass() rather than guessing at a single label.
      */
-    private void deleteNodeByDbId(Long dbId) {
-        String cypher = "MATCH (n:DatabaseObject {dbId: $dbId}) DETACH DELETE n";
-        neo4jClient.query(cypher).bind(dbId).to("dbId").run();
+    private void switchNodeLabels(DatabaseObject obj) {
+        Set<String> oldLabels = fetchNodeLabels(obj.getDbId());
+        Set<String> newLabels = computeHierarchyLabels(obj.getClass());
+
+        Set<String> labelsToRemove = new LinkedHashSet<>(oldLabels);
+        labelsToRemove.removeAll(newLabels);
+        Set<String> labelsToAdd = new LinkedHashSet<>(newLabels);
+        labelsToAdd.removeAll(oldLabels);
+
+        if (labelsToRemove.isEmpty() && labelsToAdd.isEmpty())
+            return;
+
+        StringBuilder cypher = new StringBuilder("MATCH (n:DatabaseObject {dbId: $dbId}) ");
+        if (!labelsToRemove.isEmpty())
+            cypher.append("REMOVE n:").append(String.join(":", labelsToRemove)).append(" ");
+        if (!labelsToAdd.isEmpty())
+            cypher.append("SET n:").append(String.join(":", labelsToAdd)).append(" ");
+        logger.debug("Switch node labels Cypher: " + cypher);
+        neo4jClient.query(cypher.toString()).bind(obj.getDbId()).to("dbId").run();
+    }
+
+    /**
+     * Live labels currently on the node with this dbId (ground truth from Neo4j, rather than
+     * assuming the previously stored schemaClass name maps to a loadable Java class).
+     */
+    private Set<String> fetchNodeLabels(Long dbId) {
+        String cypher = "MATCH (n:DatabaseObject {dbId: $dbId}) RETURN labels(n) AS labels";
+        Optional<Map<String, Object>> result = neo4jClient.query(cypher).bind(dbId).to("dbId").fetch().one();
+        if (result.isEmpty())
+            return Collections.emptySet();
+        Object labelsValue = result.get().get("labels");
+        if (labelsValue instanceof Collection) {
+            Set<String> labels = new HashSet<>();
+            for (Object label : (Collection<?>) labelsValue)
+                labels.add(label.toString());
+            return labels;
+        }
+        return Collections.emptySet();
+    }
+
+    /**
+     * The full set of node labels Spring Data Neo4j would assign to an instance of cls: one
+     * label per @Node-annotated class/interface in cls's hierarchy (superclasses and
+     * implemented interfaces, walked transitively), using that type's explicit @Node label(s)
+     * if declared, otherwise its simple name.
+     */
+    private Set<String> computeHierarchyLabels(Class<?> cls) {
+        Set<String> labels = new LinkedHashSet<>();
+        Set<Class<?>> visited = new HashSet<>();
+        Deque<Class<?>> toVisit = new ArrayDeque<>();
+        toVisit.add(cls);
+        while (!toVisit.isEmpty()) {
+            Class<?> current = toVisit.poll();
+            if (current == null || !visited.add(current))
+                continue;
+            org.springframework.data.neo4j.core.schema.Node nodeAnnotation =
+                    current.getAnnotation(org.springframework.data.neo4j.core.schema.Node.class);
+            if (nodeAnnotation != null) {
+                String[] explicitLabels = nodeAnnotation.value().length > 0 ?
+                        nodeAnnotation.value() : nodeAnnotation.labels();
+                if (explicitLabels.length > 0)
+                    labels.addAll(Arrays.asList(explicitLabels));
+                else
+                    labels.add(current.getSimpleName());
+            }
+            // Stop at the root of the domain model - DatabaseObject's own superclass (Object)
+            // and interfaces (Serializable, Comparable, DatabaseObjectLike) aren't part of the
+            // domain's label hierarchy.
+            if (current == DatabaseObject.class)
+                continue;
+            // ArrayDeque rejects null elements, and getSuperclass() is null for interfaces
+            // (and would be null for Object, but DatabaseObject.class is never reached via
+            // an interface with no superclass since it's a concrete class).
+            Class<?> superclass = current.getSuperclass();
+            if (superclass != null)
+                toVisit.add(superclass);
+            toVisit.addAll(Arrays.asList(current.getInterfaces()));
+        }
+        return labels;
     }
 
     /**
