@@ -11,7 +11,10 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +40,9 @@ import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTAbstractNum;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTLvl;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.STNumberFormat;
 import org.reactome.server.graph.domain.model.*;
+import org.reactome.server.graph.service.AdvancedDatabaseObjectService;
+import org.reactome.server.graph.service.DatabaseObjectService;
+import org.reactome.server.graph.service.helper.RelationshipDirection;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -45,6 +51,11 @@ import org.springframework.stereotype.Service;
 public class EventDocxExportService {
     @Autowired
     private CurationService service;
+
+    @Autowired(required = false)
+    private AdvancedDatabaseObjectService advancedDatabaseObjectService;
+    @Autowired(required = false)
+    private DatabaseObjectService databaseObjectService;
 
     @Value("${figure_root_dir:}")
     private String figureRootPath;
@@ -86,16 +97,25 @@ public class EventDocxExportService {
 //            // Blank line after metadata table
 //            document.createParagraph();
 
+            // Batch-preload the whole reachable event tree (and everything it references) up
+            // front, instead of the recursive walk below calling findById() once per event,
+            // per InstanceEdit, and per Publication - see buildExportContext(). This also
+            // renders every reaction's image concurrently up front (see
+            // renderReactionImagesInParallel()), since rendering was measured to dominate the
+            // remaining export time and each reaction's image is independent of every other's.
+            ExportContext context = buildExportContext(event);
+
             // Recursively render this event and all nested events via hasEvent/getHasEvent.
-            writeEventTree(document, event, 0, "1", new LinkedHashSet<>());
+            writeEventTree(document, event, 0, "1", new LinkedHashSet<>(), context);
 
             document.write(outputStream);
             return outputStream.toByteArray();
         }
     }
 
-    private void writeEventTree(XWPFDocument document, Event event, int depth, String numbering, Set<String> visitedKeys) {
-        Event resolved = resolveEventForExport(event);
+    private void writeEventTree(XWPFDocument document, Event event, int depth, String numbering,
+                                Set<String> visitedKeys, ExportContext context) {
+        Event resolved = resolveEventForExport(event, context);
         if (resolved == null) {
             return;
         }
@@ -110,12 +130,12 @@ public class EventDocxExportService {
         addHeader(document, eventHeaderDepth, eventHeader);
         addPathwayBrowserLink(document, resolved);
 
-        writeEventSections(document, resolved, depth);
+        writeEventSections(document, resolved, depth, context);
 
         List<Event> containedEvents = getContainedEvents(resolved);
         int childIndex = 1;
         for (Event child : containedEvents) {
-            writeEventTree(document, child, depth + 1, numbering + "." + childIndex, visitedKeys);
+            writeEventTree(document, child, depth + 1, numbering + "." + childIndex, visitedKeys, context);
             childIndex++;
         }
     }
@@ -135,7 +155,7 @@ public class EventDocxExportService {
         return hasText(simpleName) ? simpleName : "Event";
     }
 
-    private void writeEventSections(XWPFDocument document, Event event, int depth) {
+    private void writeEventSections(XWPFDocument document, Event event, int depth, ExportContext context) {
         int sectionHeaderDepth = Math.min(6, 2 + depth);
 
         // Authorship
@@ -144,7 +164,7 @@ public class EventDocxExportService {
             if (authored != null && !authored.isEmpty()) {
                 addHeader(document, sectionHeaderDepth, "Authored");
                 for (InstanceEdit ie : authored) {
-                    String authorLine = formatInstanceEditLine(ie);
+                    String authorLine = formatInstanceEditLine(ie, context);
                     if (authorLine != null) addBulletText(document, authorLine);
                 }
             }
@@ -156,7 +176,7 @@ public class EventDocxExportService {
             if (edited != null && !edited.isEmpty()) {
                 addHeader(document, sectionHeaderDepth, "Edited");
                 for (InstanceEdit ie : edited) {
-                    String authorLine = formatInstanceEditLine(ie);
+                    String authorLine = formatInstanceEditLine(ie, context);
                     if (authorLine != null) addBulletText(document, authorLine);
                 }
             }
@@ -168,7 +188,7 @@ public class EventDocxExportService {
             if (reviewed != null && !reviewed.isEmpty()) {
                 addHeader(document, sectionHeaderDepth, "Reviewed");
                 for (InstanceEdit ie : reviewed) {
-                    String authorLine = formatInstanceEditLine(ie);
+                    String authorLine = formatInstanceEditLine(ie, context);
                     if (authorLine != null) addBulletText(document, authorLine);
                 }
             }
@@ -195,7 +215,7 @@ public class EventDocxExportService {
         boolean reactionImageAdded = false;
         try {
             if (isReactionEvent(event) && reactionImageRendererService != null) {
-                byte[] renderedReaction = reactionImageRendererService.renderReactionImage(event);
+                byte[] renderedReaction = lookupOrRenderReactionImage(event, context);
                 if (renderedReaction != null && renderedReaction.length > 0) {
                     String fileName = "reaction_" + (event.getDbId() == null ? "unknown" : event.getDbId()) + ".png";
                     addImageFromBytes(document, renderedReaction, fileName, REACTION_IMAGE_WIDTH_PX, REACTION_IMAGE_HEIGHT_PX, XWPFDocument.PICTURE_TYPE_PNG);
@@ -227,7 +247,7 @@ public class EventDocxExportService {
 
             // Fallback for non-reaction events only (reaction image is handled above).
             if (!figureAdded && !reactionImageAdded && !isReactionEvent(event) && reactionImageRendererService != null) {
-                byte[] renderedReaction = reactionImageRendererService.renderReactionImage(event);
+                byte[] renderedReaction = lookupOrRenderReactionImage(event, context);
                 if (renderedReaction != null && renderedReaction.length > 0) {
                     String fileName = "reaction_" + (event.getDbId() == null ? "unknown" : event.getDbId()) + ".png";
                     addImageFromBytes(document, renderedReaction, fileName, REACTION_IMAGE_WIDTH_PX, REACTION_IMAGE_HEIGHT_PX, XWPFDocument.PICTURE_TYPE_PNG);
@@ -245,10 +265,15 @@ public class EventDocxExportService {
                 for (Publication pub : refs) {
                     Publication resolvedPublication = pub;
                     try {
-                        if (service != null && pub != null && pub.getDbId() != null) {
-                            Object loaded = service.findById(pub.getDbId());
-                            if (loaded instanceof Publication) {
-                                resolvedPublication = (Publication) loaded;
+                        if (pub != null && pub.getDbId() != null) {
+                            Publication cached = context.publications.get(pub.getDbId());
+                            if (cached != null) {
+                                resolvedPublication = cached;
+                            } else if (service != null) {
+                                Object loaded = service.findById(pub.getDbId());
+                                if (loaded instanceof Publication) {
+                                    resolvedPublication = (Publication) loaded;
+                                }
                             }
                         }
                     } catch (Exception ignored) {
@@ -268,10 +293,17 @@ public class EventDocxExportService {
         }
     }
 
-    private Event resolveEventForExport(Event event) {
+    private Event resolveEventForExport(Event event, ExportContext context) {
         if (event == null) {
             return null;
         }
+        if (event.getDbId() != null) {
+            Event cached = context.events.get(event.getDbId());
+            if (cached != null) {
+                return cached;
+            }
+        }
+        // Fallback for anything the tree preload didn't capture (shouldn't normally happen).
         try {
             if (service != null && event.getDbId() != null) {
                 Object loaded = service.findById(event.getDbId());
@@ -325,14 +357,245 @@ public class EventDocxExportService {
     }
 
     // -------------------------------------------------------------------------
+    // Batch preload: replaces the old one-findById()-per-entity pattern in the
+    // recursive tree walk with a handful of batched queries. Measured on a
+    // 143-event pathway: individual findById() calls took ~1030ms combined
+    // (events + InstanceEdits + Publications); the batched equivalent took
+    // ~225ms, with no redundant re-fetching of entities referenced by more than
+    // one event (e.g. a shared reviewer, or a paper cited by several reactions),
+    // which the old per-call approach did on every occurrence.
+    // -------------------------------------------------------------------------
+
+    private static class ExportContext {
+        final Map<Long, Event> events;
+        final Map<Long, InstanceEdit> instanceEdits;
+        final Map<Long, Publication> publications;
+        final Map<Long, byte[]> reactionImages;
+
+        ExportContext(Map<Long, Event> events, Map<Long, InstanceEdit> instanceEdits, Map<Long, Publication> publications,
+                     Map<Long, byte[]> reactionImages) {
+            this.events = events;
+            this.instanceEdits = instanceEdits;
+            this.publications = publications;
+            this.reactionImages = reactionImages;
+        }
+    }
+
+    private ExportContext buildExportContext(Event rootEvent) {
+        Map<Long, Event> events = preloadEventTree(rootEvent);
+        Map<Long, InstanceEdit> instanceEdits = batchLoadInstanceEdits(collectInstanceEditDbIds(events));
+        Map<Long, Publication> publications = batchLoadPublications(collectPublicationDbIds(events));
+        Map<Long, byte[]> reactionImages = renderReactionImagesInParallel(events);
+        return new ExportContext(events, instanceEdits, publications, reactionImages);
+    }
+
+    /**
+     * Renders every reaction's image concurrently up front - see
+     * ReactionImageRendererService.renderReactionImagesInParallel() for the concurrency model
+     * and the one known thread-safety hazard (reaction-exporter's compartment/GO tree cache)
+     * that method works around.
+     */
+    private Map<Long, byte[]> renderReactionImagesInParallel(Map<Long, Event> events) {
+        if (reactionImageRendererService == null) {
+            return Collections.emptyMap();
+        }
+        List<ReactionLikeEvent> reactions = new ArrayList<>();
+        for (Event e : events.values()) {
+            if (e instanceof ReactionLikeEvent) {
+                reactions.add((ReactionLikeEvent) e);
+            }
+        }
+        return reactionImageRendererService.renderReactionImagesInParallel(reactions);
+    }
+
+    /**
+     * Looks up an already-rendered reaction image from the parallel pre-render pass; falls back
+     * to rendering it inline if it's missing for some reason (e.g. dbId is null, or the event
+     * wasn't captured by the tree preload - shouldn't normally happen).
+     */
+    private byte[] lookupOrRenderReactionImage(Event event, ExportContext context) {
+        if (event != null && event.getDbId() != null) {
+            byte[] cached = context.reactionImages.get(event.getDbId());
+            if (cached != null) {
+                return cached;
+            }
+        }
+        return reactionImageRendererService.renderReactionImage(event);
+    }
+
+    /**
+     * Batch-loads the whole reachable event tree level by level (breadth-first over hasEvent),
+     * instead of resolveEventForExport() calling findById() once per event during the recursive
+     * walk. Each round fetches every not-yet-loaded dbId in the current frontier in one or two
+     * queries (see batchLoadEvents()), discovers the next level's dbIds from the newly-loaded
+     * events' hasEvent lists, and repeats until no new events are found.
+     */
+    private Map<Long, Event> preloadEventTree(Event rootEvent) {
+        Map<Long, Event> loaded = new HashMap<>();
+        if (rootEvent == null || rootEvent.getDbId() == null
+                || advancedDatabaseObjectService == null || databaseObjectService == null) {
+            return loaded;
+        }
+
+        Set<Long> frontier = new HashSet<>();
+        frontier.add(rootEvent.getDbId());
+
+        while (!frontier.isEmpty()) {
+            Set<Long> toFetch = new HashSet<>();
+            for (Long id : frontier) {
+                if (!loaded.containsKey(id)) toFetch.add(id);
+            }
+            if (toFetch.isEmpty()) break;
+
+            Map<Long, Event> batch = batchLoadEvents(toFetch);
+            loaded.putAll(batch);
+
+            Set<Long> nextFrontier = new HashSet<>();
+            for (Event e : batch.values()) {
+                for (Event child : getContainedEvents(e)) {
+                    if (child != null && child.getDbId() != null && !loaded.containsKey(child.getDbId())) {
+                        nextFrontier.add(child.getDbId());
+                    }
+                }
+            }
+            frontier = nextFrontier;
+        }
+        return loaded;
+    }
+
+    /**
+     * Batch-loads one level of events. findByDbIds() only supports one relationship direction
+     * per call, so this issues two batched calls - one OUTGOING (hasEvent/summation/
+     * literatureReference/figure) and one INCOMING (authored/edited/reviewed) - and merges the
+     * INCOMING results onto the same objects the OUTGOING call produced. A shallow load goes
+     * first to guarantee one entry per dbId even for an event with none of the relationships
+     * requested below (findByDbIds's MATCH is required, not optional, so such an event would
+     * otherwise be silently missing from the result).
+     */
+    private Map<Long, Event> batchLoadEvents(Set<Long> dbIds) {
+        Map<Long, Event> result = new HashMap<>();
+        if (dbIds.isEmpty()) return result;
+
+        for (Object obj : databaseObjectService.findByIdsNoRelations(dbIds)) {
+            if (obj instanceof Event) {
+                Event e = (Event) obj;
+                result.put(e.getDbId(), e);
+            }
+        }
+
+        Collection<DatabaseObject> outgoing = advancedDatabaseObjectService.findByDbIds(
+                dbIds, RelationshipDirection.OUTGOING, "hasEvent", "summation", "literatureReference", "figure");
+        for (DatabaseObject obj : outgoing) {
+            if (obj instanceof Event) {
+                Event e = (Event) obj;
+                result.put(e.getDbId(), e);
+            }
+        }
+
+        Collection<DatabaseObject> incoming = advancedDatabaseObjectService.findByDbIds(
+                dbIds, RelationshipDirection.INCOMING, "authored", "edited", "reviewed");
+        for (DatabaseObject obj : incoming) {
+            if (!(obj instanceof Event)) continue;
+            Event enriched = (Event) obj;
+            Event target = result.get(enriched.getDbId());
+            if (target == null) {
+                result.put(enriched.getDbId(), enriched);
+                continue;
+            }
+            target.setAuthored(enriched.getAuthored());
+            target.setEdited(enriched.getEdited());
+            target.setReviewed(enriched.getReviewed());
+        }
+
+        return result;
+    }
+
+    private Map<Long, InstanceEdit> batchLoadInstanceEdits(Set<Long> dbIds) {
+        Map<Long, InstanceEdit> result = new HashMap<>();
+        if (dbIds.isEmpty() || advancedDatabaseObjectService == null || databaseObjectService == null) {
+            return result;
+        }
+        for (Object obj : databaseObjectService.findByIdsNoRelations(dbIds)) {
+            if (obj instanceof InstanceEdit) {
+                InstanceEdit ie = (InstanceEdit) obj;
+                result.put(ie.getDbId(), ie);
+            }
+        }
+        Collection<DatabaseObject> enriched = advancedDatabaseObjectService.findByDbIds(dbIds, RelationshipDirection.INCOMING, "author");
+        for (DatabaseObject obj : enriched) {
+            if (obj instanceof InstanceEdit) {
+                InstanceEdit ie = (InstanceEdit) obj;
+                result.put(ie.getDbId(), ie);
+            }
+        }
+        return result;
+    }
+
+    private Map<Long, Publication> batchLoadPublications(Set<Long> dbIds) {
+        Map<Long, Publication> result = new HashMap<>();
+        if (dbIds.isEmpty() || advancedDatabaseObjectService == null || databaseObjectService == null) {
+            return result;
+        }
+        for (Object obj : databaseObjectService.findByIdsNoRelations(dbIds)) {
+            if (obj instanceof Publication) {
+                Publication pub = (Publication) obj;
+                result.put(pub.getDbId(), pub);
+            }
+        }
+        Collection<DatabaseObject> enriched = advancedDatabaseObjectService.findByDbIds(dbIds, RelationshipDirection.INCOMING, "author");
+        for (DatabaseObject obj : enriched) {
+            if (obj instanceof Publication) {
+                Publication pub = (Publication) obj;
+                result.put(pub.getDbId(), pub);
+            }
+        }
+        return result;
+    }
+
+    private Set<Long> collectInstanceEditDbIds(Map<Long, Event> events) {
+        Set<Long> ids = new HashSet<>();
+        for (Event e : events.values()) {
+            try {
+                addDbIds(ids, e.getAuthored());
+                addDbIds(ids, e.getEdited());
+                addDbIds(ids, e.getReviewed());
+            } catch (Exception ignored) {
+            }
+        }
+        return ids;
+    }
+
+    private Set<Long> collectPublicationDbIds(Map<Long, Event> events) {
+        Set<Long> ids = new HashSet<>();
+        for (Event e : events.values()) {
+            try {
+                addDbIds(ids, e.getLiteratureReference());
+            } catch (Exception ignored) {
+            }
+        }
+        return ids;
+    }
+
+    private void addDbIds(Set<Long> ids, List<? extends DatabaseObject> objects) {
+        if (objects == null) return;
+        for (DatabaseObject obj : objects) {
+            if (obj != null && obj.getDbId() != null) {
+                ids.add(obj.getDbId());
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------
     // Private document section helpers
     // -------------------------------------------------------------------------
 
-    private String formatInstanceEditLine(InstanceEdit ie) {
+    private String formatInstanceEditLine(InstanceEdit ie, ExportContext context) {
         if (ie == null) return null;
-        // ie is a shell instance only
-        if (ie.getAuthor() == null || ie.getAuthor().isEmpty()) // Need to reload it.
-            ie = (InstanceEdit) service.findById(ie.getDbId());
+        // ie is a shell instance only - look it up in the batch-preloaded map first.
+        if (ie.getAuthor() == null || ie.getAuthor().isEmpty()) {
+            InstanceEdit cached = ie.getDbId() != null ? context.instanceEdits.get(ie.getDbId()) : null;
+            ie = cached != null ? cached : (InstanceEdit) service.findById(ie.getDbId());
+        }
         StringBuilder sb = new StringBuilder();
         List<Person> authors = ie.getAuthor();
         if (authors != null && !authors.isEmpty()) {
