@@ -466,11 +466,16 @@ public class EventDocxExportService {
     /**
      * Batch-loads one level of events. findByDbIds() only supports one relationship direction
      * per call, so this issues two batched calls - one OUTGOING (hasEvent/summation/
-     * literatureReference/figure) and one INCOMING (authored/edited/reviewed) - and merges the
-     * INCOMING results onto the same objects the OUTGOING call produced. A shallow load goes
-     * first to guarantee one entry per dbId even for an event with none of the relationships
-     * requested below (findByDbIds's MATCH is required, not optional, so such an event would
-     * otherwise be silently missing from the result).
+     * literatureReference/figure/stableIdentifier) and one INCOMING (authored/edited/reviewed) -
+     * and merges the INCOMING results onto the same objects the OUTGOING call produced. A
+     * shallow load goes first to guarantee one entry per dbId even for an event with none of the
+     * relationships requested below (findByDbIds's MATCH is required, not optional, so such an
+     * event would otherwise be silently missing from the result).
+     *
+     * stableIdentifier is included specifically because addPathwayBrowserLink() needs it to
+     * build the PathwayBrowser URL - it's easy to miss since it's not read anywhere else in the
+     * export, unlike the old resolveEventForExport()'s full depth-1 findById(), which pulled in
+     * every relationship (including this one) whether the export used it or not.
      */
     private Map<Long, Event> batchLoadEvents(Set<Long> dbIds) {
         Map<Long, Event> result = new HashMap<>();
@@ -484,7 +489,7 @@ public class EventDocxExportService {
         }
 
         Collection<DatabaseObject> outgoing = advancedDatabaseObjectService.findByDbIds(
-                dbIds, RelationshipDirection.OUTGOING, "hasEvent", "summation", "literatureReference", "figure");
+                dbIds, RelationshipDirection.OUTGOING, "hasEvent", "summation", "literatureReference", "figure", "stableIdentifier");
         for (DatabaseObject obj : outgoing) {
             if (obj instanceof Event) {
                 Event e = (Event) obj;

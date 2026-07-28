@@ -9,6 +9,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import org.reactome.server.graph.domain.model.AbstractModifiedResidue;
@@ -221,6 +225,59 @@ public class ReactionImageRendererService {
             logger.warn("Failed to render reaction image for {}: {}", rle.getStId(), e.getMessage());
             return null;
         }
+    }
+
+    /**
+     * Renders multiple reaction images concurrently, keyed by dbId. Each render is otherwise
+     * independent (own layout/diagram/graph/raster pipeline), so this is a straightforward
+     * embarrassingly-parallel workload - the only hazard is reaction-exporter's compartment/GO
+     * tree cache: GoTreeFactory.getLazyLoadedReactomeTree() lazily populates a static field with
+     * an unsynchronized check-then-act ("if (tree == null) tree = build...") the first time any
+     * reaction is rendered. Hitting that from multiple threads before it's been populated once
+     * would race (duplicate/partial builds mutating shared GoTerm objects concurrently). Render
+     * the first reaction alone, sequentially, to populate it deterministically; every call after
+     * that only reads the cached tree, which is safe to do concurrently.
+     */
+    public Map<Long, byte[]> renderReactionImagesInParallel(List<ReactionLikeEvent> reactions) {
+        Map<Long, byte[]> result = new ConcurrentHashMap<>();
+        if (reactions == null || reactions.isEmpty()) {
+            return result;
+        }
+
+        ReactionLikeEvent first = reactions.get(0);
+        byte[] firstImage = renderReactionImage(first);
+        if (firstImage != null && first.getDbId() != null) {
+            result.put(first.getDbId(), firstImage);
+        }
+
+        List<ReactionLikeEvent> rest = reactions.subList(1, reactions.size());
+        if (rest.isEmpty()) {
+            return result;
+        }
+
+        int threads = Math.max(1, Math.min(rest.size(), Runtime.getRuntime().availableProcessors()));
+        ExecutorService executor = Executors.newFixedThreadPool(threads);
+        try {
+            List<Future<?>> futures = new ArrayList<>();
+            for (ReactionLikeEvent rle : rest) {
+                futures.add(executor.submit(() -> {
+                    byte[] image = renderReactionImage(rle);
+                    if (image != null && rle.getDbId() != null) {
+                        result.put(rle.getDbId(), image);
+                    }
+                }));
+            }
+            for (Future<?> future : futures) {
+                try {
+                    future.get();
+                } catch (Exception e) {
+                    logger.warn("Failed to render a reaction image in parallel: {}", e.getMessage());
+                }
+            }
+        } finally {
+            executor.shutdown();
+        }
+        return result;
     }
 
     /**
