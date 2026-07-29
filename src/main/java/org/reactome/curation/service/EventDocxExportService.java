@@ -34,6 +34,8 @@ import org.apache.poi.xwpf.usermodel.XWPFHyperlinkRun;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
 import org.apache.poi.xwpf.usermodel.XWPFTable;
+import org.apache.poi.xwpf.usermodel.XWPFTableCell;
+import org.apache.poi.xwpf.usermodel.XWPFTableRow;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
@@ -1169,6 +1171,8 @@ public class EventDocxExportService {
     private static class MarkupCursor {
         final XWPFDocument document;
         final Map<String, Object> paragraphFormatting;
+        final java.util.function.Supplier<XWPFParagraph> newParagraphSupplier;
+        final boolean insideTableCell;
         XWPFParagraph paragraph;
         boolean paragraphHasContent;
         boolean pendingParagraphBreak;
@@ -1177,6 +1181,27 @@ public class EventDocxExportService {
             this.document = document;
             this.paragraph = paragraph;
             this.paragraphFormatting = paragraphFormatting;
+            this.newParagraphSupplier = document::createParagraph;
+            this.insideTableCell = false;
+        }
+
+        /**
+         * A cursor scoped to one table cell's content: &lt;p&gt;/&lt;br&gt; boundaries create new
+         * paragraphs inside the cell (via XWPFTableCell.addParagraph()) rather than in the document
+         * body, and insideTableCell degrades any further nested &lt;table&gt; to plain text instead
+         * of attempting a real nested POI table.
+         */
+        static MarkupCursor forCell(XWPFDocument document, XWPFTableCell cell) {
+            XWPFParagraph first = cell.getParagraphs().isEmpty() ? cell.addParagraph() : cell.getParagraphs().get(0);
+            return new MarkupCursor(document, first, cell);
+        }
+
+        private MarkupCursor(XWPFDocument document, XWPFParagraph paragraph, XWPFTableCell cell) {
+            this.document = document;
+            this.paragraph = paragraph;
+            this.paragraphFormatting = null;
+            this.newParagraphSupplier = cell::addParagraph;
+            this.insideTableCell = true;
         }
     }
 
@@ -1186,7 +1211,7 @@ public class EventDocxExportService {
 
     private void ensureParagraphReady(MarkupCursor cursor) {
         if (cursor.pendingParagraphBreak && cursor.paragraphHasContent) {
-            cursor.paragraph = cursor.document.createParagraph();
+            cursor.paragraph = cursor.newParagraphSupplier.get();
             applyParagraphFormatting(cursor.paragraph, cursor.paragraphFormatting);
             cursor.paragraphHasContent = false;
         }
@@ -1235,7 +1260,19 @@ public class EventDocxExportService {
                 requestParagraphBreak(cursor);
                 break;
             }
+            case "table":
+                if (cursor.insideTableCell) {
+                    // Real nested DOCX tables aren't supported - degrade to plain inline text
+                    // (tab-separated, via the "tr"/"td"/"th" cases below) rather than dropping it.
+                    appendChildren(element, cursor, style);
+                } else {
+                    appendTable(element, cursor, style);
+                }
+                break;
             case "tr":
+                // Only reached for a <tr> outside of any <table> the "table" case above
+                // recognized (e.g. malformed markup) - appendTable() consumes a real table's own
+                // rows/cells directly and never recurses into this case for them.
                 requestParagraphBreak(cursor);
                 appendChildren(element, cursor, style);
                 break;
@@ -1287,11 +1324,101 @@ public class EventDocxExportService {
                 cursor.paragraphHasContent = true;
                 break;
             default:
-                // span, table/tbody/thead/caption, ul/ol, and any other unrecognized tag: a
-                // transparent wrapper - recurse into its children with the style unchanged, rather
-                // than either rendering full DOCX tables/lists or leaking the raw tag as text.
+                // span, tbody/thead/tfoot/caption (table's own wrapper tags, already consumed by
+                // appendTable() when reached through a real <table>), ul/ol, and any other
+                // unrecognized tag: a transparent wrapper - recurse into its children with the
+                // style unchanged, rather than either rendering full DOCX lists or leaking the raw
+                // tag as text.
                 appendChildren(element, cursor, style);
         }
+    }
+
+    /**
+     * Renders an HTML &lt;table&gt; as a real DOCX table. Curator table markup is often malformed
+     * (missing/duplicated &lt;table&gt; wrappers, a &lt;tr&gt; with no &lt;td&gt; cells at all,
+     * curly-quoted attributes) - Jsoup's HTML5 tree builder already normalizes most of that (e.g.
+     * foster-parenting content that isn't valid inside a table out in front of it, always wrapping
+     * rows in a synthesized &lt;tbody&gt;), so this only needs to defensively skip rows that end up
+     * with zero cells and pad ragged rows out to the table's widest row.
+     */
+    private void appendTable(Element tableElement, MarkupCursor cursor, RunStyle style) {
+        List<List<Element>> rowsOfCells = new ArrayList<>();
+        int columnCount = 0;
+        for (Element row : collectTableRows(tableElement)) {
+            List<Element> cells = new ArrayList<>();
+            for (Element child : row.children()) {
+                String tag = child.tagName();
+                if (tag.equals("td") || tag.equals("th")) {
+                    cells.add(child);
+                }
+            }
+            if (!cells.isEmpty()) {
+                rowsOfCells.add(cells);
+                columnCount = Math.max(columnCount, cells.size());
+            }
+        }
+        if (rowsOfCells.isEmpty()) {
+            return;
+        }
+
+        XWPFTable table = cursor.document.createTable(rowsOfCells.size(), columnCount);
+        applySingleLineBorders(table);
+        for (int rowIndex = 0; rowIndex < rowsOfCells.size(); rowIndex++) {
+            List<Element> cells = rowsOfCells.get(rowIndex);
+            XWPFTableRow tableRow = table.getRow(rowIndex);
+            for (int colIndex = 0; colIndex < cells.size(); colIndex++) {
+                Element cellElement = cells.get(colIndex);
+                RunStyle cellStyle = "th".equals(cellElement.tagName()) ? withBold(style) : style;
+                MarkupCursor cellCursor = MarkupCursor.forCell(cursor.document, tableRow.getCell(colIndex));
+                appendChildren(cellElement, cellCursor, cellStyle);
+            }
+            // Any remaining cells in a ragged row (colIndex >= cells.size()) are left as the empty
+            // paragraph createTable() already gave them.
+        }
+
+        // Content after the table needs a fresh paragraph: cursor.paragraph was positioned in the
+        // document ahead of the table, so appending more runs to it would render out of order.
+        cursor.paragraph = cursor.document.createParagraph();
+        applyParagraphFormatting(cursor.paragraph, cursor.paragraphFormatting);
+        cursor.paragraphHasContent = false;
+        cursor.pendingParagraphBreak = false;
+    }
+
+    /** Direct &lt;tr&gt; children of the table, unwrapping one level of tbody/thead/tfoot. */
+    private List<Element> collectTableRows(Element tableElement) {
+        List<Element> rows = new ArrayList<>();
+        for (Element child : tableElement.children()) {
+            switch (child.tagName()) {
+                case "tr":
+                    rows.add(child);
+                    break;
+                case "tbody":
+                case "thead":
+                case "tfoot":
+                    for (Element grandchild : child.children()) {
+                        if (grandchild.tagName().equals("tr")) {
+                            rows.add(grandchild);
+                        }
+                    }
+                    break;
+                default:
+                    // Stray content Jsoup couldn't place in a row (shouldn't normally survive
+                    // inside <table> - its tree builder foster-parents such content out already).
+            }
+        }
+        return rows;
+    }
+
+    private void applySingleLineBorders(XWPFTable table) {
+        int size = 4;
+        int space = 0;
+        String color = "000000";
+        table.setTopBorder(XWPFTable.XWPFBorderType.SINGLE, size, space, color);
+        table.setBottomBorder(XWPFTable.XWPFBorderType.SINGLE, size, space, color);
+        table.setLeftBorder(XWPFTable.XWPFBorderType.SINGLE, size, space, color);
+        table.setRightBorder(XWPFTable.XWPFBorderType.SINGLE, size, space, color);
+        table.setInsideHBorder(XWPFTable.XWPFBorderType.SINGLE, size, space, color);
+        table.setInsideVBorder(XWPFTable.XWPFBorderType.SINGLE, size, space, color);
     }
 
     private RunStyle withBold(RunStyle style) {
