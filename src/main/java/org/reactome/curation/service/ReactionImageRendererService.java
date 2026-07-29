@@ -221,8 +221,21 @@ public class ReactionImageRendererService {
                 rasterExporter.export(diagram, graph, args, null, baos);
                 return baos.toByteArray();
             }
+        } catch (UnsupportedOperationException e) {
+            // Known, permanent limitation, not a bug to chase: diagram-exporter's RenderableFactory
+            // has a fixed switch over renderable classes (Protein, Chemical, Complex, ...) with no
+            // case for newer participant types like Cell (used by CellDevelopmentStep, added to
+            // Reactome's schema for cell/development-biology modeling after this library's diagram
+            // rendering was written) - it throws unconditionally rather than degrading. Not
+            // fixable without patching that third-party jar, so this logs at info (an expected
+            // skip) instead of warn; the caller already handles a null image fine (no image is
+            // added to the docx for this reaction).
+            logger.info("Skipping reaction image for {} - unsupported by diagram-exporter: {}", rle.getStId(), e.getMessage());
+            return null;
         } catch (Exception e) {
-            logger.warn("Failed to render reaction image for {}: {}", rle.getStId(), e.getMessage());
+            // Pass e itself (not just e.getMessage()) so SLF4J logs the stack trace - exceptions
+            // like NPEs often have a null message, which otherwise leaves nothing to diagnose from.
+            logger.warn("Failed to render reaction image for {}", rle.getStId(), e);
             return null;
         }
     }
@@ -307,10 +320,19 @@ public class ReactionImageRendererService {
         Collection<EntityGlyph> participants = new ArrayList<>();
         for (LayoutParticipants lp : participantsInfo) {
             if (lp.getPhysicalEntity() == null) continue;
+            PhysicalEntity pe = peByStId.get(lp.getPhysicalEntity());
+            if (pe != null && pe.getInDisease() == null) {
+                // Some PhysicalEntity subclasses used by newer ReactionLikeEvent subclasses (e.g.
+                // Cell, participant of CellDevelopmentStep) can have this left unset in the data.
+                // EntityGlyph.isDisease() unconditionally unboxes it ("isDashed() || inDisease"),
+                // so a null here throws an NPE deep inside ReactionDiagramFactory.getNodes() for
+                // every such reaction. false matches what curators intend by leaving it unset.
+                pe.setInDisease(false);
+            }
             EntityGlyph glyph = new EntityGlyph();
             glyph.setDrug(lp.isDrug());
             glyph.setDashed(lp.isDashed());
-            glyph.setPhysicalEntity(peByStId.get(lp.getPhysicalEntity()));
+            glyph.setPhysicalEntity(pe);
             glyph.setRole(new Role(lp.getRole().getType(), lp.getRole().getStoichiometry()));
             participants.add(glyph);
         }
