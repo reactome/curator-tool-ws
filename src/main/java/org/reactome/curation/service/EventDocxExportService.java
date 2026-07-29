@@ -19,8 +19,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 
@@ -36,6 +34,10 @@ import org.apache.poi.xwpf.usermodel.XWPFHyperlinkRun;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
 import org.apache.poi.xwpf.usermodel.XWPFTable;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.nodes.TextNode;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTAbstractNum;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTLvl;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.STNumberFormat;
@@ -65,7 +67,6 @@ public class EventDocxExportService {
 
     private static final String DOCX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    private static final Pattern MARKUP_PATTERN = Pattern.compile("(?i)<(/?)(font|b|i|sup|sub)(?:\\s+color=red)?>|<img\\s+src=\"([^\"]+)\"[^>]*>");
     private static final int REACTION_IMAGE_WIDTH_PX = 420;
     private static final int REACTION_IMAGE_HEIGHT_PX = 173;
 
@@ -826,8 +827,7 @@ public class EventDocxExportService {
     public XWPFParagraph addParagraph(XWPFDocument document, String text, Map<String, Object> formatting) {
         XWPFParagraph paragraph = document.createParagraph();
         applyParagraphFormatting(paragraph, formatting);
-        appendMarkupAwareText(paragraph, valueOrNA(text), toRunStyle(formatting));
-        return paragraph;
+        return appendMarkupAwareText(document, paragraph, formatting, valueOrNA(text), toRunStyle(formatting));
     }
 
     /**
@@ -848,8 +848,7 @@ public class EventDocxExportService {
     public XWPFParagraph addNumberedText(XWPFDocument document, String text, int number) {
         XWPFParagraph paragraph = document.createParagraph();
         RunStyle style = new RunStyle();
-        appendMarkupAwareText(paragraph, String.format("%d. %s", number, valueOrNA(text)), style);
-        return paragraph;
+        return appendMarkupAwareText(document, paragraph, null, String.format("%d. %s", number, valueOrNA(text)), style);
     }
 
     /**
@@ -859,7 +858,7 @@ public class EventDocxExportService {
         XWPFParagraph paragraph = document.createParagraph();
 
         // Keep citation text plain (supports markup like <i> for journal/book title).
-        appendMarkupAwareText(paragraph, valueOrNA(text) + " (", new RunStyle());
+        paragraph = appendMarkupAwareText(document, paragraph, null, valueOrNA(text) + " (", new RunStyle());
 
         String safeUrl = valueOrNA(url);
         if (hasText(url)) {
@@ -890,8 +889,7 @@ public class EventDocxExportService {
         RunStyle style = new RunStyle();
         style.bold = true;
         style.fontSize = headerSize;
-        appendMarkupAwareText(paragraph, valueOrNA(text), style);
-        return paragraph;
+        return appendMarkupAwareText(document, paragraph, null, valueOrNA(text), style);
     }
 
     /**
@@ -1131,54 +1129,239 @@ public class EventDocxExportService {
         return style;
     }
 
-    private void appendMarkupAwareText(XWPFParagraph paragraph, String text, RunStyle defaultStyle) {
+    /**
+     * Parses text as an HTML fragment (curator summations/notes routinely contain
+     * &lt;p&gt;/&lt;font&gt;/&lt;span&gt; markup and entities like &amp;#160; - both from the legacy
+     * curation tool's own conventions and from pasting straight out of MS Word) and appends it to
+     * paragraph, translating recognized tags to DOCX formatting instead of dumping raw markup as
+     * text. Uses Jsoup rather than a hand-rolled regex because curator HTML is routinely malformed
+     * (unbalanced tags, stray closing tags) and Jsoup's tree builder repairs that the same way a
+     * browser would, and it decodes entities for free.
+     * <p>
+     * &lt;p&gt; tags start a new paragraph (reusing paragraphFormatting, if any, so continuation
+     * paragraphs keep the same indent/justification as the first) rather than being emitted as
+     * literal text - so this can grow the document by more than one paragraph. Returns whichever
+     * paragraph ends up holding the tail of the text, since callers that keep appending after this
+     * call (e.g. addHyperlink's trailing " (url)") need to target that one, not the paragraph they
+     * originally created.
+     */
+    private XWPFParagraph appendMarkupAwareText(XWPFDocument document, XWPFParagraph paragraph,
+                                                 Map<String, Object> paragraphFormatting,
+                                                 String text, RunStyle defaultStyle) {
         if (text == null || text.isEmpty()) {
+            return paragraph;
+        }
+        org.jsoup.nodes.Document parsed = Jsoup.parseBodyFragment(text);
+        parsed.outputSettings().prettyPrint(false);
+        MarkupCursor cursor = new MarkupCursor(document, paragraph, paragraphFormatting);
+        appendChildren(parsed.body(), cursor, defaultStyle);
+        return cursor.paragraph;
+    }
+
+    /**
+     * Mutable walk state for appendMarkupAwareText(). A block-level tag (&lt;p&gt;, &lt;li&gt;, ...)
+     * only requests a paragraph break via pendingParagraphBreak - the break is realized lazily, in
+     * ensureParagraphReady(), right before the next piece of actual content is written. Realizing it
+     * eagerly at the tag boundary itself would leave a trailing blank paragraph after every
+     * &lt;p&gt;...&lt;/p&gt;-wrapped summation (the overwhelmingly common case) since closing the
+     * outermost &lt;p&gt; would create a paragraph for content that may never come.
+     */
+    private static class MarkupCursor {
+        final XWPFDocument document;
+        final Map<String, Object> paragraphFormatting;
+        XWPFParagraph paragraph;
+        boolean paragraphHasContent;
+        boolean pendingParagraphBreak;
+
+        MarkupCursor(XWPFDocument document, XWPFParagraph paragraph, Map<String, Object> paragraphFormatting) {
+            this.document = document;
+            this.paragraph = paragraph;
+            this.paragraphFormatting = paragraphFormatting;
+        }
+    }
+
+    private void requestParagraphBreak(MarkupCursor cursor) {
+        cursor.pendingParagraphBreak = true;
+    }
+
+    private void ensureParagraphReady(MarkupCursor cursor) {
+        if (cursor.pendingParagraphBreak && cursor.paragraphHasContent) {
+            cursor.paragraph = cursor.document.createParagraph();
+            applyParagraphFormatting(cursor.paragraph, cursor.paragraphFormatting);
+            cursor.paragraphHasContent = false;
+        }
+        cursor.pendingParagraphBreak = false;
+    }
+
+    private void appendChildren(Element element, MarkupCursor cursor, RunStyle style) {
+        for (Node child : element.childNodes()) {
+            appendNode(child, cursor, style);
+        }
+    }
+
+    private void appendNode(Node node, MarkupCursor cursor, RunStyle style) {
+        if (node instanceof TextNode) {
+            String text = ((TextNode) node).text();
+            if (!text.isEmpty()) {
+                ensureParagraphReady(cursor);
+                createStyledRun(cursor.paragraph, text, style);
+                cursor.paragraphHasContent = true;
+            }
             return;
         }
-        List<RunStyle> styleStack = new ArrayList<>();
-        styleStack.add(new RunStyle(defaultStyle));
-
-        Matcher matcher = MARKUP_PATTERN.matcher(text);
-        int current = 0;
-        while (matcher.find()) {
-            if (matcher.start() > current) {
-                createStyledRun(paragraph, text.substring(current, matcher.start()), styleStack.get(styleStack.size() - 1));
-            }
-
-            String imgSource = matcher.group(3);
-            if (imgSource != null) {
-                createStyledRun(paragraph, "[image: " + imgSource + "]", styleStack.get(styleStack.size() - 1));
-                current = matcher.end();
-                continue;
-            }
-
-            boolean closing = "/".equals(matcher.group(1));
-            String tag = matcher.group(2) == null ? "" : matcher.group(2).toLowerCase();
-            if (closing) {
-                if (styleStack.size() > 1) {
-                    styleStack.remove(styleStack.size() - 1);
-                }
-            } else {
-                RunStyle nextStyle = new RunStyle(styleStack.get(styleStack.size() - 1));
-                if ("b".equals(tag)) {
-                    nextStyle.bold = true;
-                } else if ("i".equals(tag)) {
-                    nextStyle.italic = true;
-                } else if ("sub".equals(tag)) {
-                    nextStyle.subscript = true;
-                    nextStyle.superscript = false;
-                } else if ("sup".equals(tag)) {
-                    nextStyle.superscript = true;
-                    nextStyle.subscript = false;
-                } else if ("font".equals(tag)) {
-                    nextStyle.color = "FF0000";
-                }
-                styleStack.add(nextStyle);
-            }
-            current = matcher.end();
+        if (!(node instanceof Element)) {
+            return; // Comments, doctype declarations, etc. - nothing to render.
         }
-        if (current < text.length()) {
-            createStyledRun(paragraph, text.substring(current), styleStack.get(styleStack.size() - 1));
+
+        Element element = (Element) node;
+        switch (element.tagName()) {
+            case "p":
+            case "div":
+                requestParagraphBreak(cursor);
+                appendChildren(element, cursor, style);
+                requestParagraphBreak(cursor);
+                break;
+            case "br":
+                ensureParagraphReady(cursor);
+                cursor.paragraph.createRun().addBreak();
+                cursor.paragraphHasContent = true;
+                break;
+            case "li": {
+                requestParagraphBreak(cursor);
+                ensureParagraphReady(cursor);
+                createStyledRun(cursor.paragraph, "• ", style);
+                cursor.paragraphHasContent = true;
+                appendChildren(element, cursor, style);
+                requestParagraphBreak(cursor);
+                break;
+            }
+            case "tr":
+                requestParagraphBreak(cursor);
+                appendChildren(element, cursor, style);
+                break;
+            case "td":
+            case "th":
+                appendChildren(element, cursor, style);
+                ensureParagraphReady(cursor);
+                createStyledRun(cursor.paragraph, "\t", style);
+                cursor.paragraphHasContent = true;
+                break;
+            case "b":
+            case "strong":
+                appendChildren(element, cursor, withBold(style));
+                break;
+            case "i":
+            case "em":
+                appendChildren(element, cursor, withItalic(style));
+                break;
+            case "u":
+                appendChildren(element, cursor, withUnderline(style));
+                break;
+            case "sub":
+                appendChildren(element, cursor, withSubscript(style));
+                break;
+            case "sup":
+                appendChildren(element, cursor, withSuperscript(style));
+                break;
+            case "font":
+                appendChildren(element, cursor, withFont(style, element));
+                break;
+            case "a": {
+                String href = element.attr("href");
+                if (href.isBlank()) {
+                    appendChildren(element, cursor, style);
+                    break;
+                }
+                ensureParagraphReady(cursor);
+                XWPFHyperlinkRun hyperlinkRun = cursor.paragraph.createHyperlinkRun(href);
+                hyperlinkRun.setFontFamily(style.fontFamily != null ? style.fontFamily : FONT);
+                hyperlinkRun.setColor("0000FF");
+                hyperlinkRun.setUnderline(UnderlinePatterns.SINGLE);
+                hyperlinkRun.setText(element.text());
+                cursor.paragraphHasContent = true;
+                break;
+            }
+            case "img":
+                ensureParagraphReady(cursor);
+                createStyledRun(cursor.paragraph, "[image: " + element.attr("src") + "]", style);
+                cursor.paragraphHasContent = true;
+                break;
+            default:
+                // span, table/tbody/thead/caption, ul/ol, and any other unrecognized tag: a
+                // transparent wrapper - recurse into its children with the style unchanged, rather
+                // than either rendering full DOCX tables/lists or leaking the raw tag as text.
+                appendChildren(element, cursor, style);
+        }
+    }
+
+    private RunStyle withBold(RunStyle style) {
+        RunStyle next = new RunStyle(style);
+        next.bold = true;
+        return next;
+    }
+
+    private RunStyle withItalic(RunStyle style) {
+        RunStyle next = new RunStyle(style);
+        next.italic = true;
+        return next;
+    }
+
+    private RunStyle withUnderline(RunStyle style) {
+        RunStyle next = new RunStyle(style);
+        next.underline = UnderlinePatterns.SINGLE;
+        return next;
+    }
+
+    private RunStyle withSubscript(RunStyle style) {
+        RunStyle next = new RunStyle(style);
+        next.subscript = true;
+        next.superscript = false;
+        return next;
+    }
+
+    private RunStyle withSuperscript(RunStyle style) {
+        RunStyle next = new RunStyle(style);
+        next.superscript = true;
+        next.subscript = false;
+        return next;
+    }
+
+    /**
+     * &lt;font&gt; is overloaded in curator text: the legacy curation tool convention is
+     * &lt;font color=red&gt; to flag added/highlighted text, while a bare &lt;font face="Arial"&gt;
+     * with no color is just an MS-Word-paste artifact that shouldn't turn the text red - so color
+     * and face are applied independently, each only when actually present.
+     */
+    private RunStyle withFont(RunStyle style, Element fontElement) {
+        RunStyle next = new RunStyle(style);
+        String color = normalizeColor(fontElement.attr("color"));
+        if (color != null) {
+            next.color = color;
+        }
+        String face = fontElement.attr("face");
+        if (!face.isBlank()) {
+            next.fontFamily = face;
+        }
+        return next;
+    }
+
+    private String normalizeColor(String value) {
+        if (value == null) {
+            return null;
+        }
+        String normalized = value.trim();
+        if (normalized.startsWith("#")) {
+            normalized = normalized.substring(1);
+        }
+        if (normalized.matches("(?i)[0-9a-f]{6}")) {
+            return normalized.toUpperCase();
+        }
+        switch (normalized.toLowerCase()) {
+            case "red": return "FF0000";
+            case "blue": return "0000FF";
+            case "green": return "008000";
+            case "black": return "000000";
+            default: return null;
         }
     }
 
