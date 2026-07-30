@@ -1,6 +1,6 @@
 spring.neo4j.uri=${NEO4J_URI:bolt://localhost:7687}
-spring.neo4j.authentication.username={}
-spring.neo4j.authentication.password={}
+spring.neo4j.authentication.username={}}
+spring.neo4j.authentication.password={}}
 
 
 # For SchemaRepository: Make sure the graph database name is correct
@@ -12,6 +12,18 @@ spring.data.neo4j.database=graph.db
 logging.level.org.springframework.data.neo4j=INFO
 logging.level.org.springframework.security=INFO
 logging.level.org.reactome.server.tools.reaction.exporter=INFO
+# reaction-exporter's ReactionGraphFactory issues a Cypher query (finding preceding/following
+# reactions in a pathway diagram) using RETURN-with-implicit-grouping syntax that Neo4j has
+# deprecated but still fully supports - the query works correctly, this just silences the
+# per-request "FeatureDeprecationWarning" notice, which we can't fix without patching that
+# third-party jar's compiled Cypher string.
+logging.level.org.springframework.data.neo4j.cypher=ERROR
+# diagram-converter's ProcessFactory validates legacy PathwayDiagram XML against process_schema.xsd
+# with a JAXB unmarshaller; some older/legacy diagrams don't fully conform (e.g. missing an
+# optional element before another), which the unmarshaller tolerates and recovers from (rendering
+# continues normally), but ProcessFactory still logs every such event under the literal logger
+# name "converter" at ERROR. Silencing since it isn't actionable without patching that jar.
+logging.level.converter=OFF
 # Directory for the rolling log file (used by logback-spring.xml)
 logging.dir=logs
 
@@ -26,6 +38,11 @@ spring.main.allow-bean-definition-overriding=true
 # and https://stackoverflow.com/questions/51261809/spring-boot-jackson-non-null-property-not-working
 # Apparently the following cannot work reliably. Follow the example to use a class level configuration.
 #spring.jackson.default-property-inclusion=NON_NULL
+
+# Used to fetch ontology terms from the EBI OLS REST API
+#ols.base-url=http://www.ebi.ac.uk/ols/api/ontologies/
+# Configured on June 26, 2026
+ols.base-url=https://www.ebi.ac.uk/ols4/api/ontologies/
 
 # Used to fetch pubmed detailed information
 pubmedUrl1=https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&retmode=xml&id=
@@ -46,7 +63,7 @@ uniprotFlatFormat=.txt
 # To control the time for reusing InstanceEdit (time unit: second)
 instance_edit_duration=60
 # Root directory for storing files related to figure generation. This is used by the figure generation module to store temporary files and generated figures. Make sure this directory exists and has write permissions.
-figure_root_dir=/home/gwu/curator-tool-ws
+figure_root_dir=/usr/local/reactomes/Reactome/production/webbench/curator-tool-ws
 
 # JWT Token Configuration (time unit: milliseconds)
 # 5 minutes
@@ -59,7 +76,7 @@ jwt.idle-token-time=1200000
 jwt.refresh-token-time=86400000 
 
 # File backup configuration - maximum number of backup files to keep
-staged-file.backup.max-count=50
+staged-file.backup.max-count=100
 
 # a flag to control whether the application is running at local development environment. 
 # his is used to control some configurations that are only suitable for local development
@@ -68,9 +85,9 @@ isProduction=true
 
 # The following configurations are for test at aws_curator by running springboot as a standalone app.
 # Note: The test neo4j password at aws_curator
-file_repo_dir=/home/gwu/curator-tool-ws/file_repo
-diagram_graph_dir=/home/gwu/curator-tool-ws/diagram/graph
-diagram_cytoscape_dir=/home/gwu/curator-tool-ws/diagram/cytoscape
+file_repo_dir=/usr/local/reactomes/Reactome/production/webbench/curator-tool-ws/file_repo
+diagram_graph_dir=/usr/local/reactomes/Reactome/production/webbench/curator-tool-ws/diagram/graph
+diagram_cytoscape_dir=/usr/local/reactomes/Reactome/production/webbench/curator-tool-ws/diagram/cytoscape
 
 server.port=9090
 
@@ -81,8 +98,8 @@ server.port=9090
 # Don't lock the file so that we can test at local dev
 spring.datasource.url=jdbc:h2:file:./data/reactome_h2;DB_CLOSE_DELAY=-1;FILE_LOCK=NO
 spring.datasource.driver-class-name=org.h2.Driver
-spring.datasource.username={}
-spring.datasource.password={}
+spring.datasource.username={}}
+spring.datasource.password={}}
 spring.h2.console.enabled=true
 spring.jpa.hibernate.ddl-auto=update
 # JPA (Hibernate) configuration
