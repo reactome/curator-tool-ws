@@ -320,10 +320,19 @@ public class ReactionImageRendererService {
         Collection<EntityGlyph> participants = new ArrayList<>();
         for (LayoutParticipants lp : participantsInfo) {
             if (lp.getPhysicalEntity() == null) continue;
+            PhysicalEntity pe = peByStId.get(lp.getPhysicalEntity());
+            if (pe != null && pe.getInDisease() == null) {
+                // Some PhysicalEntity subclasses used by newer ReactionLikeEvent subclasses (e.g.
+                // Cell, participant of CellDevelopmentStep) can have this left unset in the data.
+                // EntityGlyph.isDisease() unconditionally unboxes it ("isDashed() || inDisease"),
+                // so a null here throws an NPE deep inside ReactionDiagramFactory.getNodes() for
+                // every such reaction. false matches what curators intend by leaving it unset.
+                pe.setInDisease(false);
+            }
             EntityGlyph glyph = new EntityGlyph();
             glyph.setDrug(lp.isDrug());
             glyph.setDashed(lp.isDashed());
-            glyph.setPhysicalEntity(peByStId.get(lp.getPhysicalEntity()));
+            glyph.setPhysicalEntity(pe);
             glyph.setRole(new Role(lp.getRole().getType(), lp.getRole().getStoichiometry()));
             participants.add(glyph);
         }
