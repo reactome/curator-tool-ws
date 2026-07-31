@@ -13,6 +13,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -264,33 +265,149 @@ public class EventDocxExportService {
             List<Publication> refs = event.getLiteratureReference();
             if (refs != null && !refs.isEmpty()) {
                 addHeader(document, sectionHeaderDepth, "Literature References");
-                int num = 1;
-                for (Publication pub : refs) {
-                    Publication resolvedPublication = pub;
-                    try {
-                        if (pub != null && pub.getDbId() != null) {
-                            Publication cached = context.publications.get(pub.getDbId());
-                            if (cached != null) {
-                                resolvedPublication = cached;
-                            } else if (service != null) {
-                                Object loaded = service.findById(pub.getDbId());
-                                if (loaded instanceof Publication) {
-                                    resolvedPublication = (Publication) loaded;
-                                }
-                            }
-                        }
-                    } catch (Exception ignored) {
-                    }
+                addLiteratureReferences(document, refs, context);
+            }
+        } catch (Exception ignored) {
+        }
 
-                    String citation = formatPublication(resolvedPublication);
-                    String url = resolvePublicationUrl(resolvedPublication);
-                    if (url != null) {
-                        addHyperlink(document, citation, url);
-                    } else {
-                        addNumberedText(document, citation, num);
+        // Source Reaction / Source Pathway - cross-species orthology provenance (inferredFrom).
+        // Grouped under one header per source's class (a Reaction is only ever inferred from
+        // another Reaction, and a Pathway from another Pathway, but inferredFrom is a Set so this
+        // stays defensive rather than assuming exactly one, uniformly-typed entry).
+        try {
+            Set<Event> inferredFrom = event.getInferredFrom();
+            if (inferredFrom != null && !inferredFrom.isEmpty()) {
+                List<Event> reactionSources = new ArrayList<>();
+                List<Event> pathwaySources = new ArrayList<>();
+                for (Event source : inferredFrom) {
+                    if (source == null || source.getDbId() == null) {
+                        continue;
                     }
-                    num++;
+                    Event resolvedSource = resolveInferredFromSource(source);
+                    if (resolvedSource instanceof Pathway) {
+                        pathwaySources.add(resolvedSource);
+                    } else {
+                        reactionSources.add(resolvedSource);
+                    }
                 }
+                reactionSources.sort(Comparator.comparing(e -> valueOrNA(e.getDisplayName())));
+                pathwaySources.sort(Comparator.comparing(e -> valueOrNA(e.getDisplayName())));
+
+                if (!reactionSources.isEmpty()) {
+                    addHeader(document, sectionHeaderDepth, "Source Reaction");
+                    for (Event source : reactionSources) {
+                        addInferredFromSource(document, "reaction", source, context);
+                    }
+                }
+                if (!pathwaySources.isEmpty()) {
+                    addHeader(document, sectionHeaderDepth, "Source Pathway");
+                    for (Event source : pathwaySources) {
+                        addInferredFromSource(document, "pathway", source, context);
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+        }
+
+        // Regulation (regulatedBy) - only applies to ReactionLikeEvent, not Pathway.
+        try {
+            if (event instanceof ReactionLikeEvent) {
+                List<Regulation> regulations = ((ReactionLikeEvent) event).getRegulatedBy();
+                if (regulations != null && !regulations.isEmpty()) {
+                    addHeader(document, sectionHeaderDepth, "Regulators of this Reaction");
+                    for (Regulation regulation : regulations) {
+                        String line = regulation.getDisplayName();
+                        if (line != null) {
+                            addBulletText(document, line);
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    /**
+     * Shared by the main event's own Literature References section and the supporting-references
+     * list under Source Reaction/Source Pathway. context.publications is only populated for the
+     * exported tree, so a source event's own references always fall through to service.findById()
+     * - that cache lookup simply misses rather than needing a separate no-context code path.
+     */
+    private void addLiteratureReferences(XWPFDocument document, List<Publication> refs, ExportContext context) {
+        int num = 1;
+        for (Publication pub : refs) {
+            Publication resolvedPublication = pub;
+            try {
+                if (pub != null && pub.getDbId() != null) {
+                    Publication cached = context.publications.get(pub.getDbId());
+                    if (cached != null) {
+                        resolvedPublication = cached;
+                    } else if (service != null) {
+                        Object loaded = service.findById(pub.getDbId());
+                        if (loaded instanceof Publication) {
+                            resolvedPublication = (Publication) loaded;
+                        }
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+
+            String citation = formatPublication(resolvedPublication);
+            String url = resolvePublicationUrl(resolvedPublication);
+            if (url != null) {
+                addHyperlink(document, citation, url);
+            } else {
+                addNumberedText(document, citation, num);
+            }
+            num++;
+        }
+    }
+
+    /**
+     * Resolves an inferredFrom target to its full object so displayName/speciesName/summation/
+     * literatureReference are available - the batch preload only fetches this one hop from the
+     * current event (see batchLoadEvents()), so the source event itself is otherwise just a
+     * dbId-only shell.
+     */
+    private Event resolveInferredFromSource(Event source) {
+        try {
+            if (service != null && source.getDbId() != null) {
+                Object loaded = service.findById(source.getDbId());
+                if (loaded instanceof Event) {
+                    return (Event) loaded;
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return source;
+    }
+
+    private void addInferredFromSource(XWPFDocument document, String typeLabel, Event source, ExportContext context) {
+        String displayName = valueOrNA(source.getDisplayName());
+        String speciesName = hasText(source.getSpeciesName()) ? source.getSpeciesName() : "an unspecified species";
+        String intro = String.format("This %s was inferred from the corresponding %s \"%s\" in species %s.",
+                typeLabel, typeLabel, displayName, speciesName);
+        Map<String, Object> fmt = Map.of("font", FONT, "font_size", 11);
+        addParagraph(document, intro, fmt);
+
+        try {
+            List<Summation> summations = source.getSummation();
+            if (summations != null && !summations.isEmpty()) {
+                for (Summation summation : summations) {
+                    String text = summation.getText();
+                    if (text != null && !text.isBlank()) {
+                        addParagraph(document, text, fmt);
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+        }
+
+        try {
+            List<Publication> refs = source.getLiteratureReference();
+            if (refs != null && !refs.isEmpty()) {
+                addParagraph(document, "The following literature references support the source " + typeLabel + ":", fmt);
+                addLiteratureReferences(document, refs, context);
             }
         } catch (Exception ignored) {
         }
@@ -469,16 +586,30 @@ public class EventDocxExportService {
     /**
      * Batch-loads one level of events. findByDbIds() only supports one relationship direction
      * per call, so this issues two batched calls - one OUTGOING (hasEvent/summation/
-     * literatureReference/figure/stableIdentifier) and one INCOMING (authored/edited/reviewed) -
-     * and merges the INCOMING results onto the same objects the OUTGOING call produced. A
-     * shallow load goes first to guarantee one entry per dbId even for an event with none of the
-     * relationships requested below (findByDbIds's MATCH is required, not optional, so such an
-     * event would otherwise be silently missing from the result).
+     * literatureReference/figure/stableIdentifier/regulatedBy) and one INCOMING (authored/edited/
+     * reviewed/inferredTo) - and merges the INCOMING results onto the same objects the OUTGOING
+     * call produced. A shallow load goes first to guarantee one entry per dbId even for an event
+     * with none of the relationships requested below (findByDbIds's MATCH is required, not
+     * optional, so such an event would otherwise be silently missing from the result).
      *
      * stableIdentifier is included specifically because addPathwayBrowserLink() needs it to
      * build the PathwayBrowser URL - it's easy to miss since it's not read anywhere else in the
      * export, unlike the old resolveEventForExport()'s full depth-1 findById(), which pulled in
      * every relationship (including this one) whether the export used it or not.
+     *
+     * regulatedBy and inferredTo (Event.inferredFrom is mapped as an INCOMING relationship of
+     * type "inferredTo" - the Neo4j edge is (source)-[:inferredTo]->(this), so it has to be
+     * requested here by its actual type name, in the INCOMING call, not as "inferredFrom" in the
+     * OUTGOING one) are included so that
+     * writeEventSections()'s Regulators of this Reaction and Source Reaction/Source Pathway
+     * sections don't trigger LazyFetchAspect's on-demand fetch (by dbId, one extra Neo4j round
+     * trip) for every single event in the tree just to discover most of them are empty.
+     * Regulation's own displayName is a plain property, already present on the one-hop Regulation
+     * shell this batch returns - no further resolution needed. inferredFrom's target is only a
+     * dbId-only shell from this same one-hop fetch, though; resolveInferredFromSource() still
+     * resolves it individually (for displayName/speciesName/summation/literatureReference), but
+     * that per-occurrence cost is bounded by how many inferred-from sources actually exist, not by
+     * the size of the whole tree.
      */
     private Map<Long, Event> batchLoadEvents(Set<Long> dbIds) {
         Map<Long, Event> result = new HashMap<>();
@@ -492,7 +623,8 @@ public class EventDocxExportService {
         }
 
         Collection<DatabaseObject> outgoing = advancedDatabaseObjectService.findByDbIds(
-                dbIds, RelationshipDirection.OUTGOING, "hasEvent", "summation", "literatureReference", "figure", "stableIdentifier");
+                dbIds, RelationshipDirection.OUTGOING, "hasEvent", "summation", "literatureReference", "figure",
+                "stableIdentifier", "regulatedBy");
         for (DatabaseObject obj : outgoing) {
             if (obj instanceof Event) {
                 Event e = (Event) obj;
@@ -500,8 +632,12 @@ public class EventDocxExportService {
             }
         }
 
+        // inferredFrom is declared as @Relationship(type = "inferredTo", direction = INCOMING) on
+        // Event - the Neo4j edge is (source)-[:inferredTo]->(this), so "inferredFrom" isn't a real
+        // relationship type to query by (it's just this field's Java-side name); it has to be
+        // fetched here as "inferredTo" alongside the other INCOMING relationships.
         Collection<DatabaseObject> incoming = advancedDatabaseObjectService.findByDbIds(
-                dbIds, RelationshipDirection.INCOMING, "authored", "edited", "reviewed");
+                dbIds, RelationshipDirection.INCOMING, "authored", "edited", "reviewed", "inferredTo");
         for (DatabaseObject obj : incoming) {
             if (!(obj instanceof Event)) continue;
             Event enriched = (Event) obj;
@@ -513,6 +649,7 @@ public class EventDocxExportService {
             target.setAuthored(enriched.getAuthored());
             target.setEdited(enriched.getEdited());
             target.setReviewed(enriched.getReviewed());
+            target.setInferredFrom(enriched.getInferredFrom());
         }
 
         return result;
