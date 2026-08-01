@@ -59,6 +59,12 @@ public class CuratorToolWSUtils {
                                       DatabaseObject object) throws Exception {
         String methodName = "set" + attributeName.substring(0, 1).toUpperCase() + attributeName.substring(1);
         Class parameterCls = value.getClass();
+        // A method matching only via the collection-mismatch heuristic below isn't necessarily
+        // usable for parameterCls (e.g. an unrelated overload that happens to take a List/Set of
+        // a different element type), so it's kept only as a fallback: scan every method first and
+        // prefer a directly assignable match wherever it appears, instead of returning on whichever
+        // check passes first for the first matching method getMethods() happens to return.
+        Method coercibleMethod = null;
         for (Method method : object.getClass().getMethods()) {
             if (method.getName().equals(methodName)) {
                 Class[] parameterTypes = method.getParameterTypes();
@@ -67,17 +73,17 @@ public class CuratorToolWSUtils {
                     // The method defined using super class may not be found using a subclass using getMethod directly.
                     // So we need to check if the parameter type is assignable from the value's class.
                     if (parameterType.isAssignableFrom(parameterCls)) {
-                        return method; // Found the method
+                        return method; // Directly usable - no need to keep scanning.
                     }
                     // Handle common collection mismatches (e.g. List value for Set setter).
-                    if (value instanceof Collection &&
+                    if (coercibleMethod == null && value instanceof Collection &&
                         (List.class.isAssignableFrom(parameterType) || Set.class.isAssignableFrom(parameterType))) {
-                        return method;
+                        coercibleMethod = method;
                     }
                 }
             }
         }
-        return null; // Not found
+        return coercibleMethod; // No directly assignable match found; fall back to the coercible one, if any.
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
