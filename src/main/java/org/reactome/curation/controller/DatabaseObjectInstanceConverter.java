@@ -12,14 +12,18 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.gk.model.InstanceNotFoundException;
+import org.gk.model.ReactomeJavaConstants;
 import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.util.CuratorToolWSUtils;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.service.CurationService;
 import org.reactome.curation.service.InstanceEditManager;
+import org.reactome.server.graph.domain.model.Complex;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.domain.model.Event;
 import org.reactome.server.graph.domain.model.InstanceEdit;
+import org.reactome.server.graph.domain.model.Polymer;
+import org.reactome.server.graph.domain.model.ReactionLikeEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,9 +64,27 @@ public class DatabaseObjectInstanceConverter {
             // These attributes don't have properties
             if (attribute.getProperties() == null)
                 continue;
-            String methodName = "get" + attribute.getName().substring(0, 1).toUpperCase() + attribute.getName().substring(1);
-            Method method = databaseObject.getClass().getMethod(methodName);
-            Object value = method.invoke(databaseObject);
+            Object value;
+            // ReactionLikeEvent.getInput()/getOutput(), Complex.getHasComponent(), and
+            // Polymer.getRepeatedUnit() just iterate their underlying relationship Set in
+            // whatever order Spring Data Neo4j happened to load it in - NOT the curator-defined
+            // order recorded in each relationship's "order" property. Resolve these attributes
+            // from the raw, order-sortable relationship entities instead of invoking the getter
+            // directly.
+            if (databaseObject instanceof ReactionLikeEvent &&
+                (attribute.getName().equals(ReactomeJavaConstants.input) || attribute.getName().equals(ReactomeJavaConstants.output))) {
+                ReactionLikeEvent rle = (ReactionLikeEvent) databaseObject;
+                value = CuratorToolWSUtils.getOrderedPhysicalEntities(
+                        attribute.getName().equals(ReactomeJavaConstants.input) ? rle.getInputs() : rle.getOutputs());
+            } else if (databaseObject instanceof Complex && attribute.getName().equals(ReactomeJavaConstants.hasComponent)) {
+                value = CuratorToolWSUtils.getOrderedPhysicalEntities(((Complex) databaseObject).getComponents());
+            } else if (databaseObject instanceof Polymer && attribute.getName().equals(ReactomeJavaConstants.repeatedUnit)) {
+                value = CuratorToolWSUtils.getOrderedPhysicalEntities(((Polymer) databaseObject).getRepeatedUnits());
+            } else {
+                String methodName = "get" + attribute.getName().substring(0, 1).toUpperCase() + attribute.getName().substring(1);
+                Method method = databaseObject.getClass().getMethod(methodName);
+                value = method.invoke(databaseObject);
+            }
             if (value == null)
                 continue;
             Object convertedValue = null;

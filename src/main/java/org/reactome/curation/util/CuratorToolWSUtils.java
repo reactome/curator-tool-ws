@@ -7,6 +7,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -14,7 +15,13 @@ import java.util.Map;
 import java.util.Set;
 
 import org.gk.model.ReactomeJavaConstants;
+import org.reactome.server.graph.domain.model.Complex;
 import org.reactome.server.graph.domain.model.DatabaseObject;
+import org.reactome.server.graph.domain.model.PhysicalEntity;
+import org.reactome.server.graph.domain.model.Polymer;
+import org.reactome.server.graph.domain.model.ReactionLikeEvent;
+import org.reactome.server.graph.domain.relationship.Has;
+import org.reactome.server.graph.service.helper.StoichiometryObject;
 import org.reactome.server.graph.service.util.DatabaseObjectUtils;
 
 /**
@@ -42,7 +49,65 @@ public class CuratorToolWSUtils {
             field2value.remove("rNAMarker");
             field2value.put("RNAMarker", value);
         }
+        // DatabaseObjectUtils.getAllFields() populates "input"/"output"/"hasComponent"/"repeatedUnit"
+        // via fetchInput()/fetchOutput()/fetchHasComponent()/fetchRepeatedUnit(), which sort by
+        // displayName (Has.Util.simplifiedSort()) rather than the curator-defined order recorded in
+        // each relationship's "order" property. Overwrite them here with the same relationship
+        // entities, re-sorted by "order" instead, so saving doesn't scramble the order.
+        if (obj instanceof ReactionLikeEvent) {
+            ReactionLikeEvent rle = (ReactionLikeEvent) obj;
+            if (field2value.containsKey(ReactomeJavaConstants.input))
+                field2value.put(ReactomeJavaConstants.input, getOrderedStoichiometry(rle.getInputs()));
+            if (field2value.containsKey(ReactomeJavaConstants.output))
+                field2value.put(ReactomeJavaConstants.output, getOrderedStoichiometry(rle.getOutputs()));
+        }
+        else if (obj instanceof Complex) {
+            Complex complex = (Complex) obj;
+            if (field2value.containsKey(ReactomeJavaConstants.hasComponent))
+                field2value.put(ReactomeJavaConstants.hasComponent, getOrderedStoichiometry(complex.getComponents()));
+        }
+        else if (obj instanceof Polymer) {
+            Polymer polymer = (Polymer) obj;
+            if (field2value.containsKey(ReactomeJavaConstants.repeatedUnit))
+                field2value.put(ReactomeJavaConstants.repeatedUnit, getOrderedStoichiometry(polymer.getRepeatedUnits()));
+        }
         return field2value;
+    }
+
+    /**
+     * Sorts a relationship-entity collection (ReactionLikeEvent.input/output, Complex.hasComponent,
+     * Polymer.repeatedUnit) by its curator-defined "order" property, as a StoichiometryObject list
+     * ready to substitute for the displayName-sorted list their respective fetchXxx() methods
+     * (Has.Util.simplifiedSort()) would otherwise produce - used when writing, via getAllFields()
+     * above.
+     */
+    private static List<StoichiometryObject> getOrderedStoichiometry(Collection<? extends Has<PhysicalEntity>> relationshipEntities) {
+        List<StoichiometryObject> result = new ArrayList<>();
+        for (Has<PhysicalEntity> has : sortByOrder(relationshipEntities))
+            result.add(has.toStoichiometryObject());
+        return result;
+    }
+
+    /**
+     * Sorts a relationship-entity collection (ReactionLikeEvent.input/output, Complex.hasComponent,
+     * Polymer.repeatedUnit) by its curator-defined "order" property and expands it back into a flat
+     * PhysicalEntity list (duplicated per stoichiometry) - a drop-in, correctly-ordered replacement
+     * for calling getInput()/getOutput()/getHasComponent()/getRepeatedUnit() directly, since those
+     * just iterate the underlying Set in whatever order Spring Data Neo4j happened to load it in.
+     * Used when reading back, via DatabaseObjectInstanceConverter.
+     */
+    public static List<PhysicalEntity> getOrderedPhysicalEntities(Collection<? extends Has<PhysicalEntity>> relationshipEntities) {
+        if (relationshipEntities == null)
+            return null; // Match Has.Util.expandStoichiometry()'s null-on-null-input contract.
+        return Has.Util.expandStoichiometry(sortByOrder(relationshipEntities));
+    }
+
+    private static List<Has<PhysicalEntity>> sortByOrder(Collection<? extends Has<PhysicalEntity>> relationshipEntities) {
+        List<Has<PhysicalEntity>> sorted = new ArrayList<>();
+        if (relationshipEntities != null)
+            sorted.addAll(relationshipEntities);
+        sorted.sort(Comparator.comparingInt(Has::getOrder));
+        return sorted;
     }
     
     /**
