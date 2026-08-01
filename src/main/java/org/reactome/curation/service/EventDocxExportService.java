@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -260,9 +261,10 @@ public class EventDocxExportService {
         } catch (Exception ignored) {
         }
 
-        // Literature references
+        // Literature references - the event's own plus any cited by its Summation(s), merged and
+        // de-duplicated (see collectLiteratureReferences()).
         try {
-            List<Publication> refs = event.getLiteratureReference();
+            List<Publication> refs = collectLiteratureReferences(event, context);
             if (refs != null && !refs.isEmpty()) {
                 addHeader(document, sectionHeaderDepth, "Literature References");
                 addLiteratureReferences(document, refs, context);
@@ -404,13 +406,87 @@ public class EventDocxExportService {
         }
 
         try {
-            List<Publication> refs = source.getLiteratureReference();
+            List<Publication> refs = collectLiteratureReferences(source, context);
             if (refs != null && !refs.isEmpty()) {
                 addParagraph(document, "The following literature references support the source " + typeLabel + ":", fmt);
                 addLiteratureReferences(document, refs, context);
             }
         } catch (Exception ignored) {
         }
+    }
+
+    /**
+     * Merges an event's own literatureReference with every reference cited by its Summation(s),
+     * de-duplicated by dbId (an event and its summation frequently cite the same paper), preserving
+     * first-seen order - the event's own references first, then each summation's in list order.
+     * Summations are resolved against context.summations (populated by batchLoadSummations()) so
+     * this doesn't trigger a per-summation Neo4j round trip for events inside the exported tree;
+     * for anything outside that tree (e.g. an inferredFrom source), the fallback in
+     * resolveSummation() falls through to LazyFetchAspect's on-demand fetch instead, same as
+     * resolveInferredFromSource() already does for the source event itself.
+     */
+    private List<Publication> collectLiteratureReferences(Event event, ExportContext context) {
+        Map<Long, Publication> byDbId = new LinkedHashMap<>();
+        List<Publication> withoutDbId = new ArrayList<>();
+
+        List<Publication> ownRefs = null;
+        try {
+            ownRefs = event.getLiteratureReference();
+        } catch (Exception ignored) {
+        }
+        mergePublications(ownRefs, byDbId, withoutDbId);
+
+        try {
+            List<Summation> summations = event.getSummation();
+            if (summations != null) {
+                for (Summation summation : summations) {
+                    Summation resolved = resolveSummation(summation, context);
+                    List<Publication> summationRefs = null;
+                    try {
+                        summationRefs = resolved == null ? null : resolved.getLiteratureReference();
+                    } catch (Exception ignored) {
+                    }
+                    mergePublications(summationRefs, byDbId, withoutDbId);
+                }
+            }
+        } catch (Exception ignored) {
+        }
+
+        List<Publication> merged = new ArrayList<>(byDbId.values());
+        merged.addAll(withoutDbId);
+        return merged;
+    }
+
+    private void mergePublications(List<Publication> refs, Map<Long, Publication> byDbId, List<Publication> withoutDbId) {
+        if (refs == null) return;
+        for (Publication pub : refs) {
+            if (pub == null) continue;
+            Long dbId = pub.getDbId();
+            if (dbId != null) {
+                byDbId.putIfAbsent(dbId, pub);
+            } else {
+                withoutDbId.add(pub);
+            }
+        }
+    }
+
+    /**
+     * Resolves a shell Summation (from an event's one-hop summation list) to the copy with
+     * literatureReference already populated by batchLoadSummations(); falls back to the shell
+     * itself when it isn't in context (e.g. not part of the batch-preloaded tree), which still
+     * works via LazyFetchAspect but costs one Neo4j round trip per summation.
+     */
+    private Summation resolveSummation(Summation summation, ExportContext context) {
+        if (summation == null) {
+            return null;
+        }
+        if (summation.getDbId() != null) {
+            Summation cached = context.summations.get(summation.getDbId());
+            if (cached != null) {
+                return cached;
+            }
+        }
+        return summation;
     }
 
     private Event resolveEventForExport(Event event, ExportContext context) {
@@ -489,13 +565,15 @@ public class EventDocxExportService {
     private static class ExportContext {
         final Map<Long, Event> events;
         final Map<Long, InstanceEdit> instanceEdits;
+        final Map<Long, Summation> summations;
         final Map<Long, Publication> publications;
         final Map<Long, byte[]> reactionImages;
 
-        ExportContext(Map<Long, Event> events, Map<Long, InstanceEdit> instanceEdits, Map<Long, Publication> publications,
-                     Map<Long, byte[]> reactionImages) {
+        ExportContext(Map<Long, Event> events, Map<Long, InstanceEdit> instanceEdits, Map<Long, Summation> summations,
+                     Map<Long, Publication> publications, Map<Long, byte[]> reactionImages) {
             this.events = events;
             this.instanceEdits = instanceEdits;
+            this.summations = summations;
             this.publications = publications;
             this.reactionImages = reactionImages;
         }
@@ -504,9 +582,10 @@ public class EventDocxExportService {
     private ExportContext buildExportContext(Event rootEvent) {
         Map<Long, Event> events = preloadEventTree(rootEvent);
         Map<Long, InstanceEdit> instanceEdits = batchLoadInstanceEdits(collectInstanceEditDbIds(events));
-        Map<Long, Publication> publications = batchLoadPublications(collectPublicationDbIds(events));
+        Map<Long, Summation> summations = batchLoadSummations(collectSummationDbIds(events));
+        Map<Long, Publication> publications = batchLoadPublications(collectPublicationDbIds(events, summations));
         Map<Long, byte[]> reactionImages = renderReactionImagesInParallel(events);
-        return new ExportContext(events, instanceEdits, publications, reactionImages);
+        return new ExportContext(events, instanceEdits, summations, publications, reactionImages);
     }
 
     /**
@@ -676,6 +755,34 @@ public class EventDocxExportService {
         return result;
     }
 
+    /**
+     * Batch-loads Summations with their literatureReference relation populated, so
+     * collectLiteratureReferences() can merge an event's own references with its summations'
+     * without triggering LazyFetchAspect's per-summation on-demand fetch for every summation in
+     * the exported tree.
+     */
+    private Map<Long, Summation> batchLoadSummations(Set<Long> dbIds) {
+        Map<Long, Summation> result = new HashMap<>();
+        if (dbIds.isEmpty() || advancedDatabaseObjectService == null || databaseObjectService == null) {
+            return result;
+        }
+        for (Object obj : databaseObjectService.findByIdsNoRelations(dbIds)) {
+            if (obj instanceof Summation) {
+                Summation s = (Summation) obj;
+                result.put(s.getDbId(), s);
+            }
+        }
+        Collection<DatabaseObject> enriched = advancedDatabaseObjectService.findByDbIds(
+                dbIds, RelationshipDirection.OUTGOING, "literatureReference");
+        for (DatabaseObject obj : enriched) {
+            if (obj instanceof Summation) {
+                Summation s = (Summation) obj;
+                result.put(s.getDbId(), s);
+            }
+        }
+        return result;
+    }
+
     private Map<Long, Publication> batchLoadPublications(Set<Long> dbIds) {
         Map<Long, Publication> result = new HashMap<>();
         if (dbIds.isEmpty() || advancedDatabaseObjectService == null || databaseObjectService == null) {
@@ -710,11 +817,28 @@ public class EventDocxExportService {
         return ids;
     }
 
-    private Set<Long> collectPublicationDbIds(Map<Long, Event> events) {
+    private Set<Long> collectPublicationDbIds(Map<Long, Event> events, Map<Long, Summation> summations) {
         Set<Long> ids = new HashSet<>();
         for (Event e : events.values()) {
             try {
                 addDbIds(ids, e.getLiteratureReference());
+            } catch (Exception ignored) {
+            }
+        }
+        for (Summation s : summations.values()) {
+            try {
+                addDbIds(ids, s.getLiteratureReference());
+            } catch (Exception ignored) {
+            }
+        }
+        return ids;
+    }
+
+    private Set<Long> collectSummationDbIds(Map<Long, Event> events) {
+        Set<Long> ids = new HashSet<>();
+        for (Event e : events.values()) {
+            try {
+                addDbIds(ids, e.getSummation());
             } catch (Exception ignored) {
             }
         }

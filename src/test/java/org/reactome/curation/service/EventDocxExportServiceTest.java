@@ -102,6 +102,61 @@ public class EventDocxExportServiceTest {
     }
 
     /**
+     * An Event and its Summation may cite overlapping and distinct references. The export should
+     * merge both sets into one Literature References list, de-duplicating by dbId rather than
+     * printing the shared reference twice.
+     */
+    @Test
+    void literatureReferencesShouldMergeEventAndSummationReferences() throws Exception {
+        Pathway event = new Pathway(200001L);
+        event.setDisplayName("Merge Test Pathway");
+
+        LiteratureReference eventRef = new LiteratureReference();
+        eventRef.setDbId(1L);
+        eventRef.setTitle("Event-level reference");
+        eventRef.setJournal("Journal A");
+        eventRef.setYear(2001);
+        eventRef.setPubMedIdentifier(1111111);
+        event.setLiteratureReference(new ArrayList<>(List.of(eventRef)));
+
+        // Same dbId as eventRef - should be de-duplicated, not listed twice.
+        LiteratureReference duplicateOfEventRef = new LiteratureReference();
+        duplicateOfEventRef.setDbId(1L);
+        duplicateOfEventRef.setTitle("Event-level reference");
+        duplicateOfEventRef.setJournal("Journal A");
+        duplicateOfEventRef.setYear(2001);
+        duplicateOfEventRef.setPubMedIdentifier(1111111);
+
+        LiteratureReference summationOnlyRef = new LiteratureReference();
+        summationOnlyRef.setDbId(2L);
+        summationOnlyRef.setTitle("Summation-only reference");
+        summationOnlyRef.setJournal("Journal B");
+        summationOnlyRef.setYear(2002);
+        summationOnlyRef.setPubMedIdentifier(2222222);
+
+        Summation summation = new Summation();
+        summation.setText("Some summation text citing its own references.");
+        summation.setLiteratureReference(new ArrayList<>(List.of(duplicateOfEventRef, summationOnlyRef)));
+        event.setSummation(new ArrayList<>(List.of(summation)));
+
+        byte[] docxBytes = service.exportEventDocx(event);
+        assertThat(docxBytes).isNotEmpty();
+
+        try (XWPFDocument doc = new XWPFDocument(new ByteArrayInputStream(docxBytes))) {
+            String text = doc.getParagraphs().stream()
+                    .map(XWPFParagraph::getText)
+                    .collect(Collectors.joining("\n"));
+
+            assertThat(text).contains("Literature References");
+            assertThat(text).contains("Event-level reference");
+            assertThat(text).contains("Summation-only reference");
+
+            long occurrences = text.lines().filter(line -> line.contains("Event-level reference")).count();
+            assertThat(occurrences).isEqualTo(1);
+        }
+    }
+
+    /**
      * Creates a fully-populated Pathway event and writes it to
      * target/test-event-export.docx so the output can be inspected visually.
      * Also asserts that the file has non-zero size and that the expected
