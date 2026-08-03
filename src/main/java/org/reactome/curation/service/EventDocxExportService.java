@@ -956,7 +956,28 @@ public class EventDocxExportService {
         return String.join(". ", citationParts) + ".";
     }
 
+    /**
+     * Prefers the PubMed-style authorName strings (e.g. "Smith JA") set directly on the
+     * Publication - see LiteratureReferenceAttributeAutoFiller - since those are already in the
+     * exact citation format wanted here. Only falls back to formatting the "author" Person
+     * relationship (a different name format) when authorName isn't populated, e.g. for older
+     * LiteratureReferences created before that attribute existed.
+     */
     private String formatPublicationAuthors(Publication pub) {
+        List<String> authorNames = pub.getAuthorName();
+        if (authorNames != null && !authorNames.isEmpty()) {
+            List<String> normalized = new ArrayList<>();
+            for (String authorName : authorNames) {
+                String value = normalizeText(authorName);
+                if (hasText(value)) {
+                    normalized.add(value);
+                }
+            }
+            if (!normalized.isEmpty()) {
+                return String.join(", ", normalized);
+            }
+        }
+
         Object authorsObject = invokeGetter(pub, "getAuthor");
         if (!(authorsObject instanceof List<?>)) {
             authorsObject = invokeGetter(pub, "getAuthors");

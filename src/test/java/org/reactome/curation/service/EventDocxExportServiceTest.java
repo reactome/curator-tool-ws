@@ -157,6 +157,75 @@ public class EventDocxExportServiceTest {
     }
 
     /**
+     * When a Publication has authorName set (the PubMed-style strings set by
+     * LiteratureReferenceAttributeAutoFiller), the export should use those verbatim instead of
+     * formatting the "author" Person relationship, even when both are present.
+     */
+    @Test
+    void formatPublicationAuthorsShouldPreferAuthorNameOverAuthorList() throws Exception {
+        Pathway event = new Pathway(300001L);
+        event.setDisplayName("AuthorName Preference Test");
+
+        LiteratureReference ref = new LiteratureReference();
+        ref.setDbId(10L);
+        ref.setTitle("A paper with authorName set");
+        ref.setJournal("Journal C");
+        ref.setYear(2010);
+        ref.setPubMedIdentifier(3333333);
+        ref.setAuthorName(List.of("Smith JA", "Doe RK"));
+
+        Person person = new Person();
+        person.setSurname("ShouldNotAppear");
+        person.setFirstname("Nobody");
+        ref.setAuthor(List.of(person));
+
+        event.setLiteratureReference(new ArrayList<>(List.of(ref)));
+
+        byte[] docxBytes = service.exportEventDocx(event);
+
+        try (XWPFDocument doc = new XWPFDocument(new ByteArrayInputStream(docxBytes))) {
+            String text = doc.getParagraphs().stream()
+                    .map(XWPFParagraph::getText)
+                    .collect(Collectors.joining("\n"));
+            assertThat(text).contains("Smith JA, Doe RK");
+            assertThat(text).doesNotContain("ShouldNotAppear");
+        }
+    }
+
+    /**
+     * When authorName isn't populated (e.g. an older LiteratureReference), the export should fall
+     * back to formatting the "author" Person relationship, as before.
+     */
+    @Test
+    void formatPublicationAuthorsShouldFallBackToAuthorListWhenAuthorNameMissing() throws Exception {
+        Pathway event = new Pathway(300002L);
+        event.setDisplayName("Author List Fallback Test");
+
+        LiteratureReference ref = new LiteratureReference();
+        ref.setDbId(11L);
+        ref.setTitle("A paper without authorName");
+        ref.setJournal("Journal D");
+        ref.setYear(2011);
+        ref.setPubMedIdentifier(4444444);
+
+        Person person = new Person();
+        person.setSurname("Fallback");
+        person.setFirstname("Author");
+        ref.setAuthor(List.of(person));
+
+        event.setLiteratureReference(new ArrayList<>(List.of(ref)));
+
+        byte[] docxBytes = service.exportEventDocx(event);
+
+        try (XWPFDocument doc = new XWPFDocument(new ByteArrayInputStream(docxBytes))) {
+            String text = doc.getParagraphs().stream()
+                    .map(XWPFParagraph::getText)
+                    .collect(Collectors.joining("\n"));
+            assertThat(text).contains("Fallback");
+        }
+    }
+
+    /**
      * Creates a fully-populated Pathway event and writes it to
      * target/test-event-export.docx so the output can be inspected visually.
      * Also asserts that the file has non-zero size and that the expected
