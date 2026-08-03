@@ -336,7 +336,6 @@ public class EventDocxExportService {
      * - that cache lookup simply misses rather than needing a separate no-context code path.
      */
     private void addLiteratureReferences(XWPFDocument document, List<Publication> refs, ExportContext context) {
-        int num = 1;
         for (Publication pub : refs) {
             Publication resolvedPublication = pub;
             try {
@@ -359,9 +358,8 @@ public class EventDocxExportService {
             if (url != null) {
                 addHyperlink(document, citation, url);
             } else {
-                addNumberedText(document, citation, num);
+                addParagraph(document, citation, null);
             }
-            num++;
         }
     }
 
