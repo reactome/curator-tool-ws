@@ -355,9 +355,15 @@ public class CurationService {
             countInstances(child);
     }
     
-    public Integer countInstances(String clsName, 
+    public Integer countInstances(String clsName,
                                   String query) {
-        return curationRepository.countInstances(clsName, query);
+        return countInstances(clsName, query, false);
+    }
+
+    public Integer countInstances(String clsName,
+                                  String query,
+                                  boolean regex) {
+        return curationRepository.countInstances(clsName, query, regex);
     }
     
     public SimpleInstance fetchPathwayDiagramForPathway(Long pathwayId) {
@@ -379,7 +385,15 @@ public class CurationService {
                                       int skip,
                                       int limit,
                                       String text) {
-        return curationRepository.listInstances(className, skip, limit, text);
+        return listInstances(className, skip, limit, text, false);
+    }
+
+    public InstanceList listInstances(String className,
+                                      int skip,
+                                      int limit,
+                                      String text,
+                                      boolean regex) {
+        return curationRepository.listInstances(className, skip, limit, text, regex);
     }
     
     public SimpleInstance findInstance(String displayName,

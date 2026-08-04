@@ -600,11 +600,33 @@ public class CurationRepository {
      * try to create an index on displayName if it is not here like this: CREATE
      * INDEX ON :DatabaseObject(displayName)
      */
-    @SuppressWarnings({"rawtypes"})
     public InstanceList listInstances(String className, int skip, int limit, String text) {
+        return listInstances(className, skip, limit, text, false);
+    }
+
+    /**
+     * Get a list of objects in SimpleInstance. Note: If performance is an issue,
+     * try to create an index on displayName if it is not here like this: CREATE
+     * INDEX ON :DatabaseObject(displayName)
+     *
+     * @param regex when true, text is treated as a regular expression matched against
+     * displayName. When false, text is matched literally: a purely numeric text is
+     * looked up as a dbId, anything else as a displayName substring. Note that the
+     * dbId shortcut is deliberately skipped in regex mode, where a digits-only text
+     * is a perfectly good displayName pattern.
+     */
+    @SuppressWarnings({"rawtypes"})
+    public InstanceList listInstances(String className, int skip, int limit, String text, boolean regex) {
         if (text == null || text.trim().length() == 0) {
             List emptyList = Collections.EMPTY_LIST;
             return listInstances(className, skip, limit, emptyList, emptyList, emptyList, emptyList);
+        }
+        else if (regex) {
+            List<String> attributes = Collections.singletonList("displayName");
+            List<String> attributeTypes = Collections.singletonList("string");
+            List<ListOperand> operands = Collections.singletonList(ListOperand.MATCHES_REGEX);
+            List<String> searchKeys = Collections.singletonList(text);
+            return listInstances(className, skip, limit, attributes, attributeTypes, operands, searchKeys);
         }
         else {
             // if the query (text) is a number (passed as a string), to an equal map for dbId
@@ -625,6 +647,22 @@ public class CurationRepository {
                 return listInstances(className, skip, limit, attributes, attributeTypes, operands, searchKeys);
             }
         }
+    }
+
+    /**
+     * Build the Cypher regex matching a search key as literal text.
+     * See CuratorToolWSUtils.buildContainsPattern.
+     */
+    private String containsPattern(String key) {
+        return CuratorToolWSUtils.buildContainsPattern(key);
+    }
+
+    /**
+     * Build the Cypher regex matching a search key as a user-supplied regular expression.
+     * See CuratorToolWSUtils.buildRegexPattern.
+     */
+    private String regexPattern(String key) {
+        return CuratorToolWSUtils.buildRegexPattern(key);
     }
 
     /**
@@ -736,7 +774,12 @@ public class CurationRepository {
                         relMatchClauses.add("MATCH (inst)-[:`" + attr + "`]-()");
                         break;
                     case CONTAINS:
-                        params.put(paramName, "(?i).*" + key + ".*");
+                        params.put(paramName, containsPattern(key));
+                        relMatchClauses.add("MATCH (inst)-[:`" + attr + "`]-(" + nodeAlias
+                                + ") WHERE " + nodeAlias + ".displayName =~ $" + paramName);
+                        break;
+                    case MATCHES_REGEX:
+                        params.put(paramName, regexPattern(key));
                         relMatchClauses.add("MATCH (inst)-[:`" + attr + "`]-(" + nodeAlias
                                 + ") WHERE " + nodeAlias + ".displayName =~ $" + paramName);
                         break;
@@ -758,7 +801,11 @@ public class CurationRepository {
                 // toString() throws a TypeError on arrays in Neo4j 4.x, so we use ANY().
                 switch (operand) {
                     case CONTAINS:
-                        params.put(paramName, "(?i).*" + key + ".*");
+                        params.put(paramName, containsPattern(key));
+                        whereClauses.add("inst." + attr + " IS NOT NULL AND ANY(x IN inst." + attr + " WHERE x IS NOT NULL AND toString(x) =~ $" + paramName + ")");
+                        break;
+                    case MATCHES_REGEX:
+                        params.put(paramName, regexPattern(key));
                         whereClauses.add("inst." + attr + " IS NOT NULL AND ANY(x IN inst." + attr + " WHERE x IS NOT NULL AND toString(x) =~ $" + paramName + ")");
                         break;
                     case EQUAL:
@@ -790,7 +837,11 @@ public class CurationRepository {
                         whereClauses.add("inst." + attr + " IS NOT NULL AND toString(inst." + attr + ") <> $" + paramName);
                         break;
                     case CONTAINS:
-                        params.put(paramName, "(?i).*" + key + ".*");
+                        params.put(paramName, containsPattern(key));
+                        whereClauses.add("inst." + attr + " IS NOT NULL AND toString(inst." + attr + ") =~ $" + paramName);
+                        break;
+                    case MATCHES_REGEX:
+                        params.put(paramName, regexPattern(key));
                         whereClauses.add("inst." + attr + " IS NOT NULL AND toString(inst." + attr + ") =~ $" + paramName);
                         break;
                     case IS_NOT_NULL:
@@ -1211,12 +1262,13 @@ public class CurationRepository {
     }
 
 
-    private Condition createDisplayNameQueryCondition(String text, Node instance) {
+    private Condition createDisplayNameQueryCondition(String text, Node instance, boolean regex) {
         Condition condition = null;
         if (text != null) {
-            // Find display names containing text using regex
+            // Find display names matching text using regex. The literal case quotes the
+            // text so that it stays consistent with the CONTAINS handling in listInstances.
             var displayName = instance.property("displayName");
-            condition = displayName.matches(".*(?i)" + text + ".*");
+            condition = displayName.matches(regex ? regexPattern(text) : containsPattern(text));
         }
         return condition;
     }
@@ -1260,8 +1312,17 @@ public class CurationRepository {
     }
 
     public Integer countInstances(String clsName, String text) {
+        return countInstances(clsName, text, false);
+    }
+
+    /**
+     * Count instances of a class, optionally filtered by a displayName query.
+     * @param regex when true, text is treated as a regular expression rather than
+     * a literal substring, matching the listInstances behaviour.
+     */
+    public Integer countInstances(String clsName, String text, boolean regex) {
         var instance = Cypher.node(clsName).named("inst");
-        Condition condition = createDisplayNameQueryCondition(text, instance);
+        Condition condition = createDisplayNameQueryCondition(text, instance, regex);
         var query = Cypher.match(instance);
         if (condition != null)
             query.where(condition);

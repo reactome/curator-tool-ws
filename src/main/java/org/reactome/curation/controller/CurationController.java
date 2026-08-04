@@ -23,6 +23,7 @@ import org.reactome.curation.service.DiagramLockService;
 import org.reactome.curation.service.EventDocxExportService;
 import org.reactome.curation.service.PathwayDiagramService;
 import org.reactome.curation.util.CurationAuditLogger;
+import org.reactome.curation.util.CuratorToolWSUtils;
 import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.domain.model.Deleted;
 import org.reactome.server.graph.domain.model.Event;
@@ -576,11 +577,14 @@ public class CurationController {
     
     /**
      * This API can accept an optional parameter called query for searching based on display name
-     * in the format like ?query=TP53. 
+     * in the format like ?query=TP53.
      * Note: the query string should be encoded using the standard http way from the front end (e.g. no space, etc).
      * @param className
      * @param skip
      * @param limit
+     * @param regex optional flag (?regex=true). When set, query is treated as a regular
+     * expression matched against displayName instead of a literal substring. An invalid
+     * pattern is reported as a 400 rather than an empty result.
      * @return
      */
     @GetMapping("listInstances/{className}/{skip}/{limit}")
@@ -588,11 +592,13 @@ public class CurationController {
                                       @PathVariable("skip") Integer skip,
                                       @PathVariable("limit") Integer limit,
                                       // Make sure to use Optional so that we can take a URL without query.
-                                      @RequestParam("query") Optional<String> query) {
-        return service.listInstances(className, 
-                skip, 
+                                      @RequestParam("query") Optional<String> query,
+                                      @RequestParam("regex") Optional<Boolean> regex) {
+        return service.listInstances(className,
+                skip,
                 limit,
-                query.isEmpty() ? null : query.get());
+                query.isEmpty() ? null : query.get(),
+                regex.orElse(false));
     }
     
 
@@ -621,7 +627,7 @@ public class CurationController {
                 return service.listInstances(className, skip, limit, null);
             List<String> attributeList = List.of(attributes.get().split(","));
             List<String> operandList = List.of(operands.get().split(","));
-            List<String> keyList = List.of(searchKeys.get().split(","));
+            List<String> keyList = CuratorToolWSUtils.splitSearchKeys(searchKeys.get());
             // Make sure all three lists have the same length
             if ((attributeList.size() != operandList.size()) ||
                     (attributeList.size() != keyList.size())) {
@@ -643,21 +649,33 @@ public class CurationController {
             List<ListOperand> listOperandList = new ArrayList<>(operandList.size());
             for (String operand : operandList) {
                 ListOperand listOperand = ListOperand.map(operand);
+                // An unknown operand used to slip through as a null and then fail deep in the
+                // query building, where the catch below turned it into an empty result that
+                // reads as "no matches found". Report it as a bad request instead.
+                if (listOperand == null)
+                    throw new IllegalArgumentException("Unknown search operand: " + operand);
                 listOperandList.add(listOperand);
             }
-            return service.listInstances(className, 
-                    skip, 
+            return service.listInstances(className,
+                    skip,
                     limit,
                     attributeList,
                     attributeTypeList,
                     listOperandList,
                     keyList);
         }
+        catch(IllegalArgumentException e) {
+            // Let bad input (unknown operand, malformed regex) reach the client as a 400
+            // through GlobalExceptionHandler rather than being masked as an empty result.
+            logger.error("searchInstances: " + e.getMessage(), e);
+            throw e;
+        }
         catch(Exception e) {
             logger.error("searchInstances: " + e.getMessage(), e);
             return new InstanceList(); // Return an empty object.
         }
     }
+
     
     
     /**
@@ -681,8 +699,11 @@ public class CurationController {
      */
     @GetMapping("countInstances/{className}")
     public Integer countInstances(@PathVariable("className") String className,
-                                  @RequestParam("query") Optional<String> query) {
-        return service.countInstances(className, query.isEmpty() ? null : query.get());
+                                  @RequestParam("query") Optional<String> query,
+                                  @RequestParam("regex") Optional<Boolean> regex) {
+        return service.countInstances(className,
+                query.isEmpty() ? null : query.get(),
+                regex.orElse(false));
     }
 
     @GetMapping("getSchemaClasses")
