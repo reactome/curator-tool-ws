@@ -27,10 +27,8 @@ import org.reactome.curation.service.autofill.ChEBIAttributeAutoFiller;
 import org.reactome.curation.service.autofill.LiteratureReferenceAttributeAutoFiller;
 import org.reactome.curation.service.autofill.ExternalOntologyAutoFiller;
 import org.reactome.curation.service.autofill.ReferenceGeneProductAutoFiller;
-import org.reactome.server.graph.domain.model.DatabaseObject;
-import org.reactome.server.graph.domain.model.Deleted;
-import org.reactome.server.graph.domain.model.InstanceEdit;
-import org.reactome.server.graph.domain.model.Taxon;
+import org.reactome.curation.util.CuratorToolWSUtils;
+import org.reactome.server.graph.domain.model.*;
 import org.reactome.server.graph.repository.AdvancedDatabaseObjectRepository;
 import org.reactome.server.graph.service.helper.AttributeClass;
 import org.reactome.server.graph.service.helper.AttributeProperties;
@@ -155,7 +153,28 @@ public class CurationService {
         // e.g the new Person class definition. The modified property may be defined two times, therefore
         // two entries in properties, which use objects.
         for (AttributeProperties prop : properties) {
-            name2prop.put(prop.getName(), prop);
+            String propName = prop.getName();
+            if (propName.equals("rNAMarker")) {
+                propName = "RNAMarker";
+                prop.setName(propName);
+            }
+            // UpdateTracker.updatedInstance is typed as List<Trackable> in the domain model,
+            // but Trackable is a Java interface with no direct front-end representation.
+            // Event and PhysicalEntity are the only two classes implementing it, so expose
+            // those directly instead of the interface.
+            if (clsName.equals("UpdateTracker") && propName.equals("updatedInstance")) {
+                prop.getAttributeClasses().clear();
+                prop.addAttributeClass(Event.class);
+                prop.addAttributeClass(PhysicalEntity.class);
+            }
+            // Same issue with Deletable
+            if (clsName.equals("Deleted") && propName.equals(ReactomeJavaConstants.replacementInstances)) {
+                prop.getAttributeClasses().clear();
+                prop.addAttributeClass(Event.class);
+                prop.addAttributeClass(PhysicalEntity.class);
+                prop.addAttributeClass(Regulation.class);
+            }
+            name2prop.put(propName, prop);
         }
         attributes.forEach(att -> att.setProperties(name2prop.get(att.getName())));
         return attributes;
@@ -426,7 +445,15 @@ public class CurationService {
     public UserInstances loadUserInstances(String accountName) throws Exception {
         return fileRepository.load(getFileForPersistedInstances(accountName));
     }
-    
+
+    public List<UserInstanceBackupSummary> listUserInstanceBackups(String accountName) {
+        return fileRepository.listBackups(getFileForPersistedInstances(accountName));
+    }
+
+    public UserInstances loadUserInstanceBackup(String accountName, String backupFileName) throws Exception {
+        return fileRepository.loadBackup(getFileForPersistedInstances(accountName), backupFileName);
+    }
+
     private String getFileForPersistedInstances(String accountName) {
         File file = new File(toolEnv.getFileRepoDir() + File.separator + accountName, accountName + ".json");
         return file.getAbsolutePath();
@@ -563,7 +590,7 @@ public class CurationService {
     }
     
     private void grepNewInstances(DatabaseObject obj, Set<DatabaseObject> newInstances) {
-        Map<String, Object> field2value = DatabaseObjectUtils.getAllFields(obj, false);
+        Map<String, Object> field2value = CuratorToolWSUtils.getAllFields(obj, false);
         // Recursive calling to store all new instances
         for (String field : field2value.keySet()) {
             Object value = field2value.get(field);

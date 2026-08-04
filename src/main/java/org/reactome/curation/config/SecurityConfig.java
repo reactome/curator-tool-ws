@@ -24,7 +24,7 @@ public class SecurityConfig {
         // Have to enable cors here. Otherwise it cannot work!
         http.cors().and().csrf().disable() // We are build a stateless, jwt based app and it should be safe to disable csrf here.
             .authorizeRequests()
-            .antMatchers("/api/auth/login", "/api/auth/refresh").permitAll()  // Allow unauthenticated access to login and register
+            .antMatchers("/api/auth/login", "/api/auth/refresh", "/api/auth/logout").permitAll()  // Allow unauthenticated access to login and register
             .anyRequest().authenticated();
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class); // Add custom JWT filter
         // Turn off the jwt security check for the time being

@@ -429,6 +429,28 @@ class CurationRepositoryTests {
         logger.info("Reactions with input: total={}", result.getTotalCount());
     }
 
+    /**
+     * Regression test: Event.inferredFrom is declared as the INCOMING direction of the
+     * "inferredTo" relationship (see graph-core's Event.java) - there is no "inferredFrom"
+     * relationship type in the graph at all. Before the fix, listInstances() built its
+     * relationship pattern from the literal attribute name ("inferredFrom"), which matches
+     * nothing, so this always returned zero results even though many Reactions do have
+     * inferredFrom set. After the fix, the actual relationship type/direction is resolved
+     * via the @Relationship annotation on the domain class.
+     */
+    @Test
+    public void testListInstancesReverseAttributeInferredFrom() {
+        InstanceList result = repository.listInstances("Reaction", 0, 10,
+                List.of("inferredFrom"),
+                List.of("instance"),
+                List.of(ListOperand.IS_NOT_NULL),
+                Collections.singletonList(null));
+        assertNotNull(result);
+        assertNotNull(result.getTotalCount());
+        assertTrue(result.getTotalCount() > 0, "Should find Reactions with inferredFrom set");
+        logger.info("Reactions with inferredFrom set: total={}", result.getTotalCount());
+    }
+
     @Test
     public void testListInstancesCombinedFilters() {
         // Reactions whose displayName contains "phosphorylates" and have no compartment
@@ -586,5 +608,96 @@ class CurationRepositoryTests {
 
         assertEquals(1, matched.size(),
                 "Expected exactly one PathwayDiagram for representedPathway dbId=" + pathwayDbId);
+    }
+
+    /**
+     * Regression test for the ALL_DEFINING reference-collection bug in
+     * CypherQueryUtilities.findMatchingInstancesByDefiningAttributes().
+     *
+     * Before the fix, a Collection value for an ALL_DEFINING reference attribute was
+     * matched with a single required MATCH plus "dbId IN $param", which only demands
+     * that ONE of the relationship targets be in the list - i.e. ANY_DEFINING semantics.
+     * After the fix (ALL()+EXISTS), every value in the collection must have its own
+     * matching relationship.
+     *
+     * Complex 444551 has exactly two hasComponent relationships: to 444505 and 444506.
+     */
+    @Test
+    public void testFindMatchingInstancesByDefiningAttributes_AllDefiningRefCollection() {
+        logger.info("Test findMatchingInstancesByDefiningAttributes with ALL_DEFINING reference collection...");
+        Long complexDbId = 444551L;
+
+        // All of the Complex's actual components: should match.
+        Map<String, DefiningAttributeValue> allPresent = new HashMap<>();
+        allPresent.put("hasComponent",
+                new DefiningAttributeValue(List.of(444505L, 444506L), DefiningType.ALL_DEFINING, true));
+        List<SimpleInstance> matched = repository.findMatchedInstances("Complex", allPresent);
+        assertTrue(matched.stream().anyMatch(inst -> complexDbId.equals(inst.getDbId())),
+                "Expected Complex " + complexDbId + " to match when all its components are given");
+
+        // One real component plus one that is not a component of this Complex: must NOT match,
+        // since ALL_DEFINING requires every listed value to be present.
+        Map<String, DefiningAttributeValue> oneMissing = new HashMap<>();
+        oneMissing.put("hasComponent",
+                new DefiningAttributeValue(List.of(444505L, -1L), DefiningType.ALL_DEFINING, true));
+        List<SimpleInstance> notMatched = repository.findMatchedInstances("Complex", oneMissing);
+        assertTrue(notMatched.stream().noneMatch(inst -> complexDbId.equals(inst.getDbId())),
+                "Expected Complex " + complexDbId + " NOT to match when one listed component is not actually a component");
+
+        // Only one of the Complex's two actual components: must NOT match either, since
+        // ALL_DEFINING means the two sets of components must be equal, not just that the
+        // listed value(s) are a subset of the candidate's actual components.
+        Map<String, DefiningAttributeValue> subsetOnly = new HashMap<>();
+        subsetOnly.put("hasComponent",
+                new DefiningAttributeValue(List.of(444505L), DefiningType.ALL_DEFINING, true));
+        List<SimpleInstance> subsetMatched = repository.findMatchedInstances("Complex", subsetOnly);
+        assertTrue(subsetMatched.stream().noneMatch(inst -> complexDbId.equals(inst.getDbId())),
+                "Expected Complex " + complexDbId + " NOT to match when only a subset of its components is given");
+
+        // A duplicated value (e.g. asking for a homodimer of two copies of 444505) must NOT
+        // match a candidate that actually has one edge to 444505 and one to a DIFFERENT target
+        // (444506) - i.e. a heterodimer. A MATCH-clause-per-list-entry approach can't tell
+        // these apart, since separate MATCH statements aren't required to bind to distinct
+        // relationships; per-distinct-value size() checks are what makes this work.
+        Map<String, DefiningAttributeValue> duplicatedValue = new HashMap<>();
+        duplicatedValue.put("hasComponent",
+                new DefiningAttributeValue(List.of(444505L, 444505L), DefiningType.ALL_DEFINING, true));
+        List<SimpleInstance> duplicateMatched = repository.findMatchedInstances("Complex", duplicatedValue);
+        assertTrue(duplicateMatched.stream().noneMatch(inst -> complexDbId.equals(inst.getDbId())),
+                "Expected Complex " + complexDbId + " (a heterodimer of 444505+444506) NOT to match a query for two copies of 444505");
+    }
+
+    /**
+     * Regression test for the ANY_DEFINING non-reference-collection bug in
+     * CypherQueryUtilities.findMatchingInstancesByDefiningAttributes().
+     *
+     * Before the fix, a Collection value for a simple (non-reference) attribute always
+     * built an ALL(...) clause regardless of defining type, so ANY_DEFINING was enforced
+     * as if it were ALL_DEFINING. After the fix, ANY_DEFINING uses ANY(...) so at least
+     * one listed value matching is sufficient.
+     *
+     * Complex 374150 has name = ["GPER1:ESTG", "GPER1:Estrogen"].
+     */
+    @Test
+    public void testFindMatchingInstancesByDefiningAttributes_AnyDefiningNonRefCollection() {
+        logger.info("Test findMatchingInstancesByDefiningAttributes with ANY_DEFINING non-reference collection...");
+        Long complexDbId = 374150L;
+
+        // Only one of the two listed names is real; the other does not exist for this Complex.
+        // ANY_DEFINING should still match since at least one value is present.
+        Map<String, DefiningAttributeValue> oneMatches = new HashMap<>();
+        oneMatches.put("name",
+                new DefiningAttributeValue(List.of("GPER1:ESTG", "Not A Real Name"), DefiningType.ANY_DEFINING, false));
+        List<SimpleInstance> matched = repository.findMatchedInstances("Complex", oneMatches);
+        assertTrue(matched.stream().anyMatch(inst -> complexDbId.equals(inst.getDbId())),
+                "Expected Complex " + complexDbId + " to match when at least one listed name is present (ANY_DEFINING)");
+
+        // Neither listed name is real: should not match.
+        Map<String, DefiningAttributeValue> noneMatch = new HashMap<>();
+        noneMatch.put("name",
+                new DefiningAttributeValue(List.of("Not A Real Name", "Also Not Real"), DefiningType.ANY_DEFINING, false));
+        List<SimpleInstance> notMatched = repository.findMatchedInstances("Complex", noneMatch);
+        assertTrue(notMatched.stream().noneMatch(inst -> complexDbId.equals(inst.getDbId())),
+                "Expected Complex " + complexDbId + " NOT to match when no listed name is present");
     }
 }

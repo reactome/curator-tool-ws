@@ -40,6 +40,9 @@ public class UserManager {
             case "create":
                 createUser(args, userService);
                 return;
+            case "list":
+                listUsers(userService);
+                return;
             case "delete":
                 deleteUser(args, userService);
                 return;
@@ -72,6 +75,13 @@ public class UserManager {
         System.out.println("Deleted user '" + username + "'.");
     }
 
+    private static void listUsers(UserService userService) {
+        System.out.println("Username\tRole");
+        for (User user : userService.findAllUsers()) {
+            System.out.println(user.getUsername() + "\t" + formatRoleName(user.getRole()));
+        }
+    }
+
     private static void changePassword(String[] args, UserService userService) {
         requireArgumentCount(args, 3, "change-password requires <username> <newPassword>.");
         String username = requireNonBlank(args[1], "Username cannot be blank.");
@@ -97,9 +107,14 @@ public class UserManager {
         return role == null || role.isBlank() ? "" : " with role '" + role + "'";
     }
 
+    private static String formatRoleName(String role) {
+        return role == null || role.isBlank() ? "-" : role;
+    }
+
     private static void printUsage() {
         System.err.println("Usage:");
         System.err.println("  create <username> <password> [role]");
+        System.err.println("  list");
         System.err.println("  delete <username>");
         System.err.println("  change-password <username> <newPassword>");
     }

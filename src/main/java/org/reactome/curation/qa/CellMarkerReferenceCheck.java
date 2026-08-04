@@ -29,7 +29,7 @@ public class CellMarkerReferenceCheck extends QAChecker {
                 "MATCH (cell:%s {dbId: %d})-[:markerReference]->(mr:MarkerReference)\n"
                 + "OPTIONAL MATCH (mr)-[:cell]->(markerCell:Cell), \n"
                 + "               (mr)-[:marker]->(mrMarker:PhysicalEntity), \n"
-                + "               (cell)-[:proteinMarker|rnaMarker]->(cellMarker:PhysicalEntity)\n"
+                + "               (cell)-[:proteinMarker|RNAMarker]->(cellMarker:PhysicalEntity)\n"
                 + "RETURN \n"
                 + "  cell.dbId, cell.displayName, \n"
                 + "  mr.dbId, mr.displayName, \n"

@@ -6,12 +6,18 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.Map;
+import java.util.Set;
 
 import org.gk.model.ReactomeJavaConstants;
 import org.reactome.server.graph.domain.model.DatabaseObject;
+import org.reactome.server.graph.service.util.DatabaseObjectUtils;
 
 /**
  * A collection of some utility methods that can be used in this project.
@@ -28,6 +34,17 @@ public class CuratorToolWSUtils {
                 ReactomeJavaConstants.input,
                 ReactomeJavaConstants.output
         );
+    }
+
+    public static Map<String, Object> getAllFields(DatabaseObject obj, boolean includeSubObjects) {
+        Map<String, Object> field2value = DatabaseObjectUtils.getAllFields(obj, includeSubObjects);
+        // Some modification regarding using RNAMarker (or rnaMarker, or rNAMakrer)
+        if (field2value.containsKey("rNAMarker")) {
+            Object value = field2value.get("rNAMarker");
+            field2value.remove("rNAMarker");
+            field2value.put("RNAMarker", value);
+        }
+        return field2value;
     }
 
     /**
@@ -111,7 +128,7 @@ public class CuratorToolWSUtils {
         keys.add(current.toString());
         return keys;
     }
-    
+
     /**
      * Find the set method for an attribute in the DatabaseObjet class.
      * @param attributeName
@@ -136,12 +153,34 @@ public class CuratorToolWSUtils {
                     if (parameterType.isAssignableFrom(parameterCls)) {
                         return method; // Found the method
                     }
+                    // Handle common collection mismatches (e.g. List value for Set setter).
+                    if (value instanceof Collection &&
+                        (List.class.isAssignableFrom(parameterType) || Set.class.isAssignableFrom(parameterType))) {
+                        return method;
+                    }
                 }
             }
         }
         return null; // Not found
     }
-    
+
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    public static Object convertValueForSetMethod(Method setMethod, Object value) {
+        if (value == null)
+            return null;
+        Class<?> parameterType = setMethod.getParameterTypes()[0];
+        if (parameterType.isAssignableFrom(value.getClass()))
+            return value;
+        if (!(value instanceof Collection))
+            return value;
+        Collection collection = (Collection) value;
+        if (Set.class.isAssignableFrom(parameterType))
+            return new LinkedHashSet<>(collection);
+        if (List.class.isAssignableFrom(parameterType))
+            return new ArrayList<>(collection);
+        return value;
+    }
+
     public static Method getGetMethod(String attributeName,
                                       DatabaseObject object) throws Exception {
         String methodName = "get" + attributeName.substring(0, 1).toUpperCase() + attributeName.substring(1);

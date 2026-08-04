@@ -244,7 +244,7 @@ public class CypherQueryUtilities {
      * 2). Create a new modified relationship to the passed InstanceEdit.
      * 3). Create a new modifiedList relationship to the passed InstanceEdit with rank = maxRank + 1.
      * @param instance
-     * @param ieNode
+     * @param neo4jClient
      * @param ie
      */
     public void addModifiedIE(DatabaseObject instance, 
@@ -364,7 +364,6 @@ public class CypherQueryUtilities {
         
         // Build the Cypher query
         StringBuilder matchBuilder  = new StringBuilder();
-        StringBuilder whereBuilder  = new StringBuilder();
         matchBuilder.append("MATCH (n:").append(schemaClass).append(") ");
         
         // Separate ALL_DEFINING and ANY_DEFINING attributes
@@ -387,19 +386,57 @@ public class CypherQueryUtilities {
             
             String whereClause;
             if (isReference) {
-                String refAlias = "ref_" + attName;
                 String paramName = attName + "_dbId";
-                parameters.put(paramName, value);
                 boolean isAll = defValue.getDefiningType() == org.reactome.curation.model.CurationAttribute.DefiningType.ALL_DEFINING;
                 if (isAll) {
-                    // ALL_DEFINING: a required MATCH guarantees the relationship exists.
-                    // Use a unique alias per attribute so multiple ALL_DEFINING references
-                    // can coexist in the same query.
-                    refMatchClauses.add("MATCH (n)-[:" + attName + "]->(" + refAlias + ":DatabaseObject)");
-                    whereClause = value instanceof Collection
-                            ? refAlias + ".dbId IN $" + paramName
-                            : refAlias + ".dbId = $" + paramName;
+                    if (value instanceof Collection) {
+                        // ALL_DEFINING with multiple reference values: the candidate's
+                        // relationships for this attribute must equal the given values
+                        // exactly, including multiplicity (e.g. a homodimer-like list with
+                        // the same target dbId twice must match a candidate with exactly two
+                        // edges to that target, not one). A MATCH clause per list entry
+                        // cannot enforce this: separate MATCH statements are not required to
+                        // bind to distinct relationships, so two "dbId: X" MATCH clauses can
+                        // both silently reuse the same single edge. Instead, check size() per
+                        // DISTINCT value (exact per-value multiplicity) plus a total size()
+                        // check (rejects extra, unlisted relationships) - both entirely in the
+                        // WHERE clause, so no MATCH-clause aliasing/cartesian concerns.
+                        // A bare "size(pattern)" is deprecated by Neo4j in favor of a pattern
+                        // comprehension ("size([pattern | expr])"), which is what's used below.
+                        Collection<?> values = (Collection<?>) value;
+                        if (values.isEmpty()) {
+                            continue;
+                        }
+                        Map<Object, Integer> countByValue = new HashMap<>();
+                        for (Object v : values) {
+                            countByValue.merge(v, 1, Integer::sum);
+                        }
+                        List<String> perValueClauses = new ArrayList<>();
+                        int i = 0;
+                        for (Map.Entry<Object, Integer> countEntry : countByValue.entrySet()) {
+                            String valueParamName = paramName + "_" + i;
+                            String valueCountParamName = valueParamName + "_count";
+                            parameters.put(valueParamName, countEntry.getKey());
+                            parameters.put(valueCountParamName, countEntry.getValue());
+                            perValueClauses.add("size([(n)-[:" + attName + "]->(:DatabaseObject {dbId: $"
+                                    + valueParamName + "}) | 1]) = $" + valueCountParamName);
+                            i++;
+                        }
+                        String totalCountParamName = paramName + "_totalCount";
+                        parameters.put(totalCountParamName, values.size());
+                        perValueClauses.add("size([(n)-[:" + attName + "]->(:DatabaseObject) | 1]) = $" + totalCountParamName);
+                        whereClause = "(" + String.join(" AND ", perValueClauses) + ")";
+                    } else {
+                        // ALL_DEFINING: a required MATCH guarantees the relationship exists.
+                        // Use a unique alias per attribute so multiple ALL_DEFINING references
+                        // can coexist in the same query.
+                        parameters.put(paramName, value);
+                        String refAlias = "ref_" + attName;
+                        refMatchClauses.add("MATCH (n)-[:" + attName + "]->(" + refAlias + ":DatabaseObject)");
+                        whereClause = refAlias + ".dbId = $" + paramName;
+                    }
                 } else {
+                    parameters.put(paramName, value);
                     // ANY_DEFINING: use an EXISTS subquery so the check is a true post-filter
                     // on the outer row.  OPTIONAL MATCH + WHERE does NOT work here: Neo4j
                     // treats a WHERE placed directly after OPTIONAL MATCH as part of the
@@ -414,12 +451,14 @@ public class CypherQueryUtilities {
                 String paramName = attName + "_value";
                 
                 if (value instanceof Collection) {
-                    // For multi-valued attributes, check if all/any values match
+                    // For multi-valued attributes, ALL_DEFINING requires every provided
+                    // value to be present, ANY_DEFINING requires at least one.
                     Collection<?> values = (Collection<?>) value;
                     if (values.isEmpty()) {
                         continue;
                     }
-                    whereClause = "ALL(v IN $" + paramName + " WHERE v IN n." + attName + ")";
+                    boolean isAllNonRef = defValue.getDefiningType() == org.reactome.curation.model.CurationAttribute.DefiningType.ALL_DEFINING;
+                    whereClause = (isAllNonRef ? "ALL" : "ANY") + "(v IN $" + paramName + " WHERE v IN n." + attName + ")";
                     parameters.put(paramName, new ArrayList<>(values));
                 } else {
                     // For single-valued attributes

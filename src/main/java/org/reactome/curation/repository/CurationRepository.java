@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.gk.model.ReactomeJavaConstants;
@@ -122,6 +123,47 @@ public class CurationRepository {
     }
 
     /**
+     * Build a Cypher relationship pattern between "(inst)" and the given target alias
+     * (empty string for an anonymous node) for an "instance"-typed attribute used in
+     * {@link #listInstances}, using the actual Neo4j relationship type and direction
+     * from the graph-core domain class's @Relationship annotation rather than assuming
+     * the attribute name IS the relationship type.
+     *
+     * This matters because some attributes are reverse views of a differently-named
+     * relationship - e.g. Event.inferredFrom is declared as the INCOMING direction of the
+     * "inferredTo" relationship (there is no "inferredFrom" relationship in the graph at
+     * all), so a pattern built from the literal attribute name silently matches nothing.
+     * Falls back to the previous behavior (attribute name as an undirected relationship
+     * type) when the domain class or the annotated field can't be resolved, preserving
+     * existing behavior for the common case where the attribute name and relationship
+     * type coincide.
+     */
+    private String buildInstanceRelationshipPattern(String className, String attr, String targetAlias) {
+        String type = attr;
+        String arrowLeft = "-";
+        String arrowRight = "-";
+        try {
+            Class<?> cls = Class.forName(DatabaseObject.class.getPackageName() + "." + className);
+            Relationship rel = getField2rel(cls).get(attr);
+            if (rel != null) {
+                if (!rel.type().isEmpty())
+                    type = rel.type();
+                if (rel.direction() == Relationship.Direction.INCOMING) {
+                    arrowLeft = "<-";
+                    arrowRight = "-";
+                } else {
+                    arrowLeft = "-";
+                    arrowRight = "->";
+                }
+            }
+        } catch (ClassNotFoundException e) {
+            logger.warn("Could not resolve domain class for schema class '{}' while mapping attribute '{}' " +
+                    "to its relationship type; falling back to an undirected pattern: {}", className, attr, e.getMessage());
+        }
+        return "(inst)" + arrowLeft + "[:`" + type + "`]" + arrowRight + "(" + targetAlias + ")";
+    }
+
+    /**
      * Get the next dbId that can be used to create a new DatabaseObject. This is a
      * synchronized method so that it can be accessed by one thread only to avoid
      * any id conflict.
@@ -163,7 +205,7 @@ public class CurationRepository {
             deletedInstance.setName(obj.getDisplayName());
             deletedInstance.setCreated(ie); // Don't forget to set created.
             // Check species is there by checking the method
-            Map<String, Object> field2value = DatabaseObjectUtils.getAllFields(obj, true);
+            Map<String, Object> field2value = CuratorToolWSUtils.getAllFields(obj, true);
             if (field2value.containsKey(ReactomeJavaConstants.species)) {
                 Object value = field2value.get(ReactomeJavaConstants.species);
                 if (value instanceof List) {
@@ -200,7 +242,7 @@ public class CurationRepository {
     @Transactional
     public Boolean delete(DatabaseObject obj, InstanceEdit ie) throws Exception {
         // Make sure there is a node having this dbId
-        if (!neo4jTemplate.existsById(obj.getDbId(), obj.getClass())) {
+        if (!existsById(obj.getDbId())) {
             throw new DatabaseObjectNotFoundException(obj);
         }
 
@@ -250,7 +292,7 @@ public class CurationRepository {
     @Transactional
     public DatabaseObject storeShell(DatabaseObject obj) throws Exception {
         // Only instance that has not been in the database can be stored
-        if (obj.getDbId() != null && neo4jTemplate.existsById(obj.getDbId(), obj.getClass())) {
+        if (obj.getDbId() != null && existsById(obj.getDbId())) {
             throw new IllegalStateException(obj + " is in the database and cannot be stored. Call update instead.");
         }
         if (obj.getDbId() == null || obj.getDbId() < 0)
@@ -293,7 +335,7 @@ public class CurationRepository {
         if (obj.getDbId() == null || obj.getDbId() < 0) 
             obj = storeShell(obj); // Assign a new dbId and create a node for the object.
         // Step 2: Get all fields and their values
-        Map<String, Object> field2value = DatabaseObjectUtils.getAllFields(obj, false); // Use "false" to avoid empty
+        Map<String, Object> field2value = CuratorToolWSUtils.getAllFields(obj, false); // Use "false" to avoid empty
         // fields
         // Step 3: Check if any referred object has been deleted
         // Make sure existing DatabaseObject referred by the passed obj still exists to
@@ -329,13 +371,20 @@ public class CurationRepository {
                 continue;
             Relationship rel = field2rel.get(field);
             Object value = field2value.get(field);
-            if (value instanceof List) {
+            // For multi-valued attribute, in rare case the returned value is a set (e.g. inferredFrom)
+            // This should be treated as a bug at the graph data model layer
+            List<?> valueList = null;
+            if (value instanceof Set)
+                valueList = new ArrayList<>((Set)value);
+            else if (value instanceof List) {
+                valueList = (List<?>)value;
+            }
+            if (valueList != null) {
                 // For list, we need to handle for all and stoichiometry for
                 // Complex.hasComponent,
                 // Polymer.repeatedUnit, and ReactionlikeEvent.input, output.
-                List<?> list = (List<?>) value;
-                for (int i = 0; i < list.size(); i++) {
-                    var tmp = list.get(i);
+                for (int i = 0; i < valueList.size(); i++) {
+                    var tmp = valueList.get(i);
                     stat = handleValueObj(objNode, tmp, rel, i, relationships, stat);
                 }
             } 
@@ -528,13 +577,13 @@ public class CurationRepository {
             DatabaseObject dObj = (DatabaseObject) value;
             if (dObj.getDbId() == null || dObj.getDbId() < 0)
                 return null;
-            if (!neo4jTemplate.existsById(dObj.getDbId(), DatabaseObject.class))
+            if (!existsById(dObj.getDbId()))
                 return dObj;
         } else if (value instanceof StoichiometryObject) {
             DatabaseObject dObj = ((StoichiometryObject) value).getObject();
             if (dObj.getDbId() == null || dObj.getDbId() < 0)
                 return null;
-            if (!neo4jTemplate.existsById(dObj.getDbId(), DatabaseObject.class))
+            if (!existsById(dObj.getDbId()))
                 return dObj;
         }
         return null; // Don't care
@@ -577,7 +626,8 @@ public class CurationRepository {
             else
                 labels = labels.or(instance.hasLabels(clsName));
         }
-        Condition condition = displayNameProp.matches("(?i)" + displayName); // Perform a case insensitive search
+        // Quote so regex metacharacters in the name are matched literally.
+        Condition condition = displayNameProp.matches("(?i)" + Pattern.quote(displayName)); // Perform a case insensitive search
 
         condition = labels.and(condition);
         var query = Cypher.match(instance);
@@ -707,6 +757,9 @@ public class CurationRepository {
         Map<Long, String> id2SchemaClass = new HashMap<>();
         for (Map<String, Object> map : results) {
             Long dbId = Long.parseLong(map.get("dbId").toString());
+            Object clsObj = map.get("schemaClass");
+            if (clsObj == null)
+                continue;
             String clsName = map.get("schemaClass").toString();
             id2SchemaClass.put(dbId, clsName);
         }
@@ -768,10 +821,10 @@ public class CurationRepository {
                 switch (operand) {
                     case IS_NULL:
                         // Pattern-existence predicate: no OPTIONAL MATCH needed
-                        whereClauses.add("NOT (inst)-[:`" + attr + "`]-()");
+                        whereClauses.add("NOT " + buildInstanceRelationshipPattern(className, attr, ""));
                         break;
                     case IS_NOT_NULL:
-                        relMatchClauses.add("MATCH (inst)-[:`" + attr + "`]-()");
+                        relMatchClauses.add("MATCH " + buildInstanceRelationshipPattern(className, attr, ""));
                         break;
                     case CONTAINS:
                         params.put(paramName, containsPattern(key));
@@ -782,16 +835,21 @@ public class CurationRepository {
                         params.put(paramName, regexPattern(key));
                         relMatchClauses.add("MATCH (inst)-[:`" + attr + "`]-(" + nodeAlias
                                 + ") WHERE " + nodeAlias + ".displayName =~ $" + paramName);
+                        // Quote the key so regex metacharacters (e.g. '+', '*', '(') in the
+                        // search term are matched literally instead of being interpreted as regex.
+                        params.put(paramName, "(?i).*" + Pattern.quote(key) + ".*");
+                        relMatchClauses.add("MATCH " + buildInstanceRelationshipPattern(className, attr, nodeAlias)
+                                + " WHERE " + nodeAlias + ".displayName =~ $" + paramName);
                         break;
                     case EQUAL:
                         params.put(paramName, key);
-                        relMatchClauses.add("MATCH (inst)-[:`" + attr + "`]-(" + nodeAlias
-                                + ") WHERE " + nodeAlias + ".displayName = $" + paramName);
+                        relMatchClauses.add("MATCH " + buildInstanceRelationshipPattern(className, attr, nodeAlias)
+                                + " WHERE " + nodeAlias + ".displayName = $" + paramName);
                         break;
                     case NOT_EQUAL:
                         params.put(paramName, key);
-                        relMatchClauses.add("MATCH (inst)-[:`" + attr + "`]-(" + nodeAlias
-                                + ") WHERE " + nodeAlias + ".displayName <> $" + paramName);
+                        relMatchClauses.add("MATCH " + buildInstanceRelationshipPattern(className, attr, nodeAlias)
+                                + " WHERE " + nodeAlias + ".displayName <> $" + paramName);
                         break;
                     default:
                         break;
@@ -801,6 +859,9 @@ public class CurationRepository {
                 // toString() throws a TypeError on arrays in Neo4j 4.x, so we use ANY().
                 switch (operand) {
                     case CONTAINS:
+                        // Quote the key so regex metacharacters (e.g. '+', '*', '(') in the
+                        // search term are matched literally instead of being interpreted as regex.
+                        params.put(paramName, "(?i).*" + Pattern.quote(key) + ".*");
                         params.put(paramName, containsPattern(key));
                         whereClauses.add("inst." + attr + " IS NOT NULL AND ANY(x IN inst." + attr + " WHERE x IS NOT NULL AND toString(x) =~ $" + paramName + ")");
                         break;
@@ -837,6 +898,9 @@ public class CurationRepository {
                         whereClauses.add("inst." + attr + " IS NOT NULL AND toString(inst." + attr + ") <> $" + paramName);
                         break;
                     case CONTAINS:
+                        // Quote the key so regex metacharacters (e.g. '+', '*', '(') in the
+                        // search term are matched literally instead of being interpreted as regex.
+                        params.put(paramName, "(?i).*" + Pattern.quote(key) + ".*");
                         params.put(paramName, containsPattern(key));
                         whereClauses.add("inst." + attr + " IS NOT NULL AND toString(inst." + attr + ") =~ $" + paramName);
                         break;
@@ -1269,6 +1333,8 @@ public class CurationRepository {
             // text so that it stays consistent with the CONTAINS handling in listInstances.
             var displayName = instance.property("displayName");
             condition = displayName.matches(regex ? regexPattern(text) : containsPattern(text));
+            // Quote so regex metacharacters (e.g. '+') in the search text are matched literally.
+            condition = displayName.matches(".*(?i)" + Pattern.quote(text) + ".*");
         }
         return condition;
     }
@@ -1298,7 +1364,7 @@ public class CurationRepository {
                 searchKey = searchKey.toLowerCase(); // Only here to avoid equal check
             condition = attributeProp.isNotNull()
                     .and(Functions.toString(attributeProp)
-                            .matches(".*(?i)" + searchKey + ".*"));
+                            .matches(".*(?i)" + Pattern.quote(searchKey) + ".*"));
             break;
         case IS_NOT_NULL:
             condition = attributeProp.isNotNull();
@@ -1371,7 +1437,7 @@ public class CurationRepository {
         sb.append("MATCH (n:").append(getNodeLabel(obj)).append(" {dbId: $dbId}) ");
         int i = 0;
         for (String field : field2rel.keySet()) {
-            // We will try to delete an relationship as long as it is defined in the model
+            // We will try to delete a relationship as long as it is defined in the model
             // even though it may not exist in the database for this object
             // By doing this, we don't need to load the object first to find out which relationship exists
             Relationship rel = field2rel.get(field);
@@ -1416,10 +1482,43 @@ public class CurationRepository {
      */
     @Transactional
     public DatabaseObject commit(DatabaseObject obj) throws Exception {
-        if (obj.getDbId() != null && neo4jTemplate.existsById(obj.getDbId(), obj.getClass()))
+        if (obj.getDbId() != null && existsById(obj.getDbId())) {
+            // Check if its class type is switched. If it is, delete it and then do a store.
+            // update()/store() both locate the existing node via a MATCH keyed on obj's
+            // (new) class label - see resetNode() and storeNodeProperties(), both of which
+            // do "MATCH (n:<getNodeLabel(obj)> {dbId: $dbId})". If the stored node still
+            // carries the OLD class's label, that MATCH finds nothing and the whole update
+            // silently no-ops: no exception, no persisted change at all. Deleting the node
+            // by dbId alone (not by label) and letting storeShell() recreate it lets Spring
+            // Data Neo4j's own save() compute the new class's full label set for us, rather
+            // than us having to diff the old and new label sets ourselves.
+            //
+            // Caveat: this deletes and recreates the node, so relationships FROM OTHER
+            // objects INTO this one (e.g. a Pathway's hasEvent pointing at it) are lost -
+            // store() only recreates this object's own attribute relationships. Switching
+            // the class of an object that already has referrers is not supported here.
+            String storedSchemaClass = fetchSchemaClasses(List.of(obj.getDbId())).get(obj.getDbId());
+            if (storedSchemaClass != null && !storedSchemaClass.equals(obj.getSchemaClass())) {
+                deleteNodeByDbId(obj.getDbId());
+                storeShell(obj);
+                return store(obj);
+            }
             return update(obj);
+        }
         else
             return store(obj);
+    }
+
+    /**
+     * Delete a node by dbId alone, matched via the generic DatabaseObject label rather
+     * than a specific schema-class label. Used when the caller no longer agrees with the
+     * node's current specific label (e.g. its class type is being switched via commit()),
+     * so matching by the new class's label would find nothing. Does not preserve or
+     * notify referrers - see commit()'s class-switch handling for that caveat.
+     */
+    private void deleteNodeByDbId(Long dbId) {
+        String cypher = "MATCH (n:DatabaseObject {dbId: $dbId}) DETACH DELETE n";
+        neo4jClient.query(cypher).bind(dbId).to("dbId").run();
     }
 
     /**
