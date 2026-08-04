@@ -27,6 +27,7 @@ import org.neo4j.cypherdsl.core.Node;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReading;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingUpdate;
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
+import org.reactome.curation.exceptions.DatabaseObjectTypeMismatchException;
 import org.reactome.curation.model.CurationAttribute.DefiningAttributeValue;
 import org.reactome.curation.util.CuratorToolWSUtils;
 import org.reactome.curation.model.InstanceList;
@@ -342,12 +343,11 @@ public class CurationRepository {
         // Step 2: Get all fields and their values
         Map<String, Object> field2value = CuratorToolWSUtils.getAllFields(obj, false); // Use "false" to avoid empty
         // fields
-        // Step 3: Check if any referred object has been deleted
-        // Make sure existing DatabaseObject referred by the passed obj still exists to
-        // avoid overwriting other curators' editing
-        DatabaseObject deleted = findAnyDeletedValue(field2value);
-        if (deleted != null)
-            throw new DatabaseObjectNotFoundException(deleted);
+        // Step 3: Check if any referred object has been deleted, or resolves to a different
+        // schema class than expected (see findAnyInvalidValue()'s javadoc for why the latter
+        // check matters just as much as the former: either one, left unchecked, would let Step 6
+        // silently wipe every relationship of obj instead of just the bad reference).
+        findAnyInvalidValue(field2value);
         // Step 4: Make sure all referred objects (new) are stored first
         Map<String, Relationship> field2rel = getField2rel(obj.getClass());
         // Recursive calling to store all new instances
@@ -545,53 +545,100 @@ public class CurationRepository {
     }
 
     /**
-     * Make sure all object values referred by a DatabaseObject have not deleted.
-     * This method checks for DatabaseObjects having dbIds assigned.
-     *
-     * @return
+     * Make sure every object value referred by a DatabaseObject being saved both still exists
+     * AND is stored under the schema class the caller expects - not just that some node with
+     * that dbId exists, which is all the older existsById()-only check verified.
+     * <p>
+     * That distinction matters because of how store()'s Step 6 recreates relationships: it
+     * chains one Cypher MATCH per relationship target, then a single CREATE for all of them, in
+     * ONE query (see handleValueObj()). Plain (non-OPTIONAL) MATCH clauses are effectively ANDed
+     * together - if even one target's MATCH (label + dbId) fails to find a node, because e.g. a
+     * stale/mistyped dbId, or two distinct new objects colliding on the same client-assigned
+     * placeholder id, resolved it to the wrong class (say a Complex reference that's actually
+     * stored as an InstanceEdit) - the WHOLE query returns zero rows, silently discarding every
+     * relationship of the object being saved, not just the mismatched one. Since resetNode()
+     * (called by update() right before store()) has already deleted the old relationships by
+     * that point, the net effect is the object being reduced to a shell.
+     * <p>
+     * Throwing here, before Step 4/5/6 run, lets @Transactional roll back whatever resetNode()
+     * already did instead of leaving that shell behind.
      */
-    private DatabaseObject findAnyDeletedValue(Map<String, Object> field2value) {
-        for (String field : field2value.keySet()) {
-            Object value = field2value.get(field);
-            if (value instanceof List) { // This is a list
-                List<?> list = (List<?>) value;
-                if (list.isEmpty())
-                    continue;
-                for (Object listObj : list) {
-                    DatabaseObject deleted = checkIfDeleted(listObj);
-                    if (deleted != null)
-                        return deleted;
-                }
+    private void findAnyInvalidValue(Map<String, Object> field2value) {
+        List<DatabaseObject> referenced = collectReferencedObjects(field2value);
+        if (referenced.isEmpty())
+            return;
+        List<Long> dbIds = referenced.stream().map(DatabaseObject::getDbId).distinct().collect(Collectors.toList());
+        Map<Long, String> actualClasses = fetchSchemaClasses(dbIds);
+        DatabaseObject notFound = findMissingReference(referenced, actualClasses);
+        if (notFound != null)
+            throw new DatabaseObjectNotFoundException(notFound);
+        DatabaseObject[] mismatch = findMismatchedReference(referenced, actualClasses);
+        if (mismatch != null)
+            throw new DatabaseObjectTypeMismatchException(mismatch[0], mismatch[0].getSchemaClass(),
+                    actualClasses.get(mismatch[0].getDbId()));
+    }
+
+    /**
+     * Walks every relationship-typed attribute value in field2value and collects the referenced
+     * DatabaseObjects that have a real (positive) dbId - i.e. existing objects the object being
+     * saved points to, as opposed to brand-new nested objects still awaiting a dbId.
+     */
+    private List<DatabaseObject> collectReferencedObjects(Map<String, Object> field2value) {
+        List<DatabaseObject> referenced = new ArrayList<>();
+        for (Object value : field2value.values()) {
+            if (value instanceof Collection) {
+                for (Object item : (Collection<?>) value)
+                    addReferencedObject(item, referenced);
             } else {
-                DatabaseObject deleted = checkIfDeleted(value);
-                if (deleted != null)
-                    return deleted;
+                addReferencedObject(value, referenced);
             }
+        }
+        return referenced;
+    }
+
+    private void addReferencedObject(Object value, List<DatabaseObject> referenced) {
+        DatabaseObject dObj = null;
+        if (value instanceof DatabaseObject) {
+            dObj = (DatabaseObject) value;
+        } else if (value instanceof StoichiometryObject) {
+            dObj = ((StoichiometryObject) value).getObject();
+        }
+        if (dObj != null && dObj.getDbId() != null && dObj.getDbId() > 0) {
+            referenced.add(dObj);
+        }
+    }
+
+    /**
+     * Pure lookup, split out from findAnyInvalidValue() so the "does every reference still
+     * exist" check is unit-testable without a live database: actualClasses is whatever
+     * fetchSchemaClasses() returned for referenced's dbIds - a dbId missing from that map means
+     * no node with that dbId exists at all.
+     */
+    DatabaseObject findMissingReference(List<DatabaseObject> referenced, Map<Long, String> actualClasses) {
+        for (DatabaseObject ref : referenced) {
+            if (!actualClasses.containsKey(ref.getDbId()))
+                return ref;
         }
         return null;
     }
 
     /**
-     * Return the deleted object from the passed value.
-     *
-     * @param value
-     * @return
+     * Pure comparison, split out from findAnyInvalidValue() so the class-mismatch check is
+     * unit-testable without a live database: actualClasses is whatever fetchSchemaClasses()
+     * returned for referenced's dbIds. Returns a single-element array holding the first
+     * mismatched reference (an array, not the DatabaseObject itself, only so callers can tell
+     * "no mismatch" apart from "mismatched, and the actual class happened to be null").
      */
-    private DatabaseObject checkIfDeleted(Object value) {
-        if (value instanceof DatabaseObject) {
-            DatabaseObject dObj = (DatabaseObject) value;
-            if (dObj.getDbId() == null || dObj.getDbId() < 0)
-                return null;
-            if (!existsById(dObj.getDbId()))
-                return dObj;
-        } else if (value instanceof StoichiometryObject) {
-            DatabaseObject dObj = ((StoichiometryObject) value).getObject();
-            if (dObj.getDbId() == null || dObj.getDbId() < 0)
-                return null;
-            if (!existsById(dObj.getDbId()))
-                return dObj;
+    DatabaseObject[] findMismatchedReference(List<DatabaseObject> referenced, Map<Long, String> actualClasses) {
+        for (DatabaseObject ref : referenced) {
+            String actualClass = actualClasses.get(ref.getDbId());
+            if (actualClass == null)
+                continue; // Missing entirely - findMissingReference()'s concern, not this one's.
+            String expectedClass = ref.getSchemaClass();
+            if (expectedClass != null && !expectedClass.equals(actualClass))
+                return new DatabaseObject[] { ref };
         }
-        return null; // Don't care
+        return null;
     }
 
     /**
