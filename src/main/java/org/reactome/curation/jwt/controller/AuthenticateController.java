@@ -149,20 +149,20 @@ public class AuthenticateController {
         }
     }
 
-    /**
-     * Build a cookie that expires the refresh token cookie on the client. All attributes
-     * (name, path, httpOnly, secure, sameSite) must match {@link #addRefreshToCookie} so the
-     * browser recognizes it as the same cookie and removes it; maxAge(0) triggers deletion.
-     */
-    private ResponseCookie clearRefreshCookie() {
-        return ResponseCookie.from(JwtService.REFRESH_TOKEN_COOKIE_NAME, "")
-                .httpOnly(true)
-                .secure(isProduction)
-                .sameSite("Lax")
-                .path("/api")
-                .maxAge(0)
-                .build();
-    }
+//    /**
+//     * Build a cookie that expires the refresh token cookie on the client. All attributes
+//     * (name, path, httpOnly, secure, sameSite) must match {@link #addRefreshToCookie} so the
+//     * browser recognizes it as the same cookie and removes it; maxAge(0) triggers deletion.
+//     */
+//    private ResponseCookie clearRefreshCookie() {
+//        return ResponseCookie.from(JwtService.REFRESH_TOKEN_COOKIE_NAME, "")
+//                .httpOnly(true)
+//                .secure(isProduction)
+//                .sameSite("Lax")
+//                .path("/api")
+//                .maxAge(0)
+//                .build();
+//    }
 
     /**
      * Log the user out: revoke the server-side refresh token (if present) and expire the
@@ -170,13 +170,13 @@ public class AuthenticateController {
      * be cleared server-side; a client-only logout leaves a stale cookie that later gets
      * replayed on /refresh. This is idempotent — it succeeds even when no cookie is sent.
      */
-    @PostMapping("/logout")
-    public void logout(@CookieValue(name = JwtService.REFRESH_TOKEN_COOKIE_NAME, required = false) String refreshToken,
-                       HttpServletResponse response) {
-        if (refreshToken != null && !refreshToken.trim().isEmpty()) {
-            refreshTokenService.revokeToken(refreshToken);
-        }
-        ResponseCookie cookie = this.clearRefreshCookie();
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-    }
+//    @PostMapping("/logout")
+//    public void logout(@CookieValue(name = JwtService.REFRESH_TOKEN_COOKIE_NAME, required = false) String refreshToken,
+//                       HttpServletResponse response) {
+//        if (refreshToken != null && !refreshToken.trim().isEmpty()) {
+//            refreshTokenService.revokeToken(refreshToken);
+//        }
+//        ResponseCookie cookie = this.clearRefreshCookie();
+//        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+//    }
 }

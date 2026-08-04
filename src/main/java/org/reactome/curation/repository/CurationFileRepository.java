@@ -12,7 +12,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
-import org.reactome.curation.model.UserInstanceBackupSummary;
+//import org.reactome.curation.model.UserInstanceBackupSummary;
 import org.reactome.curation.model.UserInstances;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -159,24 +159,24 @@ public class CurationFileRepository {
      * List the available backups of the given file (most recently modified first).
      * @param fileName the canonical (non-backup) file whose backups should be listed
      */
-    public List<UserInstanceBackupSummary> listBackups(String fileName) {
-        File originalFile = new File(fileName);
-        File parentDir = originalFile.getParentFile();
-        if (parentDir == null || !parentDir.exists())
-            return Collections.emptyList();
-
-        final String backupPrefix = getBackupPrefix(originalFile);
-        File[] backupFiles = parentDir.listFiles((dir, name) -> name.startsWith(backupPrefix));
-        if (backupFiles == null || backupFiles.length == 0)
-            return Collections.emptyList();
-
-        List<UserInstanceBackupSummary> summaries = new ArrayList<>();
-        for (File backupFile : backupFiles) {
-            summaries.add(new UserInstanceBackupSummary(backupFile.getName(), backupFile.lastModified()));
-        }
-        summaries.sort((a, b) -> Long.compare(b.getLastModified(), a.getLastModified()));
-        return summaries;
-    }
+//    public List<UserInstanceBackupSummary> listBackups(String fileName) {
+//        File originalFile = new File(fileName);
+//        File parentDir = originalFile.getParentFile();
+//        if (parentDir == null || !parentDir.exists())
+//            return Collections.emptyList();
+//
+//        final String backupPrefix = getBackupPrefix(originalFile);
+//        File[] backupFiles = parentDir.listFiles((dir, name) -> name.startsWith(backupPrefix));
+//        if (backupFiles == null || backupFiles.length == 0)
+//            return Collections.emptyList();
+//
+//        List<UserInstanceBackupSummary> summaries = new ArrayList<>();
+//        for (File backupFile : backupFiles) {
+//            summaries.add(new UserInstanceBackupSummary(backupFile.getName(), backupFile.lastModified()));
+//        }
+//        summaries.sort((a, b) -> Long.compare(b.getLastModified(), a.getLastModified()));
+//        return summaries;
+//    }
 
     /**
      * Load the content of one specific backup of the given file. To avoid path traversal or

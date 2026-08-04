@@ -446,9 +446,9 @@ public class CurationService {
         return fileRepository.load(getFileForPersistedInstances(accountName));
     }
 
-    public List<UserInstanceBackupSummary> listUserInstanceBackups(String accountName) {
-        return fileRepository.listBackups(getFileForPersistedInstances(accountName));
-    }
+//    public List<UserInstanceBackupSummary> listUserInstanceBackups(String accountName) {
+//        return fileRepository.listBackups(getFileForPersistedInstances(accountName));
+//    }
 
     public UserInstances loadUserInstanceBackup(String accountName, String backupFileName) throws Exception {
         return fileRepository.loadBackup(getFileForPersistedInstances(accountName), backupFileName);
