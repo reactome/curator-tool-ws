@@ -16,13 +16,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.gk.model.Person;
-import org.gk.model.ReactomeJavaConstants;
 import org.gk.model.Reference;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.input.SAXBuilder;
 import org.jdom.output.XMLOutputter;
-import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.SimpleInstance;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -66,73 +64,34 @@ public class LiteratureReferenceAttributeAutoFiller extends AbstractAttributeAut
         instance.setAttribute("year", Integer.valueOf(ref.getYear()));
         instance.setAttribute("pages", ref.getPage());
         instance.setAttribute("journal", ref.getJournal());
-        // Have to use Instances for authors
-        @SuppressWarnings("unchecked")
-        List<SimpleInstance> authors = (List<SimpleInstance>) instance.getAttribute("author");
-        if (authors != null)
-            authors.clear();
-        else
-            authors = new ArrayList<>();
+        // As of July 31, 2026, we use a single authorName string (e.g. "Anderson AN, Queitsch K")
+        // instead of individual Person instances to avoid duplicating Person instances.
         List<Person> persons = ref.getAuthors();
         if (persons != null && persons.size() > 0) {
+            List<String> authorNames = new ArrayList<>();
             for (Person person : persons) {
-                SimpleInstance authorInstance = queryPerson(person);
-                authors.add(authorInstance);
+                String authorName = formatAuthorName(person);
+                if (authorName != null && authorName.length() > 0)
+                    authorNames.add(authorName);
             }
-            instance.setAttribute(ReactomeJavaConstants.author, authors);
+            instance.setAttribute("authorName", authorNames);
         }
     }
-    
+
     /**
-     * Query a SimpleInstance for a Person object. If it cannot be found, a new simple instance
-     * will be created from scratch.
-     * @param person the person to query for
-     * @param autoCreatedInstances list to collect auto-created instances
-     * @return a SimpleInstance representing the person
-     * @throws Exception if query fails
+     * Format a Person as a PubMed-style author name, e.g. "Anderson AN".
+     * @param person the person to format
+     * @return the formatted name, or null if the person has no last name
      */
-    private SimpleInstance queryPerson(Person person) throws Exception {
-        // For the time being, we do a display name based search. But the final logic should be based on 
-        // the original Java desktop version implementation (see the code there).
-        String displayName = person.getLastName() == null ? "" : person.getLastName();
-        if (person.getFirstName() != null)
-            displayName += ", " + person.getFirstName();
-        else if (person.getInitial() != null)
-            displayName += ", " + person.getInitial();
-        if (displayName != null && displayName.trim().length() > 0) {
-            InstanceList personInsts = curationRepository.listInstances(ReactomeJavaConstants.Person,
-                    0, 
-                    100, // TODO: This is arbitrary and needs to be updated. 
-                    displayName);
-            if (personInsts != null && !personInsts.isEmpty()) {
-                // Make sure all three matched
-                for (SimpleInstance inst : personInsts.getInstances()) {
-                    org.reactome.server.graph.domain.model.Person dbInst = (org.reactome.server.graph.domain.model.Person) objectRepository.findById(inst.getDbId(), 1);
-                    if (dbInst != null) {
-                        String dbFirstName = dbInst.getFirstname() == null ? "" : dbInst.getFirstname();
-                        String firstName = person.getFirstName() == null ? "" : person.getFirstName();
-                        String dbLastName = dbInst.getSurname() == null ? "" : dbInst.getSurname();
-                        String lastName = person.getLastName() == null ? "" : person.getLastName();
-                        String dbInitial = dbInst.getInitial() == null ? "" : dbInst.getInitial();
-                        String initial = person.getInitial() == null ? "" : person.getInitial();
-                        if (dbFirstName.equals(firstName) &&
-                            dbLastName.equals(lastName) &&
-                            dbInitial.equals(initial))
-                            return inst;
-                    }
-                }
-            }
-        }
-        SimpleInstance authorInstance = new SimpleInstance();
-        authorInstance.setSchemaClassName(ReactomeJavaConstants.Person);
-        authorInstance.setAttribute(ReactomeJavaConstants.surname,
-                                    person.getLastName());
-        authorInstance.setAttribute(ReactomeJavaConstants.initial,
-                                    person.getInitial());
-        authorInstance.setAttribute(ReactomeJavaConstants.firstname,
-                                    person.getFirstName());
-        // Leave display name and dbId empty and have the front-end to handle these two slots.
-        return authorInstance;
+    private String formatAuthorName(Person person) {
+        String lastName = person.getLastName();
+        if (lastName == null || lastName.trim().length() == 0)
+            return null;
+        StringBuilder name = new StringBuilder(lastName.trim());
+        String initial = person.getInitial();
+        if (initial != null && initial.trim().length() > 0)
+            name.append(" ").append(initial.trim());
+        return name.toString();
     }
 
     public Reference fetchInfo(Long pmid) throws Exception {

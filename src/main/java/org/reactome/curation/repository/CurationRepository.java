@@ -2,11 +2,16 @@ package org.reactome.curation.repository;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -22,6 +27,7 @@ import org.neo4j.cypherdsl.core.Node;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReading;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingUpdate;
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
+import org.reactome.curation.exceptions.DatabaseObjectTypeMismatchException;
 import org.reactome.curation.model.CurationAttribute.DefiningAttributeValue;
 import org.reactome.curation.util.CuratorToolWSUtils;
 import org.reactome.curation.model.InstanceList;
@@ -337,12 +343,11 @@ public class CurationRepository {
         // Step 2: Get all fields and their values
         Map<String, Object> field2value = CuratorToolWSUtils.getAllFields(obj, false); // Use "false" to avoid empty
         // fields
-        // Step 3: Check if any referred object has been deleted
-        // Make sure existing DatabaseObject referred by the passed obj still exists to
-        // avoid overwriting other curators' editing
-        DatabaseObject deleted = findAnyDeletedValue(field2value);
-        if (deleted != null)
-            throw new DatabaseObjectNotFoundException(deleted);
+        // Step 3: Check if any referred object has been deleted, or resolves to a different
+        // schema class than expected (see findAnyInvalidValue()'s javadoc for why the latter
+        // check matters just as much as the former: either one, left unchecked, would let Step 6
+        // silently wipe every relationship of obj instead of just the bad reference).
+        findAnyInvalidValue(field2value);
         // Step 4: Make sure all referred objects (new) are stored first
         Map<String, Relationship> field2rel = getField2rel(obj.getClass());
         // Recursive calling to store all new instances
@@ -540,53 +545,134 @@ public class CurationRepository {
     }
 
     /**
-     * Make sure all object values referred by a DatabaseObject have not deleted.
-     * This method checks for DatabaseObjects having dbIds assigned.
-     *
-     * @return
+     * Make sure every object value referred by a DatabaseObject being saved both still exists
+     * AND is stored under the schema class the caller expects - not just that some node with
+     * that dbId exists, which is all the older existsById()-only check verified.
+     * <p>
+     * That distinction matters because of how store()'s Step 6 recreates relationships: it
+     * chains one Cypher MATCH per relationship target, then a single CREATE for all of them, in
+     * ONE query (see handleValueObj()). Plain (non-OPTIONAL) MATCH clauses are effectively ANDed
+     * together - if even one target's MATCH (label + dbId) fails to find a node, because e.g. a
+     * stale/mistyped dbId, or two distinct new objects colliding on the same client-assigned
+     * placeholder id, resolved it to the wrong class (say a Complex reference that's actually
+     * stored as an InstanceEdit) - the WHOLE query returns zero rows, silently discarding every
+     * relationship of the object being saved, not just the mismatched one. Since resetNode()
+     * (called by update() right before store()) has already deleted the old relationships by
+     * that point, the net effect is the object being reduced to a shell.
+     * <p>
+     * Throwing here, before Step 4/5/6 run, lets @Transactional roll back whatever resetNode()
+     * already did instead of leaving that shell behind.
+     * <p>
+     * This deliberately checks actual Neo4j LABELS (via fetchNodeLabels()), not the "schemaClass"
+     * property (fetchSchemaClasses()) checked by an earlier version of this method. A brand-new
+     * referenced object - e.g. the InstanceEdit for "modified", created via
+     * CurationController.commit()'s two-phase flow (storeShell() first to mint its dbId and a
+     * bare node, THEN a later, separate commit() call that fills in its real properties
+     * including "schemaClass" via storeNodeProperties()) - already carries the correct label the
+     * moment storeShell() saves it, well before that second call runs. The object being saved
+     * here may well be committed (Step 4 in CurationController.commit()) BEFORE that second call
+     * (Step 5) reaches the new InstanceEdit, so relying on "schemaClass" being set yet would
+     * reject this entirely normal, in-progress creation as if the reference were missing.
      */
-    private DatabaseObject findAnyDeletedValue(Map<String, Object> field2value) {
-        for (String field : field2value.keySet()) {
-            Object value = field2value.get(field);
-            if (value instanceof List) { // This is a list
-                List<?> list = (List<?>) value;
-                if (list.isEmpty())
-                    continue;
-                for (Object listObj : list) {
-                    DatabaseObject deleted = checkIfDeleted(listObj);
-                    if (deleted != null)
-                        return deleted;
-                }
-            } else {
-                DatabaseObject deleted = checkIfDeleted(value);
-                if (deleted != null)
-                    return deleted;
+    private void findAnyInvalidValue(Map<String, Object> field2value) {
+        List<DatabaseObject> referenced = collectReferencedObjects(field2value);
+        if (referenced.isEmpty())
+            return;
+        List<Long> dbIds = referenced.stream().map(DatabaseObject::getDbId).distinct().collect(Collectors.toList());
+        Map<Long, Set<String>> actualLabels = fetchNodeLabels(dbIds);
+        DatabaseObject notFound = findMissingReference(referenced, actualLabels);
+        if (notFound != null)
+            throw new DatabaseObjectNotFoundException(notFound);
+        DatabaseObject[] mismatch = findMismatchedReference(referenced, actualLabels);
+        if (mismatch != null)
+            throw new DatabaseObjectTypeMismatchException(mismatch[0], mismatch[0].getSchemaClass(),
+                    String.valueOf(actualLabels.get(mismatch[0].getDbId())));
+    }
+
+    /**
+     * Batch-fetches the actual Neo4j labels for a set of dbIds - unlike fetchSchemaClasses()'s
+     * "schemaClass" property, every node carries its labels from the moment it's created (see
+     * findAnyInvalidValue()'s javadoc), making labels the reliable signal for "does this dbId
+     * exist, and as what class" even for an object that's only been storeShell()'d so far.
+     */
+    Map<Long, Set<String>> fetchNodeLabels(List<Long> dbIds) {
+        String cypher = "MATCH (d:DatabaseObject) WHERE d.dbId IN $ids RETURN d.dbId AS dbId, labels(d) AS labels";
+        Collection<Map<String, Object>> results = neo4jClient.query(cypher).bind(dbIds).to("ids").fetch().all();
+        Map<Long, Set<String>> id2Labels = new HashMap<>();
+        for (Map<String, Object> map : results) {
+            Long dbId = Long.parseLong(map.get("dbId").toString());
+            Object labelsObj = map.get("labels");
+            Set<String> labels = new HashSet<>();
+            if (labelsObj instanceof Collection) {
+                for (Object label : (Collection<?>) labelsObj)
+                    labels.add(label.toString());
             }
+            id2Labels.put(dbId, labels);
+        }
+        return id2Labels;
+    }
+
+    /**
+     * Walks every relationship-typed attribute value in field2value and collects the referenced
+     * DatabaseObjects that have a real (positive) dbId - i.e. existing objects the object being
+     * saved points to, as opposed to brand-new nested objects still awaiting a dbId.
+     */
+    private List<DatabaseObject> collectReferencedObjects(Map<String, Object> field2value) {
+        List<DatabaseObject> referenced = new ArrayList<>();
+        for (Object value : field2value.values()) {
+            if (value instanceof Collection) {
+                for (Object item : (Collection<?>) value)
+                    addReferencedObject(item, referenced);
+            } else {
+                addReferencedObject(value, referenced);
+            }
+        }
+        return referenced;
+    }
+
+    private void addReferencedObject(Object value, List<DatabaseObject> referenced) {
+        DatabaseObject dObj = null;
+        if (value instanceof DatabaseObject) {
+            dObj = (DatabaseObject) value;
+        } else if (value instanceof StoichiometryObject) {
+            dObj = ((StoichiometryObject) value).getObject();
+        }
+        if (dObj != null && dObj.getDbId() != null && dObj.getDbId() > 0) {
+            referenced.add(dObj);
+        }
+    }
+
+    /**
+     * Pure lookup, split out from findAnyInvalidValue() so the "does every reference still
+     * exist" check is unit-testable without a live database: actualLabels is whatever
+     * fetchNodeLabels() returned for referenced's dbIds - a dbId missing from that map means no
+     * node with that dbId exists at all.
+     */
+    DatabaseObject findMissingReference(List<DatabaseObject> referenced, Map<Long, Set<String>> actualLabels) {
+        for (DatabaseObject ref : referenced) {
+            if (!actualLabels.containsKey(ref.getDbId()))
+                return ref;
         }
         return null;
     }
 
     /**
-     * Return the deleted object from the passed value.
-     *
-     * @param value
-     * @return
+     * Pure comparison, split out from findAnyInvalidValue() so the class-mismatch check is
+     * unit-testable without a live database: actualLabels is whatever fetchNodeLabels() returned
+     * for referenced's dbIds. Returns a single-element array holding the first mismatched
+     * reference (an array, not the DatabaseObject itself, only so callers can tell "no mismatch"
+     * apart from "mismatched, and the actual labels happened to be null").
      */
-    private DatabaseObject checkIfDeleted(Object value) {
-        if (value instanceof DatabaseObject) {
-            DatabaseObject dObj = (DatabaseObject) value;
-            if (dObj.getDbId() == null || dObj.getDbId() < 0)
-                return null;
-            if (!existsById(dObj.getDbId()))
-                return dObj;
-        } else if (value instanceof StoichiometryObject) {
-            DatabaseObject dObj = ((StoichiometryObject) value).getObject();
-            if (dObj.getDbId() == null || dObj.getDbId() < 0)
-                return null;
-            if (!existsById(dObj.getDbId()))
-                return dObj;
+    DatabaseObject[] findMismatchedReference(List<DatabaseObject> referenced, Map<Long, Set<String>> actualLabels) {
+        for (DatabaseObject ref : referenced) {
+            Set<String> labels = actualLabels.get(ref.getDbId());
+            if (labels == null)
+                continue; // Missing entirely - findMissingReference()'s concern, not this one's.
+            String expectedClass = ref.getSchemaClass();
+            if (expectedClass != null && !labels.contains(expectedClass))
+                return new DatabaseObject[] { ref };
         }
-        return null; // Don't care
+        return null;
     }
 
     /**
@@ -1421,6 +1507,40 @@ public class CurationRepository {
     }
 
     /**
+     * (field name, relationship type) pairs resetNode() must never clear, even though
+     * they're present in getField2rel(). Each of these fields is one end of a pair of
+     * differently-named fields that map to the SAME relationship type from opposite
+     * directions - e.g. Event.orthologousEvent (OUTGOING) and Event.inferredFrom
+     * (INCOMING) both map to "inferredTo", just from opposite ends of the identical edge
+     * set, so Neo4j cannot tell "my own attribute" apart from "the other object's reverse
+     * view of their own attribute pointing at me". If a brand-new instance A has
+     * inferredFrom = B and B is later committed on its own (e.g. as a separate top-level
+     * commit after being minted a dbId as a side effect of storing A), resetNode(B) would
+     * delete ALL of B's outgoing "inferredTo" edges - including the one representing
+     * A.inferredFrom - via B's orthologousEvent mapping, and nothing recreates it.
+     *
+     * Only the field NOT exposed to curators in curation_schema_attributes.json is
+     * excluded here (confirmed via CuratorToolExporter's NOMANUALEDIT locking and by
+     * checking the schema JSON directly) - the other, curator-editable field of each pair
+     * (inferredFrom, normalPathway, normalReaction, referenceEntity) is deliberately left
+     * in normal resetNode processing, since excluding it too would leave a stale duplicate
+     * relationship behind whenever a curator actually changes that field's value (Cypher's
+     * CREATE in store()'s relationship step always adds a new relationship; it does not
+     * check for or replace an existing one - only resetNode's delete keeps that in sync).
+     *
+     * The key is (field name + relationship type), not just field name, because a field
+     * name alone can collide across unrelated classes with a different meaning - e.g.
+     * ReferenceEntity.physicalEntity (type "referenceEntity", excluded here) has nothing to
+     * do with PhysicalEntityCellType.physicalEntity or CatalystActivity.physicalEntity
+     * (both type "physicalEntity", NOT excluded - they're ordinary single-owner fields).
+     */
+    private static final Set<String> RESET_NODE_EXCLUDED_FIELD_TYPE_KEYS = Set.of(
+            "orthologousEvent:inferredTo",
+            "diseasePathways:normalPathway",
+            "diseaseReactions:normalReaction",
+            "physicalEntity:referenceEntity");
+
+    /**
      * This method is used to delete all attribute relationships of an object but
      * still keep the object node itself and relationships to other objects by other
      * objects (i.e. referrals). Furthermore, all primitive attributes will be reset to
@@ -1437,10 +1557,12 @@ public class CurationRepository {
         sb.append("MATCH (n:").append(getNodeLabel(obj)).append(" {dbId: $dbId}) ");
         int i = 0;
         for (String field : field2rel.keySet()) {
+            Relationship rel = field2rel.get(field);
+            if (RESET_NODE_EXCLUDED_FIELD_TYPE_KEYS.contains(field + ":" + rel.type()))
+                continue;
             // We will try to delete a relationship as long as it is defined in the model
             // even though it may not exist in the database for this object
             // By doing this, we don't need to load the object first to find out which relationship exists
-            Relationship rel = field2rel.get(field);
             String alias = "r" + (++i);
             // Use OPTIONAL MATCH to avoid any problem if there is no such relationship just in case
             if (rel.direction() == Relationship.Direction.OUTGOING) {
@@ -1483,25 +1605,20 @@ public class CurationRepository {
     @Transactional
     public DatabaseObject commit(DatabaseObject obj) throws Exception {
         if (obj.getDbId() != null && existsById(obj.getDbId())) {
-            // Check if its class type is switched. If it is, delete it and then do a store.
+            // Check if its class type is switched. If it is, update the node's labels first.
             // update()/store() both locate the existing node via a MATCH keyed on obj's
             // (new) class label - see resetNode() and storeNodeProperties(), both of which
             // do "MATCH (n:<getNodeLabel(obj)> {dbId: $dbId})". If the stored node still
-            // carries the OLD class's label, that MATCH finds nothing and the whole update
-            // silently no-ops: no exception, no persisted change at all. Deleting the node
-            // by dbId alone (not by label) and letting storeShell() recreate it lets Spring
-            // Data Neo4j's own save() compute the new class's full label set for us, rather
-            // than us having to diff the old and new label sets ourselves.
-            //
-            // Caveat: this deletes and recreates the node, so relationships FROM OTHER
-            // objects INTO this one (e.g. a Pathway's hasEvent pointing at it) are lost -
-            // store() only recreates this object's own attribute relationships. Switching
-            // the class of an object that already has referrers is not supported here.
+            // carries only the OLD class's labels, that MATCH finds nothing and the whole
+            // update silently no-ops: no exception, no persisted change at all. Adding the
+            // new class's labels (and removing the old class's labels that no longer apply)
+            // in place - rather than deleting and recreating the node - keeps relationships
+            // FROM OTHER objects INTO this one (e.g. a Pathway's hasEvent pointing at it)
+            // intact, since those relationships are attached to the node itself, not to its
+            // labels.
             String storedSchemaClass = fetchSchemaClasses(List.of(obj.getDbId())).get(obj.getDbId());
             if (storedSchemaClass != null && !storedSchemaClass.equals(obj.getSchemaClass())) {
-                deleteNodeByDbId(obj.getDbId());
-                storeShell(obj);
-                return store(obj);
+                switchNodeLabels(obj);
             }
             return update(obj);
         }
@@ -1510,15 +1627,96 @@ public class CurationRepository {
     }
 
     /**
-     * Delete a node by dbId alone, matched via the generic DatabaseObject label rather
-     * than a specific schema-class label. Used when the caller no longer agrees with the
-     * node's current specific label (e.g. its class type is being switched via commit()),
-     * so matching by the new class's label would find nothing. Does not preserve or
-     * notify referrers - see commit()'s class-switch handling for that caveat.
+     * Adds obj's (new) class's labels to its existing node and removes whichever of the node's
+     * current labels no longer apply, without deleting/recreating the node - see commit()'s
+     * class-switch handling.
+     *
+     * A node's labels are its full class hierarchy, not just the leaf class - e.g. a Reaction
+     * node is labelled DatabaseObject, Event, ReactionLikeEvent, Reaction, Trackable, Deletable,
+     * one label per @Node-annotated superclass/interface in its hierarchy (confirmed live via
+     * "MATCH (n:Reaction) RETURN labels(n)"). That's exactly what Spring Data Neo4j itself
+     * assigns when creating a node of the new class, so it's recomputed here via reflection over
+     * obj.getClass() rather than guessing at a single label.
      */
-    private void deleteNodeByDbId(Long dbId) {
-        String cypher = "MATCH (n:DatabaseObject {dbId: $dbId}) DETACH DELETE n";
-        neo4jClient.query(cypher).bind(dbId).to("dbId").run();
+    private void switchNodeLabels(DatabaseObject obj) {
+        Set<String> oldLabels = fetchNodeLabels(obj.getDbId());
+        Set<String> newLabels = computeHierarchyLabels(obj.getClass());
+
+        Set<String> labelsToRemove = new LinkedHashSet<>(oldLabels);
+        labelsToRemove.removeAll(newLabels);
+        Set<String> labelsToAdd = new LinkedHashSet<>(newLabels);
+        labelsToAdd.removeAll(oldLabels);
+
+        if (labelsToRemove.isEmpty() && labelsToAdd.isEmpty())
+            return;
+
+        StringBuilder cypher = new StringBuilder("MATCH (n:DatabaseObject {dbId: $dbId}) ");
+        if (!labelsToRemove.isEmpty())
+            cypher.append("REMOVE n:").append(String.join(":", labelsToRemove)).append(" ");
+        if (!labelsToAdd.isEmpty())
+            cypher.append("SET n:").append(String.join(":", labelsToAdd)).append(" ");
+        logger.debug("Switch node labels Cypher: " + cypher);
+        neo4jClient.query(cypher.toString()).bind(obj.getDbId()).to("dbId").run();
+    }
+
+    /**
+     * Live labels currently on the node with this dbId (ground truth from Neo4j, rather than
+     * assuming the previously stored schemaClass name maps to a loadable Java class).
+     */
+    private Set<String> fetchNodeLabels(Long dbId) {
+        String cypher = "MATCH (n:DatabaseObject {dbId: $dbId}) RETURN labels(n) AS labels";
+        Optional<Map<String, Object>> result = neo4jClient.query(cypher).bind(dbId).to("dbId").fetch().one();
+        if (result.isEmpty())
+            return Collections.emptySet();
+        Object labelsValue = result.get().get("labels");
+        if (labelsValue instanceof Collection) {
+            Set<String> labels = new HashSet<>();
+            for (Object label : (Collection<?>) labelsValue)
+                labels.add(label.toString());
+            return labels;
+        }
+        return Collections.emptySet();
+    }
+
+    /**
+     * The full set of node labels Spring Data Neo4j would assign to an instance of cls: one
+     * label per @Node-annotated class/interface in cls's hierarchy (superclasses and
+     * implemented interfaces, walked transitively), using that type's explicit @Node label(s)
+     * if declared, otherwise its simple name.
+     */
+    private Set<String> computeHierarchyLabels(Class<?> cls) {
+        Set<String> labels = new LinkedHashSet<>();
+        Set<Class<?>> visited = new HashSet<>();
+        Deque<Class<?>> toVisit = new ArrayDeque<>();
+        toVisit.add(cls);
+        while (!toVisit.isEmpty()) {
+            Class<?> current = toVisit.poll();
+            if (current == null || !visited.add(current))
+                continue;
+            org.springframework.data.neo4j.core.schema.Node nodeAnnotation =
+                    current.getAnnotation(org.springframework.data.neo4j.core.schema.Node.class);
+            if (nodeAnnotation != null) {
+                String[] explicitLabels = nodeAnnotation.value().length > 0 ?
+                        nodeAnnotation.value() : nodeAnnotation.labels();
+                if (explicitLabels.length > 0)
+                    labels.addAll(Arrays.asList(explicitLabels));
+                else
+                    labels.add(current.getSimpleName());
+            }
+            // Stop at the root of the domain model - DatabaseObject's own superclass (Object)
+            // and interfaces (Serializable, Comparable, DatabaseObjectLike) aren't part of the
+            // domain's label hierarchy.
+            if (current == DatabaseObject.class)
+                continue;
+            // ArrayDeque rejects null elements, and getSuperclass() is null for interfaces
+            // (and would be null for Object, but DatabaseObject.class is never reached via
+            // an interface with no superclass since it's a concrete class).
+            Class<?> superclass = current.getSuperclass();
+            if (superclass != null)
+                toVisit.add(superclass);
+            toVisit.addAll(Arrays.asList(current.getInterfaces()));
+        }
+        return labels;
     }
 
     /**

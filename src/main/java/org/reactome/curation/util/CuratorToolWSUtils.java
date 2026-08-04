@@ -7,6 +7,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -16,7 +17,13 @@ import java.util.Map;
 import java.util.Set;
 
 import org.gk.model.ReactomeJavaConstants;
+import org.reactome.server.graph.domain.model.Complex;
 import org.reactome.server.graph.domain.model.DatabaseObject;
+import org.reactome.server.graph.domain.model.PhysicalEntity;
+import org.reactome.server.graph.domain.model.Polymer;
+import org.reactome.server.graph.domain.model.ReactionLikeEvent;
+import org.reactome.server.graph.domain.relationship.Has;
+import org.reactome.server.graph.service.helper.StoichiometryObject;
 import org.reactome.server.graph.service.util.DatabaseObjectUtils;
 
 /**
@@ -43,6 +50,28 @@ public class CuratorToolWSUtils {
             Object value = field2value.get("rNAMarker");
             field2value.remove("rNAMarker");
             field2value.put("RNAMarker", value);
+        }
+        // DatabaseObjectUtils.getAllFields() populates "input"/"output"/"hasComponent"/"repeatedUnit"
+        // via fetchInput()/fetchOutput()/fetchHasComponent()/fetchRepeatedUnit(), which sort by
+        // displayName (Has.Util.simplifiedSort()) rather than the curator-defined order recorded in
+        // each relationship's "order" property. Overwrite them here with the same relationship
+        // entities, re-sorted by "order" instead, so saving doesn't scramble the order.
+        if (obj instanceof ReactionLikeEvent) {
+            ReactionLikeEvent rle = (ReactionLikeEvent) obj;
+            if (field2value.containsKey(ReactomeJavaConstants.input))
+                field2value.put(ReactomeJavaConstants.input, getOrderedStoichiometry(rle.getInputs()));
+            if (field2value.containsKey(ReactomeJavaConstants.output))
+                field2value.put(ReactomeJavaConstants.output, getOrderedStoichiometry(rle.getOutputs()));
+        }
+        else if (obj instanceof Complex) {
+            Complex complex = (Complex) obj;
+            if (field2value.containsKey(ReactomeJavaConstants.hasComponent))
+                field2value.put(ReactomeJavaConstants.hasComponent, getOrderedStoichiometry(complex.getComponents()));
+        }
+        else if (obj instanceof Polymer) {
+            Polymer polymer = (Polymer) obj;
+            if (field2value.containsKey(ReactomeJavaConstants.repeatedUnit))
+                field2value.put(ReactomeJavaConstants.repeatedUnit, getOrderedStoichiometry(polymer.getRepeatedUnits()));
         }
         return field2value;
     }
@@ -143,6 +172,12 @@ public class CuratorToolWSUtils {
                                       DatabaseObject object) throws Exception {
         String methodName = "set" + attributeName.substring(0, 1).toUpperCase() + attributeName.substring(1);
         Class parameterCls = value.getClass();
+        // A method matching only via the collection-mismatch heuristic below isn't necessarily
+        // usable for parameterCls (e.g. an unrelated overload that happens to take a List/Set of
+        // a different element type), so it's kept only as a fallback: scan every method first and
+        // prefer a directly assignable match wherever it appears, instead of returning on whichever
+        // check passes first for the first matching method getMethods() happens to return.
+        Method coercibleMethod = null;
         for (Method method : object.getClass().getMethods()) {
             if (method.getName().equals(methodName)) {
                 Class[] parameterTypes = method.getParameterTypes();
@@ -151,17 +186,17 @@ public class CuratorToolWSUtils {
                     // The method defined using super class may not be found using a subclass using getMethod directly.
                     // So we need to check if the parameter type is assignable from the value's class.
                     if (parameterType.isAssignableFrom(parameterCls)) {
-                        return method; // Found the method
+                        return method; // Directly usable - no need to keep scanning.
                     }
                     // Handle common collection mismatches (e.g. List value for Set setter).
-                    if (value instanceof Collection &&
+                    if (coercibleMethod == null && value instanceof Collection &&
                         (List.class.isAssignableFrom(parameterType) || Set.class.isAssignableFrom(parameterType))) {
-                        return method;
+                        coercibleMethod = method;
                     }
                 }
             }
         }
-        return null; // Not found
+        return coercibleMethod; // No directly assignable match found; fall back to the coercible one, if any.
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })

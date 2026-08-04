@@ -226,6 +226,10 @@ public class CuratorToolExporter {
                     curationAtt.setCategory(Category.NOMANUALEDIT);
                 }
 
+                if (attName.equals(ReactomeJavaConstants.author) && cls.isa("Publication")) {
+                    curationAtt.setCategory(Category.OPTIONAL);
+                }
+
                 // Since we have inferredFrom already, lock inferredTo to avoid any edit
                 if (attName.equals(ReactomeJavaConstants.inferredTo))
                     curationAtt.setCategory(Category.NOMANUALEDIT);
@@ -254,6 +258,15 @@ public class CuratorToolExporter {
                 hasDiagramAtt.setCategory(Category.NOMANUALEDIT);
                 hasDiagramAtt.setDefiningType(DefiningType.NONE_DEFINING);
                 curationAttributes.add(hasDiagramAtt);
+            }
+            // A new attribute for Publication
+            if (cls.isa("Publication")) {
+                CurationAttribute authorNameAtt = new CurationAttribute();
+                authorNameAtt.setName("authorName");
+                // Change this to Non manual editing as of July 15, 2026
+                authorNameAtt.setCategory(Category.MANDATORY);
+                authorNameAtt.setDefiningType(DefiningType.NONE_DEFINING);
+                curationAttributes.add(authorNameAtt);
             }
             String clsName = cls.getName();
             if (clsName.startsWith("_"))
