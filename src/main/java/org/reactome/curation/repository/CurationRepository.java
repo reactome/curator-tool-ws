@@ -562,20 +562,54 @@ public class CurationRepository {
      * <p>
      * Throwing here, before Step 4/5/6 run, lets @Transactional roll back whatever resetNode()
      * already did instead of leaving that shell behind.
+     * <p>
+     * This deliberately checks actual Neo4j LABELS (via fetchNodeLabels()), not the "schemaClass"
+     * property (fetchSchemaClasses()) checked by an earlier version of this method. A brand-new
+     * referenced object - e.g. the InstanceEdit for "modified", created via
+     * CurationController.commit()'s two-phase flow (storeShell() first to mint its dbId and a
+     * bare node, THEN a later, separate commit() call that fills in its real properties
+     * including "schemaClass" via storeNodeProperties()) - already carries the correct label the
+     * moment storeShell() saves it, well before that second call runs. The object being saved
+     * here may well be committed (Step 4 in CurationController.commit()) BEFORE that second call
+     * (Step 5) reaches the new InstanceEdit, so relying on "schemaClass" being set yet would
+     * reject this entirely normal, in-progress creation as if the reference were missing.
      */
     private void findAnyInvalidValue(Map<String, Object> field2value) {
         List<DatabaseObject> referenced = collectReferencedObjects(field2value);
         if (referenced.isEmpty())
             return;
         List<Long> dbIds = referenced.stream().map(DatabaseObject::getDbId).distinct().collect(Collectors.toList());
-        Map<Long, String> actualClasses = fetchSchemaClasses(dbIds);
-        DatabaseObject notFound = findMissingReference(referenced, actualClasses);
+        Map<Long, Set<String>> actualLabels = fetchNodeLabels(dbIds);
+        DatabaseObject notFound = findMissingReference(referenced, actualLabels);
         if (notFound != null)
             throw new DatabaseObjectNotFoundException(notFound);
-        DatabaseObject[] mismatch = findMismatchedReference(referenced, actualClasses);
+        DatabaseObject[] mismatch = findMismatchedReference(referenced, actualLabels);
         if (mismatch != null)
             throw new DatabaseObjectTypeMismatchException(mismatch[0], mismatch[0].getSchemaClass(),
-                    actualClasses.get(mismatch[0].getDbId()));
+                    String.valueOf(actualLabels.get(mismatch[0].getDbId())));
+    }
+
+    /**
+     * Batch-fetches the actual Neo4j labels for a set of dbIds - unlike fetchSchemaClasses()'s
+     * "schemaClass" property, every node carries its labels from the moment it's created (see
+     * findAnyInvalidValue()'s javadoc), making labels the reliable signal for "does this dbId
+     * exist, and as what class" even for an object that's only been storeShell()'d so far.
+     */
+    Map<Long, Set<String>> fetchNodeLabels(List<Long> dbIds) {
+        String cypher = "MATCH (d:DatabaseObject) WHERE d.dbId IN $ids RETURN d.dbId AS dbId, labels(d) AS labels";
+        Collection<Map<String, Object>> results = neo4jClient.query(cypher).bind(dbIds).to("ids").fetch().all();
+        Map<Long, Set<String>> id2Labels = new HashMap<>();
+        for (Map<String, Object> map : results) {
+            Long dbId = Long.parseLong(map.get("dbId").toString());
+            Object labelsObj = map.get("labels");
+            Set<String> labels = new HashSet<>();
+            if (labelsObj instanceof Collection) {
+                for (Object label : (Collection<?>) labelsObj)
+                    labels.add(label.toString());
+            }
+            id2Labels.put(dbId, labels);
+        }
+        return id2Labels;
     }
 
     /**
@@ -610,13 +644,13 @@ public class CurationRepository {
 
     /**
      * Pure lookup, split out from findAnyInvalidValue() so the "does every reference still
-     * exist" check is unit-testable without a live database: actualClasses is whatever
-     * fetchSchemaClasses() returned for referenced's dbIds - a dbId missing from that map means
-     * no node with that dbId exists at all.
+     * exist" check is unit-testable without a live database: actualLabels is whatever
+     * fetchNodeLabels() returned for referenced's dbIds - a dbId missing from that map means no
+     * node with that dbId exists at all.
      */
-    DatabaseObject findMissingReference(List<DatabaseObject> referenced, Map<Long, String> actualClasses) {
+    DatabaseObject findMissingReference(List<DatabaseObject> referenced, Map<Long, Set<String>> actualLabels) {
         for (DatabaseObject ref : referenced) {
-            if (!actualClasses.containsKey(ref.getDbId()))
+            if (!actualLabels.containsKey(ref.getDbId()))
                 return ref;
         }
         return null;
@@ -624,18 +658,18 @@ public class CurationRepository {
 
     /**
      * Pure comparison, split out from findAnyInvalidValue() so the class-mismatch check is
-     * unit-testable without a live database: actualClasses is whatever fetchSchemaClasses()
-     * returned for referenced's dbIds. Returns a single-element array holding the first
-     * mismatched reference (an array, not the DatabaseObject itself, only so callers can tell
-     * "no mismatch" apart from "mismatched, and the actual class happened to be null").
+     * unit-testable without a live database: actualLabels is whatever fetchNodeLabels() returned
+     * for referenced's dbIds. Returns a single-element array holding the first mismatched
+     * reference (an array, not the DatabaseObject itself, only so callers can tell "no mismatch"
+     * apart from "mismatched, and the actual labels happened to be null").
      */
-    DatabaseObject[] findMismatchedReference(List<DatabaseObject> referenced, Map<Long, String> actualClasses) {
+    DatabaseObject[] findMismatchedReference(List<DatabaseObject> referenced, Map<Long, Set<String>> actualLabels) {
         for (DatabaseObject ref : referenced) {
-            String actualClass = actualClasses.get(ref.getDbId());
-            if (actualClass == null)
+            Set<String> labels = actualLabels.get(ref.getDbId());
+            if (labels == null)
                 continue; // Missing entirely - findMissingReference()'s concern, not this one's.
             String expectedClass = ref.getSchemaClass();
-            if (expectedClass != null && !expectedClass.equals(actualClass))
+            if (expectedClass != null && !labels.contains(expectedClass))
                 return new DatabaseObject[] { ref };
         }
         return null;

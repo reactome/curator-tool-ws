@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
+import org.reactome.curation.exceptions.DatabaseObjectTypeMismatchException;
 import org.reactome.curation.exceptions.InstanceChangedException;
 import org.reactome.curation.exceptions.InstanceDeletionException;
 import org.reactome.curation.model.CurationAttribute;
@@ -494,10 +495,17 @@ public class CurationController {
             }
             return rtn;
         }
+        catch (DatabaseObjectNotFoundException | DatabaseObjectTypeMismatchException e) {
+            // Rethrown as-is (rather than wrapped below) so GlobalExceptionHandler's specific
+            // handlers for these two - 404 and 409 respectively, with the real message - see it,
+            // instead of it being flattened into a generic 500 "An unexpected error occurred".
+            logger.error("CurationController.commit: " + e.getMessage(), e);
+            throw e;
+        }
         catch(Exception e) {
             logger.error("CurationController.commit: " + e.getMessage(), e);
             throw new IllegalStateException(e.getMessage());
-        } 
+        }
     }
 
     
