@@ -27,6 +27,7 @@ import javax.imageio.ImageIO;
 import org.apache.poi.ooxml.POIXMLException;
 import org.apache.poi.util.Units;
 import org.apache.poi.xwpf.usermodel.UnderlinePatterns;
+import org.apache.poi.xwpf.usermodel.LineSpacingRule;
 import org.apache.poi.xwpf.usermodel.ParagraphAlignment;
 import org.apache.poi.xwpf.usermodel.VerticalAlign;
 import org.apache.poi.xwpf.usermodel.XWPFAbstractNum;
@@ -75,6 +76,13 @@ public class EventDocxExportService {
     private static final int REACTION_IMAGE_HEIGHT_PX = 173;
 
     private static final String FONT = "Times New Roman";
+    // Explicit, rather than relying on Word/Google Docs' own (differing) unset-spacing defaults -
+    // see newParagraph()/applyDefaultParagraphSpacing().
+    private static final int DEFAULT_SPACING_BEFORE_DXA = 0;
+    private static final int DEFAULT_SPACING_AFTER_DXA = 120; // 6pt
+    private static final double DEFAULT_LINE_SPACING = 1.0; // single
+    private static final int HEADER_SPACING_BEFORE_DXA = 240; // 12pt
+    private static final int HEADER_SPACING_AFTER_DXA = 120; // 6pt
     /**
      * Export an Event as a rich DOCX document, following the same structure as the
      * Perl GenerateTextRTF.pm:
@@ -1116,10 +1124,44 @@ public class EventDocxExportService {
     }
 
     /**
+     * Creates a new paragraph in the document body with explicit baseline spacing already
+     * applied (see applyDefaultParagraphSpacing()) - use this instead of calling
+     * document.createParagraph() directly, so every paragraph in the export gets the same
+     * explicit values rather than whatever unset-spacing default Word/Google Docs each assume
+     * (which was the root cause of spacing collapsing in Google Docs specifically).
+     */
+    private static XWPFParagraph newParagraph(XWPFDocument document) {
+        XWPFParagraph paragraph = document.createParagraph();
+        applyDefaultParagraphSpacing(paragraph);
+        return paragraph;
+    }
+
+    /** Table-cell equivalent of newParagraph(XWPFDocument) - see its javadoc. */
+    private static XWPFParagraph newParagraph(XWPFTableCell cell) {
+        XWPFParagraph paragraph = cell.addParagraph();
+        applyDefaultParagraphSpacing(paragraph);
+        return paragraph;
+    }
+
+    /**
+     * Explicitly sets spacing-after and line-spacing (POI's setSpacingBetween()) on a paragraph,
+     * rather than leaving them unset. An unset value falls back to whatever the (in this export's
+     * case, essentially empty - see setModernCompatibilityMode()'s javadoc for the analogous
+     * settings.xml issue) style/document defaults happen to be, and Word and Google Docs don't
+     * always agree on what that fallback is - Google Docs has been observed collapsing spacing
+     * that Word renders fine. Setting it explicitly on every paragraph removes that ambiguity.
+     */
+    private static void applyDefaultParagraphSpacing(XWPFParagraph paragraph) {
+        paragraph.setSpacingBefore(DEFAULT_SPACING_BEFORE_DXA);
+        paragraph.setSpacingAfter(DEFAULT_SPACING_AFTER_DXA);
+        paragraph.setSpacingBetween(DEFAULT_LINE_SPACING, LineSpacingRule.AUTO);
+    }
+
+    /**
      * Perl generate_page_break equivalent for DOCX.
      */
     public void addPageBreak(XWPFDocument document) {
-        XWPFParagraph paragraph = document.createParagraph();
+        XWPFParagraph paragraph = newParagraph(document);
         paragraph.setPageBreak(true);
     }
 
@@ -1130,7 +1172,7 @@ public class EventDocxExportService {
      * right_indent, first_line_indent, justify, bind_next_para, voodoo.
      */
     public XWPFParagraph addParagraph(XWPFDocument document, String text, Map<String, Object> formatting) {
-        XWPFParagraph paragraph = document.createParagraph();
+        XWPFParagraph paragraph = newParagraph(document);
         applyParagraphFormatting(paragraph, formatting);
         return appendMarkupAwareText(document, paragraph, formatting, valueOrNA(text), toRunStyle(formatting));
     }
@@ -1139,7 +1181,7 @@ public class EventDocxExportService {
      * Perl generate_bullet_text equivalent for DOCX.
      */
     public XWPFParagraph addBulletText(XWPFDocument document, String text) {
-        XWPFParagraph paragraph = document.createParagraph();
+        XWPFParagraph paragraph = newParagraph(document);
         paragraph.setNumID(getOrCreateBulletNumId(document));
         XWPFRun run = paragraph.createRun();
         run.setFontFamily(FONT);
@@ -1161,7 +1203,7 @@ public class EventDocxExportService {
      * Perl generate_numbered_text equivalent for DOCX.
      */
     public XWPFParagraph addNumberedText(XWPFDocument document, String text, int number) {
-        XWPFParagraph paragraph = document.createParagraph();
+        XWPFParagraph paragraph = newParagraph(document);
         RunStyle style = new RunStyle();
         return appendMarkupAwareText(document, paragraph, null, String.format("%d. %s", number, valueOrNA(text)), style);
     }
@@ -1170,7 +1212,7 @@ public class EventDocxExportService {
      * Perl generate_hyperlink equivalent for DOCX. The URL is emitted inline for compatibility.
      */
     public XWPFParagraph addHyperlink(XWPFDocument document, String text, String url) {
-        XWPFParagraph paragraph = document.createParagraph();
+        XWPFParagraph paragraph = newParagraph(document);
 
         // Keep citation text plain (supports markup like <i> for journal/book title).
         paragraph = appendMarkupAwareText(document, paragraph, null, valueOrNA(text) + " (", new RunStyle());
@@ -1200,7 +1242,9 @@ public class EventDocxExportService {
      */
     public XWPFParagraph addHeader(XWPFDocument document, int depth, String text) {
         int headerSize = Math.max(12, 20 - Math.max(depth, 0));
-        XWPFParagraph paragraph = document.createParagraph();
+        XWPFParagraph paragraph = newParagraph(document);
+        paragraph.setSpacingBefore(HEADER_SPACING_BEFORE_DXA);
+        paragraph.setSpacingAfter(HEADER_SPACING_AFTER_DXA);
         RunStyle style = new RunStyle();
         style.bold = true;
         style.fontSize = headerSize;
@@ -1221,7 +1265,7 @@ public class EventDocxExportService {
         if (imagePath == null || !Files.exists(imagePath)) {
             return;
         }
-        XWPFParagraph paragraph = document.createParagraph();
+        XWPFParagraph paragraph = newParagraph(document);
         paragraph.setAlignment(ParagraphAlignment.CENTER);
         XWPFRun run = paragraph.createRun();
         int type = resolvePictureType(imagePath);
@@ -1249,7 +1293,7 @@ public class EventDocxExportService {
             return;
         }
         int[] fittedSize = fitImageInBounds(imageBytes, widthPx, heightPx);
-        XWPFParagraph paragraph = document.createParagraph();
+        XWPFParagraph paragraph = newParagraph(document);
         paragraph.setAlignment(ParagraphAlignment.CENTER);
         XWPFRun run = paragraph.createRun();
         try (ByteArrayInputStream inputStream = new ByteArrayInputStream(imageBytes)) {
@@ -1363,13 +1407,13 @@ public class EventDocxExportService {
 
     private void setRow(XWPFTable table, int rowIndex, String label, String value) {
         table.getRow(rowIndex).getCell(0).removeParagraph(0);
-        XWPFParagraph labelParagraph = table.getRow(rowIndex).getCell(0).addParagraph();
+        XWPFParagraph labelParagraph = newParagraph(table.getRow(rowIndex).getCell(0));
         XWPFRun labelRun = labelParagraph.createRun();
         labelRun.setFontFamily(FONT);
         labelRun.setText(valueOrNA(label));
 
         table.getRow(rowIndex).getCell(1).removeParagraph(0);
-        XWPFParagraph valueParagraph = table.getRow(rowIndex).getCell(1).addParagraph();
+        XWPFParagraph valueParagraph = newParagraph(table.getRow(rowIndex).getCell(1));
         XWPFRun valueRun = valueParagraph.createRun();
         valueRun.setFontFamily(FONT);
         valueRun.setText(valueOrNA(value));
@@ -1494,7 +1538,7 @@ public class EventDocxExportService {
             this.document = document;
             this.paragraph = paragraph;
             this.paragraphFormatting = paragraphFormatting;
-            this.newParagraphSupplier = document::createParagraph;
+            this.newParagraphSupplier = () -> newParagraph(document);
             this.insideTableCell = false;
         }
 
@@ -1506,6 +1550,7 @@ public class EventDocxExportService {
          */
         static MarkupCursor forCell(XWPFDocument document, XWPFTableCell cell) {
             XWPFParagraph first = cell.getParagraphs().isEmpty() ? cell.addParagraph() : cell.getParagraphs().get(0);
+            applyDefaultParagraphSpacing(first);
             return new MarkupCursor(document, first, cell);
         }
 
@@ -1513,7 +1558,7 @@ public class EventDocxExportService {
             this.document = document;
             this.paragraph = paragraph;
             this.paragraphFormatting = null;
-            this.newParagraphSupplier = cell::addParagraph;
+            this.newParagraphSupplier = () -> newParagraph(cell);
             this.insideTableCell = true;
         }
     }
@@ -1729,7 +1774,7 @@ public class EventDocxExportService {
 
         // Content after the table needs a fresh paragraph: cursor.paragraph was positioned in the
         // document ahead of the table, so appending more runs to it would render out of order.
-        cursor.paragraph = cursor.document.createParagraph();
+        cursor.paragraph = newParagraph(cursor.document);
         applyParagraphFormatting(cursor.paragraph, cursor.paragraphFormatting);
         cursor.paragraphHasContent = false;
         cursor.pendingParagraphBreak = false;
@@ -1955,7 +2000,7 @@ public class EventDocxExportService {
         }
 
         String url = "https://newcurator.reactome.org/curatorgraph/PathwayBrowser/" + stableId;
-        XWPFParagraph paragraph = document.createParagraph();
+        XWPFParagraph paragraph = newParagraph(document);
 
         XWPFRun textRun = paragraph.createRun();
         textRun.setFontFamily(FONT);
