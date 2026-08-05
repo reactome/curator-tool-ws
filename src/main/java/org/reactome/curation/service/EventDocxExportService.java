@@ -336,23 +336,16 @@ public class EventDocxExportService {
      * - that cache lookup simply misses rather than needing a separate no-context code path.
      */
     private void addLiteratureReferences(XWPFDocument document, List<Publication> refs, ExportContext context) {
+        List<Publication> resolvedRefs = new ArrayList<>();
         for (Publication pub : refs) {
-            Publication resolvedPublication = pub;
-            try {
-                if (pub != null && pub.getDbId() != null) {
-                    Publication cached = context.publications.get(pub.getDbId());
-                    if (cached != null) {
-                        resolvedPublication = cached;
-                    } else if (service != null) {
-                        Object loaded = service.findById(pub.getDbId());
-                        if (loaded instanceof Publication) {
-                            resolvedPublication = (Publication) loaded;
-                        }
-                    }
-                }
-            } catch (Exception ignored) {
-            }
+            resolvedRefs.add(resolvePublication(pub, context));
+        }
+        // Sort alphabetically by author (falls back to an empty key, sorting last) rather than
+        // keeping curator/citation order - has to happen after resolving, since an unresolved
+        // shell Publication has no author data to sort by.
+        resolvedRefs.sort(Comparator.comparing(this::authorSortKey, String.CASE_INSENSITIVE_ORDER));
 
+        for (Publication resolvedPublication : resolvedRefs) {
             String citation = formatPublication(resolvedPublication);
             String url = resolvePublicationUrl(resolvedPublication);
             if (url != null) {
@@ -361,6 +354,36 @@ public class EventDocxExportService {
                 addParagraph(document, citation, null);
             }
         }
+    }
+
+    private Publication resolvePublication(Publication pub, ExportContext context) {
+        Publication resolvedPublication = pub;
+        try {
+            if (pub != null && pub.getDbId() != null) {
+                Publication cached = context.publications.get(pub.getDbId());
+                if (cached != null) {
+                    resolvedPublication = cached;
+                } else if (service != null) {
+                    Object loaded = service.findById(pub.getDbId());
+                    if (loaded instanceof Publication) {
+                        resolvedPublication = (Publication) loaded;
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return resolvedPublication;
+    }
+
+    private String authorSortKey(Publication pub) {
+        try {
+            String authors = formatPublicationAuthors(pub);
+            if (authors != null) {
+                return authors;
+            }
+        } catch (Exception ignored) {
+        }
+        return "";
     }
 
     /**
