@@ -168,16 +168,6 @@
 				<artifactId>maven-jar-plugin</artifactId>
 				<executions>
 					<execution>
-						<id>plain-jar</id>
-						<phase>package</phase>
-						<goals>
-							<goal>jar</goal>
-						</goals>
-						<configuration>
-							<classifier>plain</classifier>
-						</configuration>
-					</execution>
-					<execution>
 						<id>user-manager-jar</id>
 						<phase>package</phase>
 						<goals>
