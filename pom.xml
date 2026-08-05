@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>org.reactome</groupId>
 	<artifactId>curator-tool-ws</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.0-SNAPSHOT</version>
 	<name>curator-tool-ws</name>
 	<description>Web RESTful API for Web Curator Tool via Neo4j</description>
 	<properties>
@@ -186,6 +186,18 @@
 						<configuration>
 							<classifier>usermanager</classifier>
 						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
 					</execution>
 				</executions>
 			</plugin>
