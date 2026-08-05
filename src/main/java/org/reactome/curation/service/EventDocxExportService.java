@@ -1120,7 +1120,17 @@ public class EventDocxExportService {
         paragraph.setNumID(getOrCreateBulletNumId(document));
         XWPFRun run = paragraph.createRun();
         run.setFontFamily(FONT);
-        run.setText(valueOrNA(text));
+        // A raw '\n' inside a single <w:t> (e.g. from a curator's multi-line InstanceEdit note)
+        // isn't valid line-break markup - Word renders it leniently, but Google Docs' stricter
+        // DOCX importer doesn't. Splitting into one <w:t> per line with an explicit <w:br/>
+        // between them (verified via a raw XML dump) renders correctly in both.
+        String[] lines = valueOrNA(text).split("\r\n|\r|\n");
+        for (int i = 0; i < lines.length; i++) {
+            if (i > 0) {
+                run.addBreak();
+            }
+            run.setText(lines[i]);
+        }
         return paragraph;
     }
 
@@ -1498,6 +1508,39 @@ public class EventDocxExportService {
         cursor.pendingParagraphBreak = false;
     }
 
+    /**
+     * Writes a text node's content, honoring plain-text line/paragraph break conventions (a
+     * single '\n' = line break, a blank line = paragraph break) that were never wrapped in real
+     * &lt;br&gt;/&lt;p&gt; tags - see appendNode()'s TextNode case for why getWholeText() (which
+     * preserves them) is used instead of text() (which collapses them to a space) to reach here.
+     * Splits into real &lt;w:br/&gt; elements and new &lt;w:p&gt; paragraphs, mirroring exactly
+     * what an actual &lt;br&gt;/&lt;p&gt; in the source markup would produce (see the "br"/"p"
+     * cases in appendNode()) - a raw '\n' left inside a single &lt;w:t&gt; instead renders fine
+     * in Word but not in Google Docs' stricter DOCX importer.
+     */
+    private void appendTextWithBreaks(String text, MarkupCursor cursor, RunStyle style) {
+        String normalized = text.replace("\r\n", "\n").replace("\r", "\n");
+        String[] paragraphs = normalized.split("\n{2,}");
+        for (int p = 0; p < paragraphs.length; p++) {
+            if (p > 0) {
+                requestParagraphBreak(cursor);
+            }
+            String[] lines = paragraphs[p].split("\n");
+            for (int i = 0; i < lines.length; i++) {
+                if (i > 0) {
+                    ensureParagraphReady(cursor);
+                    cursor.paragraph.createRun().addBreak();
+                    cursor.paragraphHasContent = true;
+                }
+                if (!lines[i].isEmpty()) {
+                    ensureParagraphReady(cursor);
+                    createStyledRun(cursor.paragraph, lines[i], style);
+                    cursor.paragraphHasContent = true;
+                }
+            }
+        }
+    }
+
     private void appendChildren(Element element, MarkupCursor cursor, RunStyle style) {
         for (Node child : element.childNodes()) {
             appendNode(child, cursor, style);
@@ -1506,11 +1549,16 @@ public class EventDocxExportService {
 
     private void appendNode(Node node, MarkupCursor cursor, RunStyle style) {
         if (node instanceof TextNode) {
-            String text = ((TextNode) node).text();
-            if (!text.isEmpty()) {
-                ensureParagraphReady(cursor);
-                createStyledRun(cursor.paragraph, text, style);
-                cursor.paragraphHasContent = true;
+            // TextNode.text() normalizes whitespace, collapsing every "\n" a curator typed
+            // (single = line break, blank line = paragraph break - the plain-text convention for
+            // Summation/note text that was never wrapped in <br>/<p>) into a single space,
+            // silently losing the break. getWholeText() preserves them so appendTextWithBreaks()
+            // can turn them into real <w:br/>/new-paragraph markup instead - the same fix already
+            // applied to addBulletText(), needed here too since a raw '\n' surviving inside a
+            // single <w:t> renders fine in Word but not in Google Docs' stricter DOCX importer.
+            String text = ((TextNode) node).getWholeText();
+            if (!text.strip().isEmpty()) {
+                appendTextWithBreaks(text, cursor, style);
             }
             return;
         }

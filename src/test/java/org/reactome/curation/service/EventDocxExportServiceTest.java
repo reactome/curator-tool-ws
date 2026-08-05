@@ -102,6 +102,70 @@ public class EventDocxExportServiceTest {
     }
 
     /**
+     * A raw '\n' embedded inside a single &lt;w:t&gt; (e.g. from a curator's multi-line
+     * InstanceEdit note, rendered via the "Authored"/"Edited"/"Reviewed" bullet lines) isn't
+     * valid line-break markup - Word renders it leniently, but Google Docs' stricter DOCX
+     * importer doesn't honor it. Each line must land in its own &lt;w:t&gt;, separated by
+     * explicit &lt;w:br/&gt; elements.
+     */
+    @Test
+    void addBulletTextShouldConvertEmbeddedNewlinesToExplicitBreaks() throws Exception {
+        try (XWPFDocument document = new XWPFDocument()) {
+            XWPFParagraph paragraph = service.addBulletText(document, "Line one\nLine two\nLine three");
+
+            List<XWPFRun> runs = paragraph.getRuns();
+            assertThat(runs).hasSize(1);
+            XWPFRun run = runs.get(0);
+
+            List<String> texts = new ArrayList<>();
+            for (var t : run.getCTR().getTList())
+                texts.add(t.getStringValue());
+            assertThat(texts).containsExactly("Line one", "Line two", "Line three");
+            assertThat(texts).noneMatch(t -> t.contains("\n"));
+            assertThat(run.getCTR().getBrList()).hasSize(2);
+        }
+    }
+
+    /**
+     * The same raw-'\n'-survives-in-a-single-&lt;w:t&gt; problem also affects the HTML-markup-
+     * aware path (addParagraph()/appendMarkupAwareText()) used for Summation text and other rich
+     * content: Jsoup's TextNode.text() normalizes a curator's plain-text line/paragraph breaks
+     * (never wrapped in real &lt;br&gt;/&lt;p&gt; tags) into a single space, silently losing
+     * them. A single '\n' should become a real &lt;w:br/&gt; within the same paragraph; a blank
+     * line should start a genuinely new &lt;w:p&gt; - exactly as if the source had used
+     * &lt;br&gt;/&lt;p&gt; tags directly.
+     */
+    @Test
+    void addParagraphShouldConvertPlainTextLineAndParagraphBreaks() throws Exception {
+        try (XWPFDocument document = new XWPFDocument()) {
+            int before = document.getParagraphs().size();
+            service.addParagraph(document, "Line one\nLine two\n\nSecond paragraph.", new HashMap<>());
+
+            List<XWPFParagraph> added = document.getParagraphs().subList(before, document.getParagraphs().size());
+            assertThat(added).hasSize(2);
+
+            XWPFParagraph firstParagraph = added.get(0);
+            // POI's getText() renders a <w:br/> back as "\n" for convenience - the assertions
+            // below on the underlying CTR XML are what actually confirm no raw '\n' survives
+            // inside a <w:t>.
+            assertThat(firstParagraph.getText()).isEqualTo("Line one\nLine two");
+            List<String> firstParagraphTexts = new ArrayList<>();
+            int breakCount = 0;
+            for (XWPFRun run : firstParagraph.getRuns()) {
+                for (var t : run.getCTR().getTList())
+                    firstParagraphTexts.add(t.getStringValue());
+                breakCount += run.getCTR().getBrList().size();
+            }
+            assertThat(firstParagraphTexts).containsExactly("Line one", "Line two");
+            assertThat(firstParagraphTexts).noneMatch(t -> t.contains("\n"));
+            assertThat(breakCount).isEqualTo(1);
+
+            XWPFParagraph secondParagraph = added.get(1);
+            assertThat(secondParagraph.getText()).isEqualTo("Second paragraph.");
+        }
+    }
+
+    /**
      * An Event and its Summation may cite overlapping and distinct references. The export should
      * merge both sets into one Literature References list, de-duplicating by dbId rather than
      * printing the shared reference twice.
