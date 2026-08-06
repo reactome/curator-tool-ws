@@ -881,8 +881,14 @@ public class CurationRepository {
                         relMatchClauses.add("MATCH " + buildInstanceRelationshipPattern(className, attr, nodeAlias)
                                 + " WHERE " + nodeAlias + ".displayName =~ $" + paramName);
                         break;
-                    // case REGEX:
-                    // just using the key similar to the "contains" case, but user will add their own characters
+                    case REGEX:
+                        // Unlike CONTAINS, the key is the curator's own regular expression and is
+                        // passed through unquoted. Cypher's =~ is a full match and case sensitive,
+                        // so wrapping in .* or (?i) is up to whoever wrote the pattern.
+                        params.put(paramName, key);
+                        relMatchClauses.add("MATCH " + buildInstanceRelationshipPattern(className, attr, nodeAlias)
+                                + " WHERE " + nodeAlias + ".displayName =~ $" + paramName);
+                        break;
                     case EQUAL:
                         params.put(paramName, key);
                         relMatchClauses.add("MATCH " + buildInstanceRelationshipPattern(className, attr, nodeAlias)
@@ -904,6 +910,12 @@ public class CurationRepository {
                         // Quote the key so regex metacharacters (e.g. '+', '*', '(') in the
                         // search term are matched literally instead of being interpreted as regex.
                         params.put(paramName, "(?i).*" + Pattern.quote(key) + ".*");
+                        whereClauses.add("inst." + attr + " IS NOT NULL AND ANY(x IN inst." + attr + " WHERE x IS NOT NULL AND toString(x) =~ $" + paramName + ")");
+                        break;
+                    case REGEX:
+                        // The curator's own regular expression, passed through unquoted; an
+                        // element matches when the pattern matches it in full.
+                        params.put(paramName, key);
                         whereClauses.add("inst." + attr + " IS NOT NULL AND ANY(x IN inst." + attr + " WHERE x IS NOT NULL AND toString(x) =~ $" + paramName + ")");
                         break;
                     case EQUAL:
@@ -938,6 +950,13 @@ public class CurationRepository {
                         // Quote the key so regex metacharacters (e.g. '+', '*', '(') in the
                         // search term are matched literally instead of being interpreted as regex.
                         params.put(paramName, "(?i).*" + Pattern.quote(key) + ".*");
+                        whereClauses.add("inst." + attr + " IS NOT NULL AND toString(inst." + attr + ") =~ $" + paramName);
+                        break;
+                    case REGEX:
+                        // The curator's own regular expression, passed through unquoted. This is
+                        // the common case (e.g. a regex on displayName), and without it the
+                        // condition would fall through and be dropped from the query entirely.
+                        params.put(paramName, key);
                         whereClauses.add("inst." + attr + " IS NOT NULL AND toString(inst." + attr + ") =~ $" + paramName);
                         break;
                     case IS_NOT_NULL:
