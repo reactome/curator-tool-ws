@@ -156,7 +156,6 @@ public class PathwayDiagramService {
         if (representedPathways.size() == 1) {
             Pathway pathway = representedPathways.get(0);
             generateDiagramJSON(diagram, pathway);
-            return;
         }
         else if (representedPathways.size() > 1) {
             // Need to perform pathway diagram overlay.

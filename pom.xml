@@ -87,7 +87,7 @@
         <dependency>
             <groupId>org.reactome.server.diagram</groupId>
             <artifactId>diagram-converter</artifactId>
-            <version>3.0.10.CT</version>
+            <version>3.0.11.CT</version>
 			<exclusions>
 				<exclusion>
 					<groupId>org.reactome.server.graph</groupId>
