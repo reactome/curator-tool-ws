@@ -881,6 +881,8 @@ public class CurationRepository {
                         relMatchClauses.add("MATCH " + buildInstanceRelationshipPattern(className, attr, nodeAlias)
                                 + " WHERE " + nodeAlias + ".displayName =~ $" + paramName);
                         break;
+                    // case REGEX:
+                    // just using the key similar to the "contains" case, but user will add their own characters
                     case EQUAL:
                         params.put(paramName, key);
                         relMatchClauses.add("MATCH " + buildInstanceRelationshipPattern(className, attr, nodeAlias)
