@@ -102,6 +102,117 @@ public class EventDocxExportServiceTest {
     }
 
     /**
+     * An unset spacing value falls back to whatever the (essentially empty, for this export -
+     * see setModernCompatibilityMode()'s javadoc) style/document defaults happen to be, and Word
+     * and Google Docs don't always agree on that fallback - Google Docs has been observed
+     * collapsing spacing that Word renders fine. Every paragraph must set spacing-after and
+     * line-spacing explicitly rather than leaving them unset.
+     */
+    @Test
+    void everyParagraphShouldHaveExplicitSpacing() throws Exception {
+        try (XWPFDocument document = new XWPFDocument()) {
+            service.addParagraph(document, "Body text", new HashMap<>());
+            service.addBulletText(document, "Bullet");
+            service.addNumberedText(document, "Item", 1);
+            service.addHyperlink(document, "Reactome", "https://reactome.org");
+
+            for (XWPFParagraph paragraph : document.getParagraphs()) {
+                assertThat(paragraph.getCTP().getPPr().isSetSpacing())
+                        .as("paragraph '%s' should have explicit spacing set", paragraph.getText())
+                        .isTrue();
+            }
+        }
+    }
+
+    /**
+     * addHeader() sets its own, larger spacingBefore/spacingAfter than the baseline every other
+     * paragraph gets. It must NOT also insert a trailing blank paragraph: that was tried as a
+     * belt-and-suspenders measure alongside explicit spacing, but stacks the blank paragraph's
+     * own line height and its own default spacing on top of the header's already-explicit
+     * spacing, producing a visibly oversized gap in both Word and Google Docs once explicit
+     * spacing alone turned out to be sufficient.
+     */
+    @Test
+    void addHeaderShouldSetHeaderSpacingWithoutAnExtraBlankParagraph() throws Exception {
+        try (XWPFDocument document = new XWPFDocument()) {
+            int before = document.getParagraphs().size();
+            service.addHeader(document, 1, "Section Title");
+
+            List<XWPFParagraph> added = document.getParagraphs().subList(before, document.getParagraphs().size());
+            assertThat(added).hasSize(1);
+
+            XWPFParagraph headerParagraph = added.get(0);
+            assertThat(headerParagraph.getText()).isEqualTo("Section Title");
+            assertThat(headerParagraph.getSpacingBefore()).isGreaterThan(0);
+            assertThat(headerParagraph.getSpacingAfter()).isGreaterThan(0);
+        }
+    }
+
+    /**
+     * A raw '\n' embedded inside a single &lt;w:t&gt; (e.g. from a curator's multi-line
+     * InstanceEdit note, rendered via the "Authored"/"Edited"/"Reviewed" bullet lines) isn't
+     * valid line-break markup - Word renders it leniently, but Google Docs' stricter DOCX
+     * importer doesn't honor it. Each line must land in its own &lt;w:t&gt;, separated by
+     * explicit &lt;w:br/&gt; elements.
+     */
+    @Test
+    void addBulletTextShouldConvertEmbeddedNewlinesToExplicitBreaks() throws Exception {
+        try (XWPFDocument document = new XWPFDocument()) {
+            XWPFParagraph paragraph = service.addBulletText(document, "Line one\nLine two\nLine three");
+
+            List<XWPFRun> runs = paragraph.getRuns();
+            assertThat(runs).hasSize(1);
+            XWPFRun run = runs.get(0);
+
+            List<String> texts = new ArrayList<>();
+            for (var t : run.getCTR().getTList())
+                texts.add(t.getStringValue());
+            assertThat(texts).containsExactly("Line one", "Line two", "Line three");
+            assertThat(texts).noneMatch(t -> t.contains("\n"));
+            assertThat(run.getCTR().getBrList()).hasSize(2);
+        }
+    }
+
+    /**
+     * The same raw-'\n'-survives-in-a-single-&lt;w:t&gt; problem also affects the HTML-markup-
+     * aware path (addParagraph()/appendMarkupAwareText()) used for Summation text and other rich
+     * content: Jsoup's TextNode.text() normalizes a curator's plain-text line/paragraph breaks
+     * (never wrapped in real &lt;br&gt;/&lt;p&gt; tags) into a single space, silently losing
+     * them. A single '\n' should become a real &lt;w:br/&gt; within the same paragraph; a blank
+     * line should start a genuinely new &lt;w:p&gt; - exactly as if the source had used
+     * &lt;br&gt;/&lt;p&gt; tags directly.
+     */
+    @Test
+    void addParagraphShouldConvertPlainTextLineAndParagraphBreaks() throws Exception {
+        try (XWPFDocument document = new XWPFDocument()) {
+            int before = document.getParagraphs().size();
+            service.addParagraph(document, "Line one\nLine two\n\nSecond paragraph.", new HashMap<>());
+
+            List<XWPFParagraph> added = document.getParagraphs().subList(before, document.getParagraphs().size());
+            assertThat(added).hasSize(2);
+
+            XWPFParagraph firstParagraph = added.get(0);
+            // POI's getText() renders a <w:br/> back as "\n" for convenience - the assertions
+            // below on the underlying CTR XML are what actually confirm no raw '\n' survives
+            // inside a <w:t>.
+            assertThat(firstParagraph.getText()).isEqualTo("Line one\nLine two");
+            List<String> firstParagraphTexts = new ArrayList<>();
+            int breakCount = 0;
+            for (XWPFRun run : firstParagraph.getRuns()) {
+                for (var t : run.getCTR().getTList())
+                    firstParagraphTexts.add(t.getStringValue());
+                breakCount += run.getCTR().getBrList().size();
+            }
+            assertThat(firstParagraphTexts).containsExactly("Line one", "Line two");
+            assertThat(firstParagraphTexts).noneMatch(t -> t.contains("\n"));
+            assertThat(breakCount).isEqualTo(1);
+
+            XWPFParagraph secondParagraph = added.get(1);
+            assertThat(secondParagraph.getText()).isEqualTo("Second paragraph.");
+        }
+    }
+
+    /**
      * An Event and its Summation may cite overlapping and distinct references. The export should
      * merge both sets into one Literature References list, de-duplicating by dbId rather than
      * printing the shared reference twice.
@@ -153,6 +264,59 @@ public class EventDocxExportServiceTest {
 
             long occurrences = text.lines().filter(line -> line.contains("Event-level reference")).count();
             assertThat(occurrences).isEqualTo(1);
+        }
+    }
+
+    /**
+     * Literature References should be listed alphabetically by author, regardless of the order
+     * they were cited in (curator/citation order), since that's how the merged event+summation
+     * list naturally comes out otherwise.
+     */
+    @Test
+    void literatureReferencesShouldBeSortedAlphabeticallyByAuthor() throws Exception {
+        Pathway event = new Pathway(400001L);
+        event.setDisplayName("Author Sort Test Pathway");
+
+        LiteratureReference zRef = new LiteratureReference();
+        zRef.setDbId(1L);
+        zRef.setTitle("Paper by Zellweger");
+        zRef.setJournal("Journal Z");
+        zRef.setYear(2001);
+        zRef.setPubMedIdentifier(1111111);
+        zRef.setAuthorName(List.of("Zellweger K"));
+
+        LiteratureReference aRef = new LiteratureReference();
+        aRef.setDbId(2L);
+        aRef.setTitle("Paper by Anderson");
+        aRef.setJournal("Journal A");
+        aRef.setYear(2002);
+        aRef.setPubMedIdentifier(2222222);
+        aRef.setAuthorName(List.of("Anderson AN"));
+
+        LiteratureReference mRef = new LiteratureReference();
+        mRef.setDbId(3L);
+        mRef.setTitle("Paper by Miller");
+        mRef.setJournal("Journal M");
+        mRef.setYear(2003);
+        mRef.setPubMedIdentifier(3333333);
+        mRef.setAuthorName(List.of("Miller JD"));
+
+        // Deliberately out of alphabetical order (Z, A, M) - the export should re-sort them.
+        event.setLiteratureReference(new ArrayList<>(List.of(zRef, aRef, mRef)));
+
+        byte[] docxBytes = service.exportEventDocx(event);
+
+        try (XWPFDocument doc = new XWPFDocument(new ByteArrayInputStream(docxBytes))) {
+            String text = doc.getParagraphs().stream()
+                    .map(XWPFParagraph::getText)
+                    .collect(Collectors.joining("\n"));
+
+            int anderson = text.indexOf("Anderson AN");
+            int miller = text.indexOf("Miller JD");
+            int zellweger = text.indexOf("Zellweger K");
+            assertThat(anderson).isGreaterThanOrEqualTo(0);
+            assertThat(miller).isGreaterThan(anderson);
+            assertThat(zellweger).isGreaterThan(miller);
         }
     }
 
