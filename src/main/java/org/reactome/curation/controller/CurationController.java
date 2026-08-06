@@ -5,6 +5,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
 import org.reactome.curation.exceptions.DatabaseObjectTypeMismatchException;
 import org.reactome.curation.exceptions.InstanceChangedException;
@@ -609,12 +611,17 @@ public class CurationController {
      * Search instances for lists of attributes, operands and searckKeys. Basically this is a more 
      * powerful listInstances. But to make the API simpler, this method is split from listInstances.
      * The frontend should determine what API should be called.
+     * <p>
+     * Attributes and operands come from fixed vocabularies and are still sent as single
+     * comma-delimited parameters. Search keys are not: a term is whatever the curator typed,
+     * and a REGEX term legitimately contains commas (a quantifier such as a{2,3}). They are
+     * therefore read as repeated searchKeys parameters so each one arrives verbatim.
      * @param className
      * @param skip
      * @param limit
      * @param attributes
      * @param operands
-     * @param searchKeys
+     * @param request supplies the repeated searchKeys parameters
      * @return
      */
     @GetMapping("searchInstances/{className}/{skip}/{limit}")
@@ -623,14 +630,17 @@ public class CurationController {
                                         @PathVariable("limit") Integer limit,
                                         @RequestParam("attributes") Optional<String> attributes,
                                         @RequestParam("operands") Optional<String> operands,
-                                        @RequestParam("searchKeys") Optional<String> searchKeys) {
+                                        HttpServletRequest request) {
         try {
+            // Read searchKeys straight off the request: binding to a List would let Spring
+            // split a single value on commas, which is exactly what has to be avoided here.
+            String[] searchKeys = request.getParameterValues("searchKeys");
             // In any of the following case, we will use listInstances
-            if (attributes.isEmpty() || operands.isEmpty() || searchKeys.isEmpty())
+            if (attributes.isEmpty() || operands.isEmpty() || searchKeys == null || searchKeys.length == 0)
                 return service.listInstances(className, skip, limit, null);
             List<String> attributeList = List.of(attributes.get().split(","));
             List<String> operandList = List.of(operands.get().split(","));
-            List<String> keyList = List.of(searchKeys.get().split(","));
+            List<String> keyList = splitSearchKeys(searchKeys, attributeList.size());
             // Make sure all three lists have the same length
             if ((attributeList.size() != operandList.size()) ||
                     (attributeList.size() != keyList.size())) {
@@ -660,7 +670,7 @@ public class CurationController {
                 }
                 listOperandList.add(listOperand);
             }
-            return service.listInstances(className, 
+            return service.listInstances(className,
                     skip, 
                     limit,
                     attributeList,
@@ -672,6 +682,22 @@ public class CurationController {
             logger.error("searchInstances: " + e.getMessage(), e);
             return new InstanceList(); // Return an empty object.
         }
+    }
+
+    /**
+     * Turn the repeated searchKeys parameters into one key per attribute.
+     * <p>
+     * Older clients (and any bookmarked URL from one) send a single comma-delimited
+     * searchKeys parameter instead, so a lone value covering several attributes is split
+     * the way it used to be. A lone value for a single attribute is never split, which is
+     * what lets a one-condition regex such as a{2,3} through untouched.
+     * @param searchKeys the values supplied for the searchKeys parameter
+     * @param expectedSize how many keys the attribute list calls for
+     */
+    private List<String> splitSearchKeys(String[] searchKeys, int expectedSize) {
+        if (searchKeys.length == 1 && expectedSize > 1)
+            return List.of(searchKeys[0].split(","));
+        return List.of(searchKeys);
     }
     
     
