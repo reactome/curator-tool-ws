@@ -652,6 +652,12 @@ public class CurationController {
             List<ListOperand> listOperandList = new ArrayList<>(operandList.size());
             for (String operand : operandList) {
                 ListOperand listOperand = ListOperand.map(operand);
+                if (listOperand == null) {
+                    // Otherwise the switch over the operand throws an NPE further down and the
+                    // curator just sees an empty list with nothing in the log to explain it.
+                    logger.error("searchInstances: unknown operand '" + operand + "'.");
+                    return new InstanceList();
+                }
                 listOperandList.add(listOperand);
             }
             return service.listInstances(className, 
