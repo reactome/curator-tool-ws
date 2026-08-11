@@ -19,15 +19,17 @@ public enum ListOperand {
             case "not_equal":
             case "not equal":
                 return NOT_EQUAL;
-            case "contains": return CONTAINS;
-            case "regex": return REGEX;
-            case "is_null":
-            case "is null":
+            case "contains":
+                return CONTAINS;
+            case "regex":
+                return REGEX;
+            case "is_null": 
+            case "is null": 
                 return IS_NULL;
-            case "is_not_null":
-            case "is not null":
+            case "is_not_null": 
+            case "is not null": 
                 return IS_NOT_NULL;
-
+           
         }
         return null;
     }

@@ -913,10 +913,12 @@ public class CurationRepository {
                         whereClauses.add("inst." + attr + " IS NOT NULL AND ANY(x IN inst." + attr + " WHERE x IS NOT NULL AND toString(x) =~ $" + paramName + ")");
                         break;
                     case REGEX:
-                        // The curator's own regular expression, passed through unquoted; an
-                        // element matches when the pattern matches it in full.
+                        // Unlike CONTAINS, the key is the curator's own regular expression and is
+                        // passed through unquoted. Cypher's =~ is a full match and case sensitive,
+                        // so wrapping in .* or (?i) is up to whoever wrote the pattern.
                         params.put(paramName, key);
-                        whereClauses.add("inst." + attr + " IS NOT NULL AND ANY(x IN inst." + attr + " WHERE x IS NOT NULL AND toString(x) =~ $" + paramName + ")");
+                        relMatchClauses.add("MATCH " + buildInstanceRelationshipPattern(className, attr, nodeAlias)
+                                + " WHERE " + nodeAlias + ".displayName =~ $" + paramName);
                         break;
                     case EQUAL:
                         params.put(paramName, key);
@@ -953,11 +955,12 @@ public class CurationRepository {
                         whereClauses.add("inst." + attr + " IS NOT NULL AND toString(inst." + attr + ") =~ $" + paramName);
                         break;
                     case REGEX:
-                        // The curator's own regular expression, passed through unquoted. This is
-                        // the common case (e.g. a regex on displayName), and without it the
-                        // condition would fall through and be dropped from the query entirely.
+                        // Unlike CONTAINS, the key is the curator's own regular expression and is
+                        // passed through unquoted. Cypher's =~ is a full match and case sensitive,
+                        // so wrapping in .* or (?i) is up to whoever wrote the pattern.
                         params.put(paramName, key);
-                        whereClauses.add("inst." + attr + " IS NOT NULL AND toString(inst." + attr + ") =~ $" + paramName);
+                        relMatchClauses.add("MATCH " + buildInstanceRelationshipPattern(className, attr, nodeAlias)
+                                + " WHERE " + nodeAlias + ".displayName =~ $" + paramName);
                         break;
                     case IS_NOT_NULL:
                         whereClauses.add("inst." + attr + " IS NOT NULL");
@@ -1384,44 +1387,6 @@ public class CurationRepository {
             var displayName = instance.property("displayName");
             // Quote so regex metacharacters (e.g. '+') in the search text are matched literally.
             condition = displayName.matches(".*(?i)" + Pattern.quote(text) + ".*");
-        }
-        return condition;
-    }
-
-    private Condition createQueryCondition(String attribute, 
-                                           ListOperand operand, 
-                                           String searchKey, 
-                                           Node instance) {
-        Condition condition = null;
-        var attributeProp = instance.property(attribute);
-        switch (operand) {
-        // We will convert everything to string to avoid type checking (e.g. dbId should be integer)
-        case EQUAL:
-            condition = attributeProp.isNotNull()
-            .and(Functions.toString(attributeProp).isEqualTo(Cypher.literalOf(searchKey)));
-            break;
-        case NOT_EQUAL:
-            condition = attributeProp.isNotNull()
-            .and(Functions.toString(attributeProp).isNotEqualTo(Cypher.literalOf(searchKey)));
-            break;
-        case CONTAINS:
-            // Regardless if the attribute value is string or other type
-            // we will use this regex
-            // Need to convert the value as string to be used in regex for any type of property
-            // Always use lower case to avoid any confusion
-            if (searchKey != null) // searchKey may be null for IS_NULL or IS_NOT_NULL
-                searchKey = searchKey.toLowerCase(); // Only here to avoid equal check
-            condition = attributeProp.isNotNull()
-                    .and(Functions.toString(attributeProp)
-                            .matches(".*(?i)" + Pattern.quote(searchKey) + ".*"));
-            break;
-        case IS_NOT_NULL:
-            condition = attributeProp.isNotNull();
-            break;
-        case IS_NULL:
-            condition = attributeProp.isNull();
-            break;
-        default:
         }
         return condition;
     }
