@@ -30,6 +30,7 @@ import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
 import org.reactome.curation.exceptions.DatabaseObjectTypeMismatchException;
 import org.reactome.curation.model.CurationAttribute.DefiningAttributeValue;
 import org.reactome.curation.util.CuratorToolWSUtils;
+import org.reactome.curation.util.ReferrerAttributeResolver;
 import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.NamedReferrerList;
@@ -1714,27 +1715,32 @@ public class CurationRepository {
         return finalReferrals;
     }
 
+    /**
+     * Group the referrers coming out of {@link #getReferralsTo(Node, org.neo4j.cypherdsl.core.Relationship)}
+     * by the attribute name holding each reference.
+     *
+     * Note: the "attribute name" carried by each passed Referrer is really the Neo4j
+     * relationship TYPE, which is not always the attribute name - see
+     * {@link ReferrerAttributeResolver} for why (Event.inferredFrom, notably, is the
+     * INCOMING direction of "inferredTo" and has no relationship of its own).
+     *
+     * @param references the referrers found for one edge direction
+     * @param direction  the edge's direction as seen from the referring instances
+     */
     private Collection<NamedReferrerList> checkReferrers(Collection<Referrer> references,
                                                          Relationship.Direction direction) throws ClassNotFoundException {
         Map<String, List<SimpleInstance>> referrers = new HashMap<>();
         Collection<NamedReferrerList> listRefs = new ArrayList<>();
         for (Referrer ref : references) {
-            String clsName = DatabaseObject.class.getPackageName() + '.' + ref.getSimpleInstance().getSchemaClassName();
+            String schemaClassName = ref.getSimpleInstance().getSchemaClassName();
+            String clsName = DatabaseObject.class.getPackageName() + '.' + schemaClassName;
             Class<?> cls = Class.forName(clsName);
-            Map<String, Relationship> field2relRefObj = this.getField2rel(cls);
-            Relationship relationshipFromRef = field2relRefObj.get(ref.getAttributeName());
-            if(relationshipFromRef != null) {
-                if (relationshipFromRef.direction().equals(direction)) {
-                    if(referrers.containsKey(ref.getAttributeName()))
-                    {
-                        referrers.get(ref.getAttributeName()).add(ref.getSimpleInstance());
-                    }
-                    else {
-                        List<SimpleInstance> insts = new ArrayList<>();
-                        insts.add(ref.getSimpleInstance());
-                        referrers.put(ref.getAttributeName(), insts);
-                    }
-                }
+            List<String> attNames = ReferrerAttributeResolver.resolveAttributeNames(cls,
+                                                                                   schemaClassName,
+                                                                                   ref.getAttributeName(),
+                                                                                   direction);
+            for (String attName : attNames) {
+                referrers.computeIfAbsent(attName, key -> new ArrayList<>()).add(ref.getSimpleInstance());
             }
         }
         for(String key : referrers.keySet()){
