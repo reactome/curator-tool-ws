@@ -561,8 +561,9 @@ class CurationRepositoryTests {
     public void testReferrers() throws Exception {
         //Long dbId = 9815367L; // Pathway
         //Long dbId = 9815366L; // Instance Edit
-        Long dbId = 179837L; // Physical Entity (EGFR)
+        // Long dbId = 179837L; // Physical Entity (EGFR)
         //Long dbId = 179837L;
+        Long dbId = 182053L; // This reaction is used as value in inferredFrom. It should have one referrer.
         Collection<NamedReferrerList> instances = repository.getReferrers(dbId);
         for(NamedReferrerList ref : instances){
             System.out.println("referrers " + ref.getAttributeName()  + ": " );

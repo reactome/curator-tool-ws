@@ -1722,18 +1722,22 @@ public class CurationRepository {
             String clsName = DatabaseObject.class.getPackageName() + '.' + ref.getSimpleInstance().getSchemaClassName();
             Class<?> cls = Class.forName(clsName);
             Map<String, Relationship> field2relRefObj = this.getField2rel(cls);
-            Relationship relationshipFromRef = field2relRefObj.get(ref.getAttributeName());
-            if(relationshipFromRef != null) {
-                if (relationshipFromRef.direction().equals(direction)) {
-                    if(referrers.containsKey(ref.getAttributeName()))
-                    {
-                        referrers.get(ref.getAttributeName()).add(ref.getSimpleInstance());
-                    }
-                    else {
-                        List<SimpleInstance> insts = new ArrayList<>();
-                        insts.add(ref.getSimpleInstance());
-                        referrers.put(ref.getAttributeName(), insts);
-                    }
+            // ref.getAttributeName() is the raw Neo4j relationship type (e.g. "inferredTo"), which is
+            // not always a valid field name - some attributes are reverse/renamed views of a
+            // differently-named relationship (e.g. Event.inferredFrom is the INCOMING view of the
+            // "inferredTo" type, whose OUTGOING view is the separate field Event.orthologousEvent).
+            // Resolve the field by matching (relationship type, direction) instead of assuming the
+            // type string is itself a field name, otherwise such attributes are silently dropped here.
+            String attributeName = findFieldByRelationshipTypeAndDirection(field2relRefObj, ref.getAttributeName(), direction);
+            if (attributeName != null) {
+                if(referrers.containsKey(attributeName))
+                {
+                    referrers.get(attributeName).add(ref.getSimpleInstance());
+                }
+                else {
+                    List<SimpleInstance> insts = new ArrayList<>();
+                    insts.add(ref.getSimpleInstance());
+                    referrers.put(attributeName, insts);
                 }
             }
         }
@@ -1745,6 +1749,25 @@ public class CurationRepository {
             listRefs.add(curatorToolReferrerList);
         }
         return listRefs;
+    }
+
+    /**
+     * Find the field in field2rel whose @Relationship has the given persisted relationship type and
+     * direction. Needed because relType is the raw Neo4j relationship type, which for reverse/renamed
+     * attributes (e.g. inferredFrom/inferredTo, memberOf/hasMember, componentOf/hasComponent) differs
+     * from the Java field name.
+     */
+    private String findFieldByRelationshipTypeAndDirection(Map<String, Relationship> field2rel,
+                                                            String relType,
+                                                            Relationship.Direction direction) {
+        for (Map.Entry<String, Relationship> entry : field2rel.entrySet()) {
+            Relationship rel = entry.getValue();
+            String type = rel.type().isEmpty() ? entry.getKey() : rel.type();
+            if (rel.direction().equals(direction) && type.equals(relType)) {
+                return entry.getKey();
+            }
+        }
+        return null;
     }
 
     public Set<Taxon> grepSpecies(Long dbId, String followAttributes, String schemaClass) {
