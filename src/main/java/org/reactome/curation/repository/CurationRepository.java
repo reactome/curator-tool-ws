@@ -28,6 +28,7 @@ import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReading;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingUpdate;
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
 import org.reactome.curation.exceptions.DatabaseObjectTypeMismatchException;
+import org.reactome.curation.exceptions.DbIdConflictException;
 import org.reactome.curation.model.CurationAttribute.DefiningAttributeValue;
 import org.reactome.curation.util.CuratorToolWSUtils;
 import org.reactome.curation.model.InstanceList;
@@ -46,6 +47,7 @@ import org.reactome.server.graph.service.helper.StoichiometryObject;
 import org.reactome.server.graph.service.util.DatabaseObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.data.neo4j.core.Neo4jTemplate;
 import org.springframework.data.neo4j.core.schema.Relationship;
@@ -174,9 +176,18 @@ public class CurationRepository {
      * synchronized method so that it can be accessed by one thread only to avoid
      * any id conflict.
      *
+     * Reconciles the in-memory cache against the database's current MAX(dbId) first,
+     * since another process independent of this application may have inserted new
+     * DatabaseObject nodes since this cache was last populated (at construction time,
+     * or at the last call to this method) - without this, maxDbId could go stale and
+     * eventually hand out a dbId that a uniqueness constraint in the database rejects.
+     *
      * @return
      */
     public synchronized Long nextDbId() {
+        Long currentDbMaxDbId = getMaxDbId();
+        if (currentDbMaxDbId != null && currentDbMaxDbId > maxDbId)
+            maxDbId = currentDbMaxDbId;
         return ++maxDbId;
     }
 
@@ -288,6 +299,10 @@ public class CurationRepository {
         this.queryUtilities.addModifiedIE(target, ie, neo4jClient);
     }
 
+    // How many times to retry storeShell() with a freshly assigned dbId if the one handed out by
+    // nextDbId() turns out to already be taken by a node some other, independent process inserted.
+    private static final int MAX_DB_ID_ASSIGNMENT_RETRIES = 3;
+
     /**
      * Store the DatabaseObject's shell representation (dbId and displayName only) so that we can
      * refer to it from other objects.
@@ -301,15 +316,29 @@ public class CurationRepository {
         if (obj.getDbId() != null && existsById(obj.getDbId())) {
             throw new IllegalStateException(obj + " is in the database and cannot be stored. Call update instead.");
         }
-        if (obj.getDbId() == null || obj.getDbId() < 0)
-            obj.setDbId(nextDbId());
-        // To do save, we create a DatabaseObject without relationships first
-        DatabaseObject proxyNode = obj.getClass().getConstructor().newInstance();
-        proxyNode.setDbId(obj.getDbId());
-        // Don't forget to copy the dbId there. It is not in the above loop.
-        proxyNode.setDbId(obj.getDbId());
-        neo4jTemplate.save(proxyNode);
-        return obj;
+        boolean assignNewDbId = (obj.getDbId() == null || obj.getDbId() < 0);
+        for (int attempt = 1; ; attempt++) {
+            if (assignNewDbId)
+                obj.setDbId(nextDbId());
+            try {
+                // To do save, we create a DatabaseObject without relationships first
+                DatabaseObject proxyNode = obj.getClass().getConstructor().newInstance();
+                proxyNode.setDbId(obj.getDbId());
+                // Don't forget to copy the dbId there. It is not in the above loop.
+                proxyNode.setDbId(obj.getDbId());
+                neo4jTemplate.save(proxyNode);
+                return obj;
+            }
+            catch (DataIntegrityViolationException e) {
+                // Only a dbId we assigned ourselves is safe to retry with a different value - a
+                // caller-supplied dbId must fail as-is so the conflict is surfaced, not masked.
+                if (!assignNewDbId || attempt >= MAX_DB_ID_ASSIGNMENT_RETRIES)
+                    throw new DbIdConflictException(obj, e);
+                logger.warn("dbId {} collided with a node inserted by another process (attempt {}/{}), " +
+                                "retrying with a freshly assigned dbId",
+                        obj.getDbId(), attempt, MAX_DB_ID_ASSIGNMENT_RETRIES);
+            }
+        }
     }
 
 

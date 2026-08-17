@@ -2,6 +2,7 @@ package org.reactome.curation.controller;
 
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
 import org.reactome.curation.exceptions.DatabaseObjectTypeMismatchException;
+import org.reactome.curation.exceptions.DbIdConflictException;
 import org.reactome.curation.exceptions.ErrorResponse;
 import org.reactome.curation.exceptions.InstanceChangedException;
 import org.reactome.curation.exceptions.InstanceDeletionException;
@@ -24,6 +25,14 @@ public class GlobalExceptionHandler {
     
     @ExceptionHandler(DatabaseObjectTypeMismatchException.class)
     public ResponseEntity<ErrorResponse> handleDatabaseObjectTypeMismatchException(DatabaseObjectTypeMismatchException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(HttpStatus.CONFLICT.value(),
+                ex.getMessage(),
+                System.currentTimeMillis());
+        return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(DbIdConflictException.class)
+    public ResponseEntity<ErrorResponse> handleDbIdConflictException(DbIdConflictException ex) {
         ErrorResponse errorResponse = new ErrorResponse(HttpStatus.CONFLICT.value(),
                 ex.getMessage(),
                 System.currentTimeMillis());
