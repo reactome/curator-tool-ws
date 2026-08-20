@@ -945,9 +945,10 @@ public class CurationRepository {
                         // Unlike CONTAINS, the key is the curator's own regular expression and is
                         // passed through unquoted. Cypher's =~ is a full match and case sensitive,
                         // so wrapping in .* or (?i) is up to whoever wrote the pattern.
+                        // Convert each list element to string first (e.g. dbId lists) so the regex
+                        // can match against non-string values too.
                         params.put(paramName, key);
-                        relMatchClauses.add("MATCH " + buildInstanceRelationshipPattern(className, attr, nodeAlias)
-                                + " WHERE " + nodeAlias + ".displayName =~ $" + paramName);
+                        whereClauses.add("inst." + attr + " IS NOT NULL AND ANY(x IN inst." + attr + " WHERE x IS NOT NULL AND toString(x) =~ $" + paramName + ")");
                         break;
                     case EQUAL:
                         params.put(paramName, key);
@@ -987,9 +988,9 @@ public class CurationRepository {
                         // Unlike CONTAINS, the key is the curator's own regular expression and is
                         // passed through unquoted. Cypher's =~ is a full match and case sensitive,
                         // so wrapping in .* or (?i) is up to whoever wrote the pattern.
+                        // Convert to string first since =~ only works on strings (e.g. dbId is a long).
                         params.put(paramName, key);
-                        relMatchClauses.add("MATCH " + buildInstanceRelationshipPattern(className, attr, nodeAlias)
-                                + " WHERE " + nodeAlias + ".displayName =~ $" + paramName);
+                        whereClauses.add("inst." + attr + " IS NOT NULL AND toString(inst." + attr + ") =~ $" + paramName);
                         break;
                     case IS_NOT_NULL:
                         whereClauses.add("inst." + attr + " IS NOT NULL");
