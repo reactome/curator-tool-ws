@@ -116,7 +116,13 @@ public class CurationRepository {
             for (Field field : _class.getDeclaredFields()) {
                 // Escape field labeled as ReactomeTransient. These fields should not be stored
                 // They are used more likely for performance purpose only.
-                if (field.getAnnotation(ReactomeTransient.class) != null) {
+                // Exception: PhysicalEntity/Regulation.inferredFrom are marked @ReactomeTransient
+                // in graph-core (Event.inferredFrom is not), but CuratorToolExporter locks
+                // "inferredTo" to NOMANUALEDIT and treats "inferredFrom" as the field curators
+                // actually assign, for every class that has this pair - not just Event. So it
+                // must be persisted here too, or a curator's edit is silently dropped.
+                if (field.getAnnotation(ReactomeTransient.class) != null
+                        && !field.getName().equals(ReactomeJavaConstants.inferredFrom)) {
                     continue;
                 }
                 if (field.getAnnotation(Relationship.class) != null) {
@@ -128,6 +134,33 @@ public class CurationRepository {
         }
         cls2field2rel.put(cls.getName(), field2rel);
         return field2rel;
+    }
+
+    // Names of ALL @Relationship-annotated fields, including @ReactomeTransient ones (e.g.
+    // PhysicalEntity/Regulation.inferredFrom, and other INCOMING "referrer" views such as
+    // hasComponent, regulator, replacementInstances). getField2rel() deliberately excludes
+    // those so they're never (re)created as real relationships, but that means they're also
+    // absent from field2rel - and storeNodeProperties() used to treat "absent from field2rel"
+    // as "this is a primitive property", so it tried to SET a node property to a value like a
+    // List<PhysicalEntity>, which Neo4j rejects and the whole store()/update() call fails.
+    // This wider set lets storeNodeProperties() recognize and skip them instead.
+    private Map<String, Set<String>> cls2AllRelationshipFieldNames = new HashMap<>();
+
+    private Set<String> getAllRelationshipFieldNames(Class<?> cls) {
+        if (cls2AllRelationshipFieldNames.containsKey(cls.getName()))
+            return cls2AllRelationshipFieldNames.get(cls.getName());
+        Set<String> names = new HashSet<>();
+        Class<?> _class = cls;
+        while (!_class.equals(Object.class)) {
+            for (Field field : _class.getDeclaredFields()) {
+                if (field.getAnnotation(Relationship.class) != null) {
+                    names.add(field.getName());
+                }
+            }
+            _class = _class.getSuperclass();
+        }
+        cls2AllRelationshipFieldNames.put(cls.getName(), names);
+        return names;
     }
 
     /**
@@ -405,6 +438,15 @@ public class CurationRepository {
                 continue;
             Relationship rel = field2rel.get(field);
             Object value = field2value.get(field);
+            // Fields in RESET_NODE_EXCLUDED_FIELD_TYPE_KEYS (e.g. PhysicalEntity/Regulation's
+            // "inferredTo", Event's "orthologousEvent") are the locked, non-curator-editable
+            // mirror of a paired field (inferredFrom) that represents the SAME edge from the
+            // opposite direction. resetNode() deliberately never deletes these first (see that
+            // field's javadoc), so if the other end of the pair is also being committed in this
+            // request, a plain CREATE below would duplicate the edge. MERGE it immediately
+            // instead of batching it into the CREATE chain, so re-asserting an edge that the
+            // other side already created is a no-op rather than a duplicate.
+            boolean useMerge = RESET_NODE_EXCLUDED_FIELD_TYPE_KEYS.contains(field + ":" + rel.type());
             // For multi-valued attribute, in rare case the returned value is a set (e.g. inferredFrom)
             // This should be treated as a bug at the graph data model layer
             List<?> valueList = null;
@@ -419,11 +461,17 @@ public class CurationRepository {
                 // Polymer.repeatedUnit, and ReactionlikeEvent.input, output.
                 for (int i = 0; i < valueList.size(); i++) {
                     var tmp = valueList.get(i);
-                    stat = handleValueObj(objNode, tmp, rel, i, relationships, stat);
+                    if (useMerge)
+                        mergeValueObj(obj, tmp, rel, i);
+                    else
+                        stat = handleValueObj(objNode, tmp, rel, i, relationships, stat);
                 }
-            } 
+            }
             else {
-                stat = handleValueObj(objNode, value, rel, null, relationships, stat);
+                if (useMerge)
+                    mergeValueObj(obj, value, rel, null);
+                else
+                    stat = handleValueObj(objNode, value, rel, null, relationships, stat);
             }
         }
         OngoingUpdate update = null;
@@ -461,13 +509,19 @@ public class CurationRepository {
         Map<String, Object> params = new HashMap<>();
         params.put("dbId", obj.getDbId());
 
+        // Fields excluded from field2rel because they're @ReactomeTransient (e.g.
+        // PhysicalEntity/Regulation.inferredFrom) are still relationship-valued, not
+        // primitive - they must be skipped here too, or their List<DatabaseObject> value
+        // gets bound as a node property and the whole save fails.
+        Set<String> allRelationshipFields = getAllRelationshipFieldNames(obj.getClass());
+
         for (Map.Entry<String, Object> entry : field2value.entrySet()) {
             String field = entry.getKey();
             Object value = entry.getValue();
             if (value == null)
                 continue; // skip null values
 
-            if (field2rel.containsKey(field))
+            if (field2rel.containsKey(field) || allRelationshipFields.contains(field))
                 continue; // skip relationship fields
 
             // Add parameterized property assignment
@@ -557,6 +611,48 @@ public class CurationRepository {
         relationship = relationship.withProperties(relProp);
         relationships.add(relationship);
         return stat;
+    }
+
+    /**
+     * Like {@link #handleValueObj}, but for a field identified as the "locked" side of a
+     * paired relationship (see RESET_NODE_EXCLUDED_FIELD_TYPE_KEYS) - issues an immediate
+     * MERGE instead of batching a CREATE, so that if the other end of the pair already
+     * created this same edge (e.g. in the same commit request), this call matches it
+     * instead of adding a duplicate. Executed as its own statement rather than folded into
+     * store()'s Cypher-DSL CREATE chain, since MATCH...MERGE and MATCH...CREATE can't be
+     * mixed in a single DSL-built statement here.
+     */
+    private void mergeValueObj(DatabaseObject obj, Object value, Relationship rel, Integer order) {
+        DatabaseObject valueObj = null;
+        Map<String, Object> relProp = new HashMap<>();
+        if (order != null)
+            relProp.put(ORDER, order);
+        if (value instanceof DatabaseObject)
+            valueObj = (DatabaseObject) value;
+        else if (value instanceof StoichiometryObject) {
+            StoichiometryObject stoiObj = (StoichiometryObject) value;
+            valueObj = stoiObj.getObject();
+            relProp.put(STOICHIOMETRY, stoiObj.getStoichiometry());
+        }
+        if (valueObj == null || valueObj.getDbId() == null)
+            return; // Nothing needs to be done
+        String arrowLeft = "-";
+        String arrowRight = "-";
+        if (rel.direction() == Relationship.Direction.OUTGOING) {
+            arrowRight = "->";
+        } else if (rel.direction() == Relationship.Direction.INCOMING) {
+            arrowLeft = "<-";
+        }
+        String cypher = "MATCH (a:" + getNodeLabel(obj) + " {dbId: $aDbId}), (b:" + getNodeLabel(valueObj)
+                + " {dbId: $bDbId}) MERGE (a)" + arrowLeft + "[r:`" + rel.type() + "`]" + arrowRight + "(b)";
+        Map<String, Object> params = new HashMap<>();
+        params.put("aDbId", obj.getDbId());
+        params.put("bDbId", valueObj.getDbId());
+        if (!relProp.isEmpty()) {
+            cypher += " SET r += $relProp";
+            params.put("relProp", relProp);
+        }
+        neo4jClient.query(cypher).bindAll(params).run();
     }
 
     private String getNodeLabel(DatabaseObject obj) {
@@ -1468,6 +1564,13 @@ public class CurationRepository {
      * delete ALL of B's outgoing "inferredTo" edges - including the one representing
      * A.inferredFrom - via B's orthologousEvent mapping, and nothing recreates it.
      *
+     * PhysicalEntity and Regulation have the identical pair, just with the roles of the two
+     * field names swapped: their curator-editable field is literally named "inferredFrom"
+     * (INCOMING) - forced into getField2rel() despite being @ReactomeTransient in graph-core,
+     * see getField2rel() - and their NOMANUALEDIT-locked, non-editable mirror is literally
+     * named "inferredTo" (OUTGOING), not "orthologousEvent". So "inferredTo:inferredTo" here
+     * plays the same role as "orthologousEvent:inferredTo" does for Event.
+     *
      * Only the field NOT exposed to curators in curation_schema_attributes.json is
      * excluded here (confirmed via CuratorToolExporter's NOMANUALEDIT locking and by
      * checking the schema JSON directly) - the other, curator-editable field of each pair
@@ -1482,9 +1585,15 @@ public class CurationRepository {
      * ReferenceEntity.physicalEntity (type "referenceEntity", excluded here) has nothing to
      * do with PhysicalEntityCellType.physicalEntity or CatalystActivity.physicalEntity
      * (both type "physicalEntity", NOT excluded - they're ordinary single-owner fields).
+     *
+     * This same set is also consulted by store()'s relationship step to decide CREATE vs
+     * MERGE (see mergeValueObj()): since resetNode() never clears these fields first, a
+     * plain CREATE would duplicate the edge if the other end of the pair is committed
+     * separately (even in the same request) and already created it.
      */
     private static final Set<String> RESET_NODE_EXCLUDED_FIELD_TYPE_KEYS = Set.of(
             "orthologousEvent:inferredTo",
+            "inferredTo:inferredTo",
             "diseasePathways:normalPathway",
             "diseaseReactions:normalReaction",
             "physicalEntity:referenceEntity");
