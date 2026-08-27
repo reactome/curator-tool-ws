@@ -57,7 +57,7 @@
 		<dependency>
             <groupId>org.reactome.server.graph</groupId>
             <artifactId>graph-core</artifactId>
-            <version>3.0.1.CT</version>
+            <version>3.0.2.CT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>
@@ -98,7 +98,7 @@
         <dependency>
             <groupId>org.reactome.server.tools</groupId>
             <artifactId>reaction-exporter</artifactId>
-            <version>1.2.9.CT</version>
+            <version>1.3.0.CT</version>
 			<exclusions>
 				<exclusion>
 					<groupId>org.reactome.server.graph</groupId>
