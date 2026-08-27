@@ -11,6 +11,7 @@ import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -302,13 +303,25 @@ public class CurationRepository {
                 // Better to add first in case something is wrong during deletion
                 if (ie.getDbId() == null || ie.getDbId() < 0)
                     ie = (InstanceEdit) store(ie); // The cast should be safe
-                for (NamedReferrerList referList: referrers) {
+                // A single referrer may reference the deleted object via more than one attribute
+                // (e.g. as both input and catalyst of a reaction), so it can appear in more than one
+                // NamedReferrerList here. Dedupe by dbId so the same InstanceEdit isn't pushed onto
+                // its modified/modifiedList/structureModified more than once for this one deletion.
+                Map<Long, SimpleInstance> uniqueReferrers = new LinkedHashMap<>();
+                Set<Long> structureModifiedReferrerDbIds = new HashSet<>();
+                for (NamedReferrerList referList : referrers) {
+                    boolean isStructureRelated = CuratorToolWSUtils.getStructureRelatedAttributes().contains(referList.getAttributeName());
                     for (SimpleInstance referrer : referList.getReferrers()) {
-                        this.queryUtilities.addModifiedIE(referrer, ie, neo4jClient);
-                        // Check if structureModified slot needs to be updated too
-                        if (CuratorToolWSUtils.getStructureRelatedAttributes().contains(referList.getAttributeName())) {
-                            this.queryUtilities.downgradeReviewStatusWithStructureChange(referrer, ie, neo4jClient);
-                        }
+                        uniqueReferrers.put(referrer.getDbId(), referrer);
+                        if (isStructureRelated)
+                            structureModifiedReferrerDbIds.add(referrer.getDbId());
+                    }
+                }
+                for (SimpleInstance referrer : uniqueReferrers.values()) {
+                    this.queryUtilities.addModifiedIE(referrer, ie, neo4jClient);
+                    // Check if structureModified slot needs to be updated too
+                    if (structureModifiedReferrerDbIds.contains(referrer.getDbId())) {
+                        this.queryUtilities.downgradeReviewStatusWithStructureChange(referrer, ie, neo4jClient);
                     }
                 }
             }

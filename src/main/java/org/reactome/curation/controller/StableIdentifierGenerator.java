@@ -124,6 +124,7 @@ public class StableIdentifierGenerator {
         }
         else {
             rtn = new StableIdentifier();
+            rtn.setIdentifier(id);
             rtn.setIdentifierVersion("1");
             if (created != null)
                 rtn.setCreated(created);

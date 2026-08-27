@@ -21,8 +21,8 @@ public class DatabaseObjectNotFoundException extends DatabaseObjectException {
 
     @Override
     public String toString() {
-        return "Cannot find DatabaseObject with dbId, stId, and displayName: " +
-               this.dbId + ", " + this.stId + ", " + this.displayName;
+        return "Cannot find DatabaseObject with dbId and displayName: " +
+               this.dbId + ", " + this.displayName;
     }
 
 }
