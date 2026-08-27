@@ -258,6 +258,8 @@ public class CypherQueryUtilities {
                 + "MATCH (ie:" + getNodeLabel(ie) + " {dbId: $ieDbId}) "
                 + "CREATE (inst)<-[:modified]-(ie) "
                 + "WITH inst, ie "
+                + "OPTIONAL MATCH (inst)<-[dup:modifiedList]-(ie) "
+                + "WITH inst, ie WHERE dup IS NULL "
                 + "OPTIONAL MATCH (inst)<-[prevRel:modifiedList]-(:InstanceEdit) "
                 + "WITH inst, ie, coalesce(max(prevRel.order), 0) AS maxOrder "
                 + "CREATE (inst)<-[:modifiedList {order: maxOrder + 1}]-(ie) "
@@ -299,6 +301,8 @@ public class CypherQueryUtilities {
                         ") " +
                         "WITH e " + // Bridge variable after FOREACH
                         "MATCH (ie:InstanceEdit {dbId: $ieDbId}) " +
+                        "OPTIONAL MATCH (e)<-[dup:structureModified]-(ie) " +
+                        "WITH e, ie WHERE dup IS NULL " +
                         "OPTIONAL MATCH (e)<-[sm:structureModified]-(:InstanceEdit) " +
                         "WITH e, ie, coalesce(max(sm.order), 0) AS maxOrder " +
                         "CREATE (e)<-[:structureModified {order: maxOrder + 1}]-(ie)";
