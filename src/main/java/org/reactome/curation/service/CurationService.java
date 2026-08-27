@@ -53,6 +53,7 @@ public class CurationService {
     private Map<String, Map<String, CurationAttribute>> clsName2attName2Attribute;
     // Cache the class tree for quick service
     private SimpleSchemaClass schemaClassTree;
+
     
     // For queries
     @Autowired
@@ -158,13 +159,6 @@ public class CurationService {
                 prop.getAttributeClasses().clear();
                 prop.addAttributeClass(Event.class);
                 prop.addAttributeClass(PhysicalEntity.class);
-            }
-            // Same issue with Deletable
-            if (clsName.equals("Deleted") && propName.equals(ReactomeJavaConstants.replacementInstances)) {
-                prop.getAttributeClasses().clear();
-                prop.addAttributeClass(Event.class);
-                prop.addAttributeClass(PhysicalEntity.class);
-                prop.addAttributeClass(Regulation.class);
             }
             name2prop.put(propName, prop);
         }
