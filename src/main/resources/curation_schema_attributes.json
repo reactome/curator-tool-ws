@@ -2637,6 +2637,10 @@
     "definingType" : "UNDEFINED",
     "category" : "NOMANUALEDIT",
     "name" : "stId"
+  }, {
+    "definingType" : "NONE_DEFINING",
+    "category" : "NOMANUALEDIT",
+    "name" : "renderedInstance"
   } ],
   "RegulationReference" : [ {
     "definingType" : "UNDEFINED",

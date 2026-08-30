@@ -542,6 +542,12 @@ public class CurationService {
         curationRepository.addModifiedIE(target, modifiedIE);
     }
 
+    public void addModifiedIEAndRenderedInstance(DatabaseObject target,
+                                                  InstanceEdit modifiedIE,
+                                                  List<Long> renderedInstanceDbIds) throws Exception {
+        curationRepository.addModifiedIEAndRenderedInstance(target, modifiedIE, renderedInstanceDbIds);
+    }
+
     public Collection<NamedReferrerList> getReferrers(Long dbId) throws Exception {
         return curationRepository.getReferrers(dbId);
     }

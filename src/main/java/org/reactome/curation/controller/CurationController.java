@@ -166,10 +166,10 @@ public class CurationController {
                 return Boolean.FALSE;
             }
             InstanceEdit ie = converter.createInstanceEdit(dbId);
-            diagramService.saveCyNetwork(pathwayDiagramId, networkJson);
+            Set<Long> renderedInstanceDbIds = diagramService.saveCyNetwork(pathwayDiagramId, networkJson);
             // Delete the back up if any
             diagramService.deleteBackupCyNetwork(pathwayDiagramId);
-            service.addModifiedIE(pdInst, ie);
+            service.addModifiedIEAndRenderedInstance(pdInst, ie, new ArrayList<>(renderedInstanceDbIds));
             auditLogger.logDiagramUpdate(username, pathwayDiagramId, true, null);
             return Boolean.TRUE;
         }

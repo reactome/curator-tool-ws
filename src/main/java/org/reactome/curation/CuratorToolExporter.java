@@ -268,6 +268,17 @@ public class CuratorToolExporter {
                 authorNameAtt.setDefiningType(DefiningType.NONE_DEFINING);
                 curationAttributes.add(authorNameAtt);
             }
+            // renderedInstance is a graph-core/Neo4j-only relationship (computed from the diagram's
+            // content on save) with no corresponding attribute in the gk_central MySQL schema, so it
+            // never shows up via the SchemaAttribute loop above. Hard-coded here the same way as
+            // hasDiagram/authorName above, until it's added to the canonical reactome-schemas definition.
+            if (cls.getName().equals(ReactomeJavaConstants.PathwayDiagram)) {
+                CurationAttribute renderedInstanceAtt = new CurationAttribute();
+                renderedInstanceAtt.setName("renderedInstance");
+                renderedInstanceAtt.setCategory(Category.NOMANUALEDIT);
+                renderedInstanceAtt.setDefiningType(DefiningType.NONE_DEFINING);
+                curationAttributes.add(renderedInstanceAtt);
+            }
             String clsName = cls.getName();
             if (clsName.startsWith("_"))
                 clsName = clsName.substring(1);

@@ -17,6 +17,7 @@
 		<java.version>11</java.version>
 		<app.main.class>org.reactome.curation.CuratorToolWsApplication</app.main.class>
 		<user.manager.main.class>org.reactome.curation.UserManager</user.manager.main.class>
+		<diagram.backfill.main.class>org.reactome.curation.PathwayDiagramRenderedInstanceBackfillRunner</diagram.backfill.main.class>
 	</properties>
 	<dependencies>
         <dependency>
@@ -187,6 +188,16 @@
 							<classifier>usermanager</classifier>
 						</configuration>
 					</execution>
+					<execution>
+						<id>diagram-backfill-jar</id>
+						<phase>package</phase>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+						<configuration>
+							<classifier>diagrambackfill</classifier>
+						</configuration>
+					</execution>
 				</executions>
 			</plugin>
 			<plugin>
@@ -228,6 +239,16 @@
 						<configuration>
 							<classifier>usermanager</classifier>
 							<mainClass>${user.manager.main.class}</mainClass>
+						</configuration>
+					</execution>
+					<execution>
+						<id>repackage-diagram-backfill</id>
+						<goals>
+							<goal>repackage</goal>
+						</goals>
+						<configuration>
+							<classifier>diagrambackfill</classifier>
+							<mainClass>${diagram.backfill.main.class}</mainClass>
 						</configuration>
 					</execution>
 				</executions>

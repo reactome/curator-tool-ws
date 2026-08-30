@@ -272,6 +272,41 @@ public class CypherQueryUtilities {
     }
 
     /**
+     * Replace a PathwayDiagram's renderedInstance relationships with exactly the passed dbIds (i.e. this
+     * is a full replace, not an append, so a diagram that no longer draws something previously drawn will
+     * correctly lose that relationship).
+     * @param pathwayDiagram
+     * @param renderedInstanceDbIds
+     * @param neo4jClient
+     */
+    public void replaceRenderedInstance(DatabaseObject pathwayDiagram,
+                                         List<Long> renderedInstanceDbIds,
+                                         Neo4jClient neo4jClient) {
+        String cypher = ""
+                + "MATCH (pd:" + getNodeLabel(pathwayDiagram) + " {dbId: $pdDbId}) "
+                + "OPTIONAL MATCH (pd)-[r:renderedInstance]->(:DatabaseObject) "
+                + "DELETE r";
+        if (renderedInstanceDbIds != null && !renderedInstanceDbIds.isEmpty()) {
+            cypher += " "
+                    // DISTINCT is required here: the OPTIONAL MATCH/DELETE above produces one row per
+                    // pre-existing relationship (0 on a first save, N on every save after), and a plain
+                    // "WITH pd" would pass all N of those rows through unchanged, causing the UNWIND
+                    // below to run once per pre-existing row - i.e. N x len(ids) CREATEs instead of
+                    // len(ids). Confirmed empirically: a second save produced 13x13=169 relationships
+                    // instead of 13.
+                    + "WITH DISTINCT pd "
+                    + "UNWIND $ids AS id "
+                    + "MATCH (t:DatabaseObject {dbId: id}) "
+                    + "CREATE (pd)-[:renderedInstance]->(t)";
+        }
+
+        neo4jClient.query(cypher)
+        .bind(pathwayDiagram.getDbId()).to("pdDbId")
+        .bind(renderedInstanceDbIds == null ? new ArrayList<Long>() : renderedInstanceDbIds).to("ids")
+        .run();
+    }
+
+    /**
      * Add an existing InstanceEdit to an Event via its structureModified relationship.
      * @param dbObj
      * @param ie

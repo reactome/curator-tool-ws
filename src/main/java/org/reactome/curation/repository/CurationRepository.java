@@ -345,6 +345,30 @@ public class CurationRepository {
         this.queryUtilities.addModifiedIE(target, ie, neo4jClient);
     }
 
+    /**
+     * Bump target's modified/modifiedList InstanceEdit and replace its renderedInstance relationships in a
+     * single transaction, so a failure computing/persisting renderedInstance rolls back the modified bump
+     * too, rather than leaving the two out of sync. Used by the PathwayDiagram save path only.
+     */
+    @Transactional
+    public void addModifiedIEAndRenderedInstance(DatabaseObject target,
+                                                  InstanceEdit ie,
+                                                  List<Long> renderedInstanceDbIds) throws Exception {
+        if (ie.getDbId() == null || ie.getDbId() < 0)
+            ie = (InstanceEdit) store(ie); // The cast should be safe
+        this.queryUtilities.addModifiedIE(target, ie, neo4jClient);
+        this.queryUtilities.replaceRenderedInstance(target, renderedInstanceDbIds, neo4jClient);
+    }
+
+    /**
+     * Replace target's renderedInstance relationships only, without touching modified/modifiedList. Used
+     * by the one-time backfill script, which shouldn't fabricate a curator audit-trail edit.
+     */
+    @Transactional
+    public void replaceRenderedInstance(DatabaseObject target, List<Long> renderedInstanceDbIds) {
+        this.queryUtilities.replaceRenderedInstance(target, renderedInstanceDbIds, neo4jClient);
+    }
+
     // How many times to retry storeShell() with a freshly assigned dbId if the one handed out by
     // nextDbId() turns out to already be taken by a node some other, independent process inserted.
     private static final int MAX_DB_ID_ASSIGNMENT_RETRIES = 3;
