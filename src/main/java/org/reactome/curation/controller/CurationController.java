@@ -326,29 +326,29 @@ public class CurationController {
         }
     }
     
-    /**
-     * 
-     * @param dbIds
-     * @return
-     * @deprecated: Don't call this method. This is highly efficient and may cause out of memory issue.
-     */
-    @Deprecated
-    @PostMapping("findByDbIds")
-    public List<SimpleInstance> findByDbIds(@RequestBody List<Long> dbIds) {
-        try {
-            List<DatabaseObject> objs = service.findInstancesByIds(dbIds);
-            List<SimpleInstance> instances = new ArrayList<>(objs.size());
-            for (DatabaseObject obj : objs) {
-                SimpleInstance instance = converter.convert(obj);
-                instances.add(instance);
-            }
-            return instances;
-        }
-        catch(Exception e) {
-            logger.error("CurationController.findByDbIds: " + e.getMessage(), e);
-            throw new IllegalStateException(e.getMessage());
-        }
-    }
+//    /**
+//     *
+//     * @param dbIds
+//     * @return
+//     * @deprecated: Don't call this method. This is highly efficient and may cause out of memory issue.
+//     */
+//    @Deprecated
+//    @PostMapping("findByDbIds")
+//    public List<SimpleInstance> findByDbIds(@RequestBody List<Long> dbIds) {
+//        try {
+//            List<DatabaseObject> objs = service.findInstancesByIds(dbIds);
+//            List<SimpleInstance> instances = new ArrayList<>(objs.size());
+//            for (DatabaseObject obj : objs) {
+//                SimpleInstance instance = converter.convert(obj);
+//                instances.add(instance);
+//            }
+//            return instances;
+//        }
+//        catch(Exception e) {
+//            logger.error("CurationController.findByDbIds: " + e.getMessage(), e);
+//            throw new IllegalStateException(e.getMessage());
+//        }
+//    }
 
     /**
      * Lightweight alternative to findByDbIds() for callers that only need a displayName per
