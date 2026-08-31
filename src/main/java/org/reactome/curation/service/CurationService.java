@@ -118,7 +118,32 @@ public class CurationService {
     public DatabaseObject findById(Long dbId) {
        return objectRepository.findById(dbId, 1);
     }
-    
+
+    /**
+     * Fast, OGM-free alternative to findById() for the single-instance display/edit load -
+     * see CurationRepository.findInstanceFast() for why this is needed (ATP/ADP/Homo sapiens
+     * hang the OGM path). Returns null on anything unexpected (unknown class, no schema
+     * attributes, etc.) so the caller can fall back to the proven-correct
+     * findById()+DatabaseObjectInstanceConverter.convert() path - this must never make an
+     * instance less loadable than before, only faster for the common case.
+     */
+    public SimpleInstance findInstanceFast(Long dbId) {
+        try {
+            Map<Long, String> id2class = curationRepository.fetchSchemaClasses(List.of(dbId));
+            String className = id2class.get(dbId);
+            if (className == null)
+                return null; // No such node; let the caller's findById() report NotFound
+            List<CurationAttribute> attributes = getAttributes(className);
+            if (attributes.isEmpty())
+                return null;
+            return curationRepository.findInstanceFast(dbId, className, attributes);
+        }
+        catch (Exception e) {
+            logger.warn("findInstanceFast failed for dbId " + dbId + ", falling back to full load: " + e.getMessage());
+            return null;
+        }
+    }
+
     public DatabaseObject commit(DatabaseObject obj) throws Exception {
         return curationRepository.commit(obj);
     }

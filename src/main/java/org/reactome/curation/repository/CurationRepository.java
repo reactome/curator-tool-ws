@@ -31,6 +31,7 @@ import org.neo4j.cypherdsl.core.StatementBuilder.OngoingUpdate;
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
 import org.reactome.curation.exceptions.DatabaseObjectTypeMismatchException;
 import org.reactome.curation.exceptions.DbIdConflictException;
+import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.model.CurationAttribute.DefiningAttributeValue;
 import org.reactome.curation.util.CuratorToolWSUtils;
 import org.reactome.curation.model.DbIdDisplayName;
@@ -875,6 +876,156 @@ public class CurationRepository {
             participants.add(new ReactionParticipant(Long.parseLong(dbId.toString()), stoichiometry));
         }
         return participants;
+    }
+
+    // GK-schema class names occasionally differ in spelling from graph-core's Java class name
+    // (e.g. reactions are stored with schemaClass "ReactionlikeEvent", but the real Java class
+    // is "ReactionLikeEvent" - see the same mismatch patched around in CurationService's
+    // constructor for a different lookup). Add entries here as further mismatches are found.
+    private static final Map<String, String> SCHEMA_CLASS_NAME_ALIASES =
+            Map.of("ReactionlikeEvent", "ReactionLikeEvent");
+
+    /**
+     * Fast, OGM-free single-instance load for display: scalar attributes at full value, every
+     * instance-typed attribute reduced to a {dbId, displayName, schemaClassName} shell - the
+     * same wire shape DatabaseObjectInstanceConverter.convert() already produces. Reuses
+     * getField2rel(), the exact relationship type/direction map commit/store already trust,
+     * instead of graph-core's OGM findById(), which OPTIONAL MATCHes every relationship in both
+     * directions on every call and hangs for heavily cross-referenced entities (e.g. ATP, ADP,
+     * Homo sapiens) because it drags in every edge touching the node, including edges that
+     * aren't even declared Java fields on the class.
+     *
+     * @param schemaClassName the GK-schema class name, as returned by fetchSchemaClasses()
+     * @param attributes the curator schema attribute list for this class, as returned by
+     *                    CurationService.getAttributes() - the authoritative source of which
+     *                    attributes to populate, matching convert()'s own driving loop
+     * @return null if no node exists for dbId
+     */
+    public SimpleInstance findInstanceFast(Long dbId, String schemaClassName, List<CurationAttribute> attributes) throws ClassNotFoundException {
+        String javaClassName = SCHEMA_CLASS_NAME_ALIASES.getOrDefault(schemaClassName, schemaClassName);
+        Class<?> cls = Class.forName(DatabaseObject.class.getPackageName() + "." + javaClassName);
+        Map<String, Relationship> field2rel = getField2rel(cls);
+
+        List<CurationAttribute> relAttributes = new ArrayList<>();
+        List<CurationAttribute> scalarAttributes = new ArrayList<>();
+        for (CurationAttribute attribute : attributes) {
+            if (attribute.getProperties() == null)
+                continue; // Schema entry with no real backing field (e.g. Person.url)
+            if (field2rel.containsKey(attribute.getName()))
+                relAttributes.add(attribute);
+            else
+                scalarAttributes.add(attribute);
+        }
+
+        StringBuilder cypher = new StringBuilder("MATCH (n:DatabaseObject) WHERE n.dbId = $dbId ");
+        List<String> aliases = new ArrayList<>();
+        for (int i = 0; i < relAttributes.size(); i++) {
+            Relationship rel = field2rel.get(relAttributes.get(i).getName());
+            String type = rel.type().isEmpty() ? relAttributes.get(i).getName() : rel.type();
+            String relVar = "r" + i;
+            String targetVar = "t" + i;
+            String alias = "field" + i;
+            if (rel.direction() == Relationship.Direction.INCOMING)
+                cypher.append("OPTIONAL MATCH (n)<-[").append(relVar).append(":`").append(type).append("`]-(")
+                        .append(targetVar).append(":DatabaseObject) ");
+            else
+                cypher.append("OPTIONAL MATCH (n)-[").append(relVar).append(":`").append(type).append("`]->(")
+                        .append(targetVar).append(":DatabaseObject) ");
+            cypher.append("WITH n");
+            for (String prevAlias : aliases)
+                cypher.append(", ").append(prevAlias);
+            cypher.append(", collect(DISTINCT {dbId: ").append(targetVar).append(".dbId, displayName: ")
+                    .append(targetVar).append(".displayName, schemaClassName: ").append(targetVar)
+                    .append(".schemaClass, order: coalesce(").append(relVar).append(".order, 0)}) AS ")
+                    .append(alias).append(" ");
+            aliases.add(alias);
+        }
+        cypher.append("RETURN properties(n) AS props");
+        for (String alias : aliases)
+            cypher.append(", ").append(alias);
+
+        Optional<Map<String, Object>> rowOpt = neo4jClient.query(cypher.toString()).bind(dbId).to("dbId").fetch().one();
+        if (rowOpt.isEmpty())
+            return null;
+        Map<String, Object> row = rowOpt.get();
+        Map<String, Object> props = (Map<String, Object>) row.get("props");
+        if (props == null)
+            return null; // dbId matched but node has no properties at all - shouldn't happen
+
+        SimpleInstance instance = new SimpleInstance();
+        instance.setDbId(dbId);
+        instance.setSchemaClassName(schemaClassName);
+        Object displayName = props.get("displayName");
+        instance.setDisplayName(displayName == null ? null : displayName.toString());
+
+        for (CurationAttribute attribute : scalarAttributes) {
+            Object value = props.get(attribute.getName());
+            if (value != null)
+                instance.setAttribute(attribute.getName(), value);
+        }
+
+        for (int i = 0; i < relAttributes.size(); i++) {
+            CurationAttribute attribute = relAttributes.get(i);
+            List<SimpleInstance> shells = toShellList(row.get(aliases.get(i)));
+            if (shells.isEmpty())
+                continue;
+            if (isCollectionField(cls, attribute.getName()))
+                instance.setAttribute(attribute.getName(), shells);
+            else
+                instance.setAttribute(attribute.getName(), shells.get(0));
+        }
+        return instance;
+    }
+
+    /**
+     * Parses the {dbId, displayName, schemaClassName, order} maps collected by
+     * findInstanceFast() into shell SimpleInstances, sorted by the relationship's own "order"
+     * property when it carries one (e.g. Input/Output/HasComponent/RepeatedUnit - see
+     * org.reactome.server.graph.domain.relationship.Has). Relationships without an order
+     * property all coalesce to 0, which is a stable no-op sort that preserves whatever order
+     * Neo4j happened to return them in - the same "no explicit order guarantee" behavior
+     * DatabaseObjectInstanceConverter.convert() already has for those.
+     */
+    private List<SimpleInstance> toShellList(Object collected) {
+        if (!(collected instanceof Collection))
+            return Collections.emptyList();
+        List<Map<?, ?>> rows = new ArrayList<>();
+        for (Object item : (Collection<?>) collected) {
+            if (item instanceof Map && ((Map<?, ?>) item).get("dbId") != null)
+                rows.add((Map<?, ?>) item);
+        }
+        rows.sort(Comparator.comparingInt(m -> {
+            Object order = m.get("order");
+            return order == null ? 0 : Integer.parseInt(order.toString());
+        }));
+        List<SimpleInstance> shells = new ArrayList<>();
+        for (Map<?, ?> row : rows) {
+            SimpleInstance shell = new SimpleInstance();
+            shell.setDbId(Long.parseLong(row.get("dbId").toString()));
+            Object displayName = row.get("displayName");
+            shell.setDisplayName(displayName == null ? null : displayName.toString());
+            Object schemaClassName = row.get("schemaClassName");
+            shell.setSchemaClassName(schemaClassName == null ? null : schemaClassName.toString());
+            shells.add(shell);
+        }
+        return shells;
+    }
+
+    /**
+     * Whether the given attribute's declared Java field is a Collection (list cardinality) or a
+     * bare reference (single cardinality) - the same field walk as getField2rel(), just checking
+     * the field's type instead of its @Relationship annotation.
+     */
+    private boolean isCollectionField(Class<?> cls, String attrName) {
+        Class<?> _class = cls;
+        while (!_class.equals(Object.class)) {
+            for (Field field : _class.getDeclaredFields()) {
+                if (field.getName().equals(attrName))
+                    return Collection.class.isAssignableFrom(field.getType());
+            }
+            _class = _class.getSuperclass();
+        }
+        return false;
     }
 
     /**
