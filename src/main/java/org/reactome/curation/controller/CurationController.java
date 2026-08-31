@@ -10,10 +10,12 @@ import org.reactome.curation.exceptions.DatabaseObjectTypeMismatchException;
 import org.reactome.curation.exceptions.InstanceChangedException;
 import org.reactome.curation.exceptions.InstanceDeletionException;
 import org.reactome.curation.model.CurationAttribute;
+import org.reactome.curation.model.DbIdDisplayName;
 import org.reactome.curation.model.DiagramLock;
 import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.NamedReferrerList;
+import org.reactome.curation.model.ReactionStructure;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.model.SimpleSchemaClass;
 import org.reactome.curation.model.UserInstanceBackupSummary;
@@ -344,7 +346,44 @@ public class CurationController {
             throw new IllegalStateException(e.getMessage());
         }
     }
-    
+
+    /**
+     * Lightweight alternative to findByDbIds() for callers that only need a displayName per
+     * dbId (e.g. the pathway diagram content validator). Unlike findByDbIds()/findByDbId(),
+     * this never traverses relationships or hydrates a full DatabaseObject, so it stays fast
+     * even for heavily cross-referenced entities (e.g. ATP, ADP) that hang the other endpoints.
+     * @param dbIds
+     * @return
+     */
+    @PostMapping("findDisplayNamesByDbIds")
+    public List<DbIdDisplayName> findDisplayNamesByDbIds(@RequestBody List<Long> dbIds) {
+        try {
+            return service.findDisplayNamesByDbIds(dbIds);
+        }
+        catch(Exception e) {
+            logger.error("CurationController.findDisplayNamesByDbIds: " + e.getMessage(), e);
+            throw new IllegalStateException(e.getMessage());
+        }
+    }
+
+    /**
+     * Lightweight dbId-level structure (inputs, outputs, catalysts, regulators) for a set of
+     * reactions, for callers that need to compare a reaction's structure without loading full
+     * DatabaseObjects (e.g. the pathway diagram content validator).
+     * @param dbIds
+     * @return
+     */
+    @PostMapping("findReactionStructuresByDbIds")
+    public List<ReactionStructure> findReactionStructuresByDbIds(@RequestBody List<Long> dbIds) {
+        try {
+            return service.findReactionStructuresByDbIds(dbIds);
+        }
+        catch(Exception e) {
+            logger.error("CurationController.findReactionStructuresByDbIds: " + e.getMessage(), e);
+            throw new IllegalStateException(e.getMessage());
+        }
+    }
+
     /**
      * Call this method to fill the attributes for a LiteratureReference represented in
      * the passed SimpleInstance.

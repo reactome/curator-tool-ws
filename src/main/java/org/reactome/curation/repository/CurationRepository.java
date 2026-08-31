@@ -32,9 +32,13 @@ import org.reactome.curation.exceptions.DatabaseObjectTypeMismatchException;
 import org.reactome.curation.exceptions.DbIdConflictException;
 import org.reactome.curation.model.CurationAttribute.DefiningAttributeValue;
 import org.reactome.curation.util.CuratorToolWSUtils;
+import org.reactome.curation.model.DbIdDisplayName;
 import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.NamedReferrerList;
+import org.reactome.curation.model.ReactionParticipant;
+import org.reactome.curation.model.ReactionRegulator;
+import org.reactome.curation.model.ReactionStructure;
 import org.reactome.curation.model.Referrer;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.util.DatabaseObjectDisplayNameGenerator;
@@ -772,6 +776,102 @@ public class CurationRepository {
             id2Labels.put(dbId, labels);
         }
         return id2Labels;
+    }
+
+    /**
+     * Batch-fetches JUST dbId/displayName pairs, with no relationship traversal and no
+     * DatabaseObject/OGM entity hydration -- unlike findInstances()/AdvancedDatabaseObjectRepository
+     * .findById(), which OPTIONAL MATCH every relationship in both directions on every call, and
+     * consequently hang for heavily cross-referenced entities like ATP/ADP. Use this instead of
+     * findInstances()/findByDbId whenever only a label is needed (e.g. diagram validation).
+     */
+    public List<DbIdDisplayName> findDisplayNamesByDbIds(List<Long> dbIds) {
+        String cypher = "MATCH (n:DatabaseObject) WHERE n.dbId IN $dbIds RETURN n.dbId AS dbId, n.displayName AS displayName";
+        Collection<Map<String, Object>> results = neo4jClient.query(cypher).bind(dbIds).to("dbIds").fetch().all();
+        List<DbIdDisplayName> list = new ArrayList<>();
+        for (Map<String, Object> row : results) {
+            Long dbId = Long.parseLong(row.get("dbId").toString());
+            String displayName = (String) row.get("displayName");
+            list.add(new DbIdDisplayName(dbId, displayName));
+        }
+        return list;
+    }
+
+    /**
+     * Batch-fetches the dbId-level structure (inputs, outputs, catalysts, regulators) of a set of
+     * reactions via targeted relationship traversal -- only the specific relationship types
+     * needed, not the generic "every relationship in both directions" pattern used by
+     * findInstances()/findById(). Each OPTIONAL MATCH is aggregated via its own WITH before the
+     * next one starts, so the different participant kinds don't cross-multiply into a cartesian
+     * product. Stoichiometry/order are read directly as relationship properties (see
+     * org.reactome.server.graph.domain.relationship.Has), not via full entity hydration.
+     */
+    public List<ReactionStructure> findReactionStructuresByDbIds(List<Long> dbIds) {
+        String cypher = "" +
+                "MATCH (r:DatabaseObject) WHERE r.dbId IN $dbIds " +
+                "OPTIONAL MATCH (r)-[ri:input]->(i:DatabaseObject) " +
+                "WITH r, collect(DISTINCT {dbId: i.dbId, stoichiometry: coalesce(ri.stoichiometry, 1)}) AS inputs " +
+                "OPTIONAL MATCH (r)-[ro:output]->(o:DatabaseObject) " +
+                "WITH r, inputs, collect(DISTINCT {dbId: o.dbId, stoichiometry: coalesce(ro.stoichiometry, 1)}) AS outputs " +
+                "OPTIONAL MATCH (r)-[:catalystActivity]->(:DatabaseObject)-[:physicalEntity]->(cat:DatabaseObject) " +
+                "WITH r, inputs, outputs, collect(DISTINCT cat.dbId) AS catalysts " +
+                "OPTIONAL MATCH (r)-[:regulatedBy]->(reg:DatabaseObject)-[:regulator]->(regEntity:DatabaseObject) " +
+                "RETURN r.dbId AS reactionDbId, inputs, outputs, catalysts, " +
+                "       collect(DISTINCT {dbId: regEntity.dbId, labels: labels(reg)}) AS regulators";
+        Collection<Map<String, Object>> results = neo4jClient.query(cypher).bind(dbIds).to("dbIds").fetch().all();
+        List<ReactionStructure> list = new ArrayList<>();
+        for (Map<String, Object> row : results) {
+            Long reactionDbId = Long.parseLong(row.get("reactionDbId").toString());
+            List<ReactionParticipant> inputs = toParticipantList(row.get("inputs"));
+            List<ReactionParticipant> outputs = toParticipantList(row.get("outputs"));
+            List<Long> catalysts = new ArrayList<>();
+            Object catalystsObj = row.get("catalysts");
+            if (catalystsObj instanceof Collection) {
+                for (Object c : (Collection<?>) catalystsObj) {
+                    if (c != null)
+                        catalysts.add(Long.parseLong(c.toString()));
+                }
+            }
+            List<ReactionRegulator> regulators = new ArrayList<>();
+            Object regulatorsObj = row.get("regulators");
+            if (regulatorsObj instanceof Collection) {
+                for (Object regObj : (Collection<?>) regulatorsObj) {
+                    if (!(regObj instanceof Map))
+                        continue;
+                    Map<?, ?> regMap = (Map<?, ?>) regObj;
+                    Object regDbId = regMap.get("dbId");
+                    if (regDbId == null)
+                        continue; // No regulator for this reaction
+                    List<String> labels = new ArrayList<>();
+                    Object labelsObj = regMap.get("labels");
+                    if (labelsObj instanceof Collection) {
+                        for (Object label : (Collection<?>) labelsObj)
+                            labels.add(label.toString());
+                    }
+                    regulators.add(new ReactionRegulator(Long.parseLong(regDbId.toString()), labels));
+                }
+            }
+            list.add(new ReactionStructure(reactionDbId, inputs, outputs, catalysts, regulators));
+        }
+        return list;
+    }
+
+    private List<ReactionParticipant> toParticipantList(Object participantsObj) {
+        List<ReactionParticipant> participants = new ArrayList<>();
+        if (!(participantsObj instanceof Collection))
+            return participants;
+        for (Object pObj : (Collection<?>) participantsObj) {
+            if (!(pObj instanceof Map))
+                continue;
+            Map<?, ?> pMap = (Map<?, ?>) pObj;
+            Object dbId = pMap.get("dbId");
+            if (dbId == null)
+                continue; // No participant of this kind for this reaction
+            Object stoi = pMap.get("stoichiometry");
+            int stoichiometry = stoi == null ? 1 : Integer.parseInt(stoi.toString());
+            participants.add(new ReactionParticipant(Long.parseLong(dbId.toString()), stoichiometry));
+        }
+        return participants;
     }
 
     /**

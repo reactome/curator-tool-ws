@@ -401,6 +401,28 @@ public class CurationService {
         return curationRepository.findInstances(dbIds);
     }
 
+    /**
+     * Lightweight alternative to findInstancesByIds() for callers that only need a label,
+     * not a full DatabaseObject -- avoids the expensive relationship-traversal query that
+     * findInstances()/findById() use, which can hang for heavily cross-referenced entities.
+     * @param dbIds
+     * @return
+     */
+    public List<DbIdDisplayName> findDisplayNamesByDbIds(List<Long> dbIds) {
+        return curationRepository.findDisplayNamesByDbIds(dbIds);
+    }
+
+    /**
+     * Lightweight dbId-level structure (inputs, outputs, catalysts, regulators) of a set of
+     * reactions, for callers that need to compare a reaction's structure without loading full
+     * DatabaseObjects (e.g. the pathway diagram content validator).
+     * @param dbIds
+     * @return
+     */
+    public List<ReactionStructure> findReactionStructuresByDbIds(List<Long> dbIds) {
+        return curationRepository.findReactionStructuresByDbIds(dbIds);
+    }
+
     public Long getNextDbId(){
         return curationRepository.nextDbId();
     }
