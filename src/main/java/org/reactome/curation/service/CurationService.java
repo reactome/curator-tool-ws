@@ -118,7 +118,32 @@ public class CurationService {
     public DatabaseObject findById(Long dbId) {
        return objectRepository.findById(dbId, 1);
     }
-    
+
+    /**
+     * Fast, OGM-free alternative to findById() for the single-instance display/edit load -
+     * see CurationRepository.findInstanceFast() for why this is needed (ATP/ADP/Homo sapiens
+     * hang the OGM path). Returns null on anything unexpected (unknown class, no schema
+     * attributes, etc.) so the caller can fall back to the proven-correct
+     * findById()+DatabaseObjectInstanceConverter.convert() path - this must never make an
+     * instance less loadable than before, only faster for the common case.
+     */
+    public SimpleInstance findInstanceFast(Long dbId) {
+        try {
+            Map<Long, String> id2class = curationRepository.fetchSchemaClasses(List.of(dbId));
+            String className = id2class.get(dbId);
+            if (className == null)
+                return null; // No such node; let the caller's findById() report NotFound
+            List<CurationAttribute> attributes = getAttributes(className);
+            if (attributes.isEmpty())
+                return null;
+            return curationRepository.findInstanceFast(dbId, className, attributes);
+        }
+        catch (Exception e) {
+            logger.warn("findInstanceFast failed for dbId " + dbId + ", falling back to full load: " + e.getMessage());
+            return null;
+        }
+    }
+
     public DatabaseObject commit(DatabaseObject obj) throws Exception {
         return curationRepository.commit(obj);
     }
@@ -401,6 +426,28 @@ public class CurationService {
         return curationRepository.findInstances(dbIds);
     }
 
+    /**
+     * Lightweight alternative to findInstancesByIds() for callers that only need a label,
+     * not a full DatabaseObject -- avoids the expensive relationship-traversal query that
+     * findInstances()/findById() use, which can hang for heavily cross-referenced entities.
+     * @param dbIds
+     * @return
+     */
+    public List<DbIdDisplayName> findDisplayNamesByDbIds(List<Long> dbIds) {
+        return curationRepository.findDisplayNamesByDbIds(dbIds);
+    }
+
+    /**
+     * Lightweight dbId-level structure (inputs, outputs, catalysts, regulators) of a set of
+     * reactions, for callers that need to compare a reaction's structure without loading full
+     * DatabaseObjects (e.g. the pathway diagram content validator).
+     * @param dbIds
+     * @return
+     */
+    public List<ReactionStructure> findReactionStructuresByDbIds(List<Long> dbIds) {
+        return curationRepository.findReactionStructuresByDbIds(dbIds);
+    }
+
     public Long getNextDbId(){
         return curationRepository.nextDbId();
     }
@@ -540,6 +587,12 @@ public class CurationService {
     
     public void addModifiedIE(DatabaseObject target, InstanceEdit modifiedIE) throws Exception {
         curationRepository.addModifiedIE(target, modifiedIE);
+    }
+
+    public void addModifiedIEAndRenderedInstance(DatabaseObject target,
+                                                  InstanceEdit modifiedIE,
+                                                  List<Long> renderedInstanceDbIds) throws Exception {
+        curationRepository.addModifiedIEAndRenderedInstance(target, modifiedIE, renderedInstanceDbIds);
     }
 
     public Collection<NamedReferrerList> getReferrers(Long dbId) throws Exception {

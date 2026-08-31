@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -30,11 +31,16 @@ import org.neo4j.cypherdsl.core.StatementBuilder.OngoingUpdate;
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
 import org.reactome.curation.exceptions.DatabaseObjectTypeMismatchException;
 import org.reactome.curation.exceptions.DbIdConflictException;
+import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.model.CurationAttribute.DefiningAttributeValue;
 import org.reactome.curation.util.CuratorToolWSUtils;
+import org.reactome.curation.model.DbIdDisplayName;
 import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.NamedReferrerList;
+import org.reactome.curation.model.ReactionParticipant;
+import org.reactome.curation.model.ReactionRegulator;
+import org.reactome.curation.model.ReactionStructure;
 import org.reactome.curation.model.Referrer;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.util.DatabaseObjectDisplayNameGenerator;
@@ -335,6 +341,7 @@ public class CurationRepository {
         // Commit the deletion
         neo4jClient.query(query.getCypher()).run(); // This may return something. But for the time being, we don't care
         // as long as no exception is thrown.
+        invalidateEventTreeCache();
         return true;
     }
     
@@ -343,6 +350,30 @@ public class CurationRepository {
         if (ie.getDbId() == null || ie.getDbId() < 0)
             ie = (InstanceEdit) store(ie); // The cast should be safe
         this.queryUtilities.addModifiedIE(target, ie, neo4jClient);
+    }
+
+    /**
+     * Bump target's modified/modifiedList InstanceEdit and replace its renderedInstance relationships in a
+     * single transaction, so a failure computing/persisting renderedInstance rolls back the modified bump
+     * too, rather than leaving the two out of sync. Used by the PathwayDiagram save path only.
+     */
+    @Transactional
+    public void addModifiedIEAndRenderedInstance(DatabaseObject target,
+                                                  InstanceEdit ie,
+                                                  List<Long> renderedInstanceDbIds) throws Exception {
+        if (ie.getDbId() == null || ie.getDbId() < 0)
+            ie = (InstanceEdit) store(ie); // The cast should be safe
+        this.queryUtilities.addModifiedIE(target, ie, neo4jClient);
+        this.queryUtilities.replaceRenderedInstance(target, renderedInstanceDbIds, neo4jClient);
+    }
+
+    /**
+     * Replace target's renderedInstance relationships only, without touching modified/modifiedList. Used
+     * by the one-time backfill script, which shouldn't fabricate a curator audit-trail edit.
+     */
+    @Transactional
+    public void replaceRenderedInstance(DatabaseObject target, List<Long> renderedInstanceDbIds) {
+        this.queryUtilities.replaceRenderedInstance(target, renderedInstanceDbIds, neo4jClient);
     }
 
     // How many times to retry storeShell() with a freshly assigned dbId if the one handed out by
@@ -373,6 +404,7 @@ public class CurationRepository {
                 // Don't forget to copy the dbId there. It is not in the above loop.
                 proxyNode.setDbId(obj.getDbId());
                 neo4jTemplate.save(proxyNode);
+                invalidateEventTreeCache();
                 return obj;
             }
             catch (DataIntegrityViolationException e) {
@@ -748,6 +780,252 @@ public class CurationRepository {
             id2Labels.put(dbId, labels);
         }
         return id2Labels;
+    }
+
+    /**
+     * Batch-fetches JUST dbId/displayName pairs, with no relationship traversal and no
+     * DatabaseObject/OGM entity hydration -- unlike findInstances()/AdvancedDatabaseObjectRepository
+     * .findById(), which OPTIONAL MATCH every relationship in both directions on every call, and
+     * consequently hang for heavily cross-referenced entities like ATP/ADP. Use this instead of
+     * findInstances()/findByDbId whenever only a label is needed (e.g. diagram validation).
+     */
+    public List<DbIdDisplayName> findDisplayNamesByDbIds(List<Long> dbIds) {
+        String cypher = "MATCH (n:DatabaseObject) WHERE n.dbId IN $dbIds RETURN n.dbId AS dbId, n.displayName AS displayName";
+        Collection<Map<String, Object>> results = neo4jClient.query(cypher).bind(dbIds).to("dbIds").fetch().all();
+        List<DbIdDisplayName> list = new ArrayList<>();
+        for (Map<String, Object> row : results) {
+            Long dbId = Long.parseLong(row.get("dbId").toString());
+            String displayName = (String) row.get("displayName");
+            list.add(new DbIdDisplayName(dbId, displayName));
+        }
+        return list;
+    }
+
+    /**
+     * Batch-fetches the dbId-level structure (inputs, outputs, catalysts, regulators) of a set of
+     * reactions via targeted relationship traversal -- only the specific relationship types
+     * needed, not the generic "every relationship in both directions" pattern used by
+     * findInstances()/findById(). Each OPTIONAL MATCH is aggregated via its own WITH before the
+     * next one starts, so the different participant kinds don't cross-multiply into a cartesian
+     * product. Stoichiometry/order are read directly as relationship properties (see
+     * org.reactome.server.graph.domain.relationship.Has), not via full entity hydration.
+     */
+    public List<ReactionStructure> findReactionStructuresByDbIds(List<Long> dbIds) {
+        String cypher = "" +
+                "MATCH (r:DatabaseObject) WHERE r.dbId IN $dbIds " +
+                "OPTIONAL MATCH (r)-[ri:input]->(i:DatabaseObject) " +
+                "WITH r, collect(DISTINCT {dbId: i.dbId, stoichiometry: coalesce(ri.stoichiometry, 1)}) AS inputs " +
+                "OPTIONAL MATCH (r)-[ro:output]->(o:DatabaseObject) " +
+                "WITH r, inputs, collect(DISTINCT {dbId: o.dbId, stoichiometry: coalesce(ro.stoichiometry, 1)}) AS outputs " +
+                "OPTIONAL MATCH (r)-[:catalystActivity]->(:DatabaseObject)-[:physicalEntity]->(cat:DatabaseObject) " +
+                "WITH r, inputs, outputs, collect(DISTINCT cat.dbId) AS catalysts " +
+                "OPTIONAL MATCH (r)-[:regulatedBy]->(reg:DatabaseObject)-[:regulator]->(regEntity:DatabaseObject) " +
+                "RETURN r.dbId AS reactionDbId, inputs, outputs, catalysts, " +
+                "       collect(DISTINCT {dbId: regEntity.dbId, labels: labels(reg)}) AS regulators";
+        Collection<Map<String, Object>> results = neo4jClient.query(cypher).bind(dbIds).to("dbIds").fetch().all();
+        List<ReactionStructure> list = new ArrayList<>();
+        for (Map<String, Object> row : results) {
+            Long reactionDbId = Long.parseLong(row.get("reactionDbId").toString());
+            List<ReactionParticipant> inputs = toParticipantList(row.get("inputs"));
+            List<ReactionParticipant> outputs = toParticipantList(row.get("outputs"));
+            List<Long> catalysts = new ArrayList<>();
+            Object catalystsObj = row.get("catalysts");
+            if (catalystsObj instanceof Collection) {
+                for (Object c : (Collection<?>) catalystsObj) {
+                    if (c != null)
+                        catalysts.add(Long.parseLong(c.toString()));
+                }
+            }
+            List<ReactionRegulator> regulators = new ArrayList<>();
+            Object regulatorsObj = row.get("regulators");
+            if (regulatorsObj instanceof Collection) {
+                for (Object regObj : (Collection<?>) regulatorsObj) {
+                    if (!(regObj instanceof Map))
+                        continue;
+                    Map<?, ?> regMap = (Map<?, ?>) regObj;
+                    Object regDbId = regMap.get("dbId");
+                    if (regDbId == null)
+                        continue; // No regulator for this reaction
+                    List<String> labels = new ArrayList<>();
+                    Object labelsObj = regMap.get("labels");
+                    if (labelsObj instanceof Collection) {
+                        for (Object label : (Collection<?>) labelsObj)
+                            labels.add(label.toString());
+                    }
+                    regulators.add(new ReactionRegulator(Long.parseLong(regDbId.toString()), labels));
+                }
+            }
+            list.add(new ReactionStructure(reactionDbId, inputs, outputs, catalysts, regulators));
+        }
+        return list;
+    }
+
+    private List<ReactionParticipant> toParticipantList(Object participantsObj) {
+        List<ReactionParticipant> participants = new ArrayList<>();
+        if (!(participantsObj instanceof Collection))
+            return participants;
+        for (Object pObj : (Collection<?>) participantsObj) {
+            if (!(pObj instanceof Map))
+                continue;
+            Map<?, ?> pMap = (Map<?, ?>) pObj;
+            Object dbId = pMap.get("dbId");
+            if (dbId == null)
+                continue; // No participant of this kind for this reaction
+            Object stoi = pMap.get("stoichiometry");
+            int stoichiometry = stoi == null ? 1 : Integer.parseInt(stoi.toString());
+            participants.add(new ReactionParticipant(Long.parseLong(dbId.toString()), stoichiometry));
+        }
+        return participants;
+    }
+
+    // GK-schema class names occasionally differ in spelling from graph-core's Java class name
+    // (e.g. reactions are stored with schemaClass "ReactionlikeEvent", but the real Java class
+    // is "ReactionLikeEvent" - see the same mismatch patched around in CurationService's
+    // constructor for a different lookup). Add entries here as further mismatches are found.
+    private static final Map<String, String> SCHEMA_CLASS_NAME_ALIASES =
+            Map.of("ReactionlikeEvent", "ReactionLikeEvent");
+
+    /**
+     * Fast, OGM-free single-instance load for display: scalar attributes at full value, every
+     * instance-typed attribute reduced to a {dbId, displayName, schemaClassName} shell - the
+     * same wire shape DatabaseObjectInstanceConverter.convert() already produces. Reuses
+     * getField2rel(), the exact relationship type/direction map commit/store already trust,
+     * instead of graph-core's OGM findById(), which OPTIONAL MATCHes every relationship in both
+     * directions on every call and hangs for heavily cross-referenced entities (e.g. ATP, ADP,
+     * Homo sapiens) because it drags in every edge touching the node, including edges that
+     * aren't even declared Java fields on the class.
+     *
+     * @param schemaClassName the GK-schema class name, as returned by fetchSchemaClasses()
+     * @param attributes the curator schema attribute list for this class, as returned by
+     *                    CurationService.getAttributes() - the authoritative source of which
+     *                    attributes to populate, matching convert()'s own driving loop
+     * @return null if no node exists for dbId
+     */
+    public SimpleInstance findInstanceFast(Long dbId, String schemaClassName, List<CurationAttribute> attributes) throws ClassNotFoundException {
+        String javaClassName = SCHEMA_CLASS_NAME_ALIASES.getOrDefault(schemaClassName, schemaClassName);
+        Class<?> cls = Class.forName(DatabaseObject.class.getPackageName() + "." + javaClassName);
+        Map<String, Relationship> field2rel = getField2rel(cls);
+
+        List<CurationAttribute> relAttributes = new ArrayList<>();
+        List<CurationAttribute> scalarAttributes = new ArrayList<>();
+        for (CurationAttribute attribute : attributes) {
+            if (attribute.getProperties() == null)
+                continue; // Schema entry with no real backing field (e.g. Person.url)
+            if (field2rel.containsKey(attribute.getName()))
+                relAttributes.add(attribute);
+            else
+                scalarAttributes.add(attribute);
+        }
+
+        StringBuilder cypher = new StringBuilder("MATCH (n:DatabaseObject) WHERE n.dbId = $dbId ");
+        List<String> aliases = new ArrayList<>();
+        for (int i = 0; i < relAttributes.size(); i++) {
+            Relationship rel = field2rel.get(relAttributes.get(i).getName());
+            String type = rel.type().isEmpty() ? relAttributes.get(i).getName() : rel.type();
+            String relVar = "r" + i;
+            String targetVar = "t" + i;
+            String alias = "field" + i;
+            if (rel.direction() == Relationship.Direction.INCOMING)
+                cypher.append("OPTIONAL MATCH (n)<-[").append(relVar).append(":`").append(type).append("`]-(")
+                        .append(targetVar).append(":DatabaseObject) ");
+            else
+                cypher.append("OPTIONAL MATCH (n)-[").append(relVar).append(":`").append(type).append("`]->(")
+                        .append(targetVar).append(":DatabaseObject) ");
+            cypher.append("WITH n");
+            for (String prevAlias : aliases)
+                cypher.append(", ").append(prevAlias);
+            cypher.append(", collect(DISTINCT {dbId: ").append(targetVar).append(".dbId, displayName: ")
+                    .append(targetVar).append(".displayName, schemaClassName: ").append(targetVar)
+                    .append(".schemaClass, order: coalesce(").append(relVar).append(".order, 0)}) AS ")
+                    .append(alias).append(" ");
+            aliases.add(alias);
+        }
+        cypher.append("RETURN properties(n) AS props");
+        for (String alias : aliases)
+            cypher.append(", ").append(alias);
+
+        Optional<Map<String, Object>> rowOpt = neo4jClient.query(cypher.toString()).bind(dbId).to("dbId").fetch().one();
+        if (rowOpt.isEmpty())
+            return null;
+        Map<String, Object> row = rowOpt.get();
+        Map<String, Object> props = (Map<String, Object>) row.get("props");
+        if (props == null)
+            return null; // dbId matched but node has no properties at all - shouldn't happen
+
+        SimpleInstance instance = new SimpleInstance();
+        instance.setDbId(dbId);
+        instance.setSchemaClassName(schemaClassName);
+        Object displayName = props.get("displayName");
+        instance.setDisplayName(displayName == null ? null : displayName.toString());
+
+        for (CurationAttribute attribute : scalarAttributes) {
+            Object value = props.get(attribute.getName());
+            if (value != null)
+                instance.setAttribute(attribute.getName(), value);
+        }
+
+        for (int i = 0; i < relAttributes.size(); i++) {
+            CurationAttribute attribute = relAttributes.get(i);
+            List<SimpleInstance> shells = toShellList(row.get(aliases.get(i)));
+            if (shells.isEmpty())
+                continue;
+            if (isCollectionField(cls, attribute.getName()))
+                instance.setAttribute(attribute.getName(), shells);
+            else
+                instance.setAttribute(attribute.getName(), shells.get(0));
+        }
+        return instance;
+    }
+
+    /**
+     * Parses the {dbId, displayName, schemaClassName, order} maps collected by
+     * findInstanceFast() into shell SimpleInstances, sorted by the relationship's own "order"
+     * property when it carries one (e.g. Input/Output/HasComponent/RepeatedUnit - see
+     * org.reactome.server.graph.domain.relationship.Has). Relationships without an order
+     * property all coalesce to 0, which is a stable no-op sort that preserves whatever order
+     * Neo4j happened to return them in - the same "no explicit order guarantee" behavior
+     * DatabaseObjectInstanceConverter.convert() already has for those.
+     */
+    private List<SimpleInstance> toShellList(Object collected) {
+        if (!(collected instanceof Collection))
+            return Collections.emptyList();
+        List<Map<?, ?>> rows = new ArrayList<>();
+        for (Object item : (Collection<?>) collected) {
+            if (item instanceof Map && ((Map<?, ?>) item).get("dbId") != null)
+                rows.add((Map<?, ?>) item);
+        }
+        rows.sort(Comparator.comparingInt(m -> {
+            Object order = m.get("order");
+            return order == null ? 0 : Integer.parseInt(order.toString());
+        }));
+        List<SimpleInstance> shells = new ArrayList<>();
+        for (Map<?, ?> row : rows) {
+            SimpleInstance shell = new SimpleInstance();
+            shell.setDbId(Long.parseLong(row.get("dbId").toString()));
+            Object displayName = row.get("displayName");
+            shell.setDisplayName(displayName == null ? null : displayName.toString());
+            Object schemaClassName = row.get("schemaClassName");
+            shell.setSchemaClassName(schemaClassName == null ? null : schemaClassName.toString());
+            shells.add(shell);
+        }
+        return shells;
+    }
+
+    /**
+     * Whether the given attribute's declared Java field is a Collection (list cardinality) or a
+     * bare reference (single cardinality) - the same field walk as getField2rel(), just checking
+     * the field's type instead of its @Relationship annotation.
+     */
+    private boolean isCollectionField(Class<?> cls, String attrName) {
+        Class<?> _class = cls;
+        while (!_class.equals(Object.class)) {
+            for (Field field : _class.getDeclaredFields()) {
+                if (field.getName().equals(attrName))
+                    return Collection.class.isAssignableFrom(field.getType());
+            }
+            _class = _class.getSuperclass();
+        }
+        return false;
     }
 
     /**
@@ -1333,11 +1611,41 @@ public class CurationRepository {
         }
     }
 
+    // getEventTree() traverses the hasEvent graph for the whole database (getAllEvents() has no
+    // species filter) and rebuilds the tree from scratch on every call, which is expensive and
+    // almost always returns the same result: the pathway hierarchy only changes when a commit/
+    // delete/storeShell happens in this app, and each of those explicitly calls
+    // invalidateEventTreeCache(). The TTL below is just a safety net for writes made outside this
+    // app (e.g. a separate import/batch process touching the same database).
+    private static final long EVENT_TREE_CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+
+    private static class CachedEventTree {
+        final List<SimpleInstance> tree;
+        final long cachedAtMs;
+        CachedEventTree(List<SimpleInstance> tree, long cachedAtMs) {
+            this.tree = tree;
+            this.cachedAtMs = cachedAtMs;
+        }
+    }
+
+    // Keyed by the speciesName parameter (the frontend always passes "all" today, but this stays
+    // correct if per-species requests are ever added).
+    private final Map<String, CachedEventTree> eventTreeCache = new ConcurrentHashMap<>();
+
+    public void invalidateEventTreeCache() {
+        eventTreeCache.clear();
+    }
+
     /**
      * This method will return anything listed under TopLevelEvents regardless their species assignment.
      * @return List of top events.
      */
     public List<SimpleInstance> getEventTree(String speciesName) {
+        CachedEventTree cached = eventTreeCache.get(speciesName);
+        if (cached != null && (System.currentTimeMillis() - cached.cachedAtMs) < EVENT_TREE_CACHE_TTL_MS) {
+            logger.debug("Returning cached event tree for species: " + speciesName);
+            return cached.tree;
+        }
         logger.debug("Getting TopLevelPathway events..");
         List<SimpleInstance> topEvents = getTopEvents(speciesName);
         Integer topEventsCount = topEvents.size();
@@ -1349,6 +1657,7 @@ public class CurationRepository {
             populateChildren(inst, parentDbId2DbId2SimpleInstance);
         }
         logger.debug("Events tree is ready.");
+        eventTreeCache.put(speciesName, new CachedEventTree(topEvents, System.currentTimeMillis()));
         return topEvents;
     }
 
@@ -1691,10 +2000,15 @@ public class CurationRepository {
             if (storedSchemaClass != null && !storedSchemaClass.equals(obj.getSchemaClass())) {
                 switchNodeLabels(obj);
             }
-            return update(obj);
+            DatabaseObject result = update(obj);
+            invalidateEventTreeCache();
+            return result;
         }
-        else
-            return store(obj);
+        else {
+            DatabaseObject result = store(obj);
+            invalidateEventTreeCache();
+            return result;
+        }
     }
 
     /**

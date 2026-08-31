@@ -108,10 +108,10 @@ public class PathwayDiagramService {
      * @param cytoscapeJSON
      * @throws Exception
      */
-    public void saveCyNetwork(Long pathwayDiagramId, JsonNode cytoscapeJSON) throws Exception {
+    public Set<Long> saveCyNetwork(Long pathwayDiagramId, JsonNode cytoscapeJSON) throws Exception {
         String text = this.mapper.writeValueAsString(cytoscapeJSON);
         this.diagramRepository.saveCyNetwork(pathwayDiagramId, text);
-        this.exportPathwayDiagramJSON(pathwayDiagramId, cytoscapeJSON);
+        return this.exportPathwayDiagramJSON(pathwayDiagramId, cytoscapeJSON);
     }
 
     // The following three methods are used to handle automatic backup of a cytosacpe diagram under editing.
@@ -145,13 +145,15 @@ public class PathwayDiagramService {
         this.diagramRepository.deleteBackupCyNetwork(pathwayDiagramId);
     }
     
-    public void exportPathwayDiagramJSON(Long pathwayDiagramId, JsonNode cytoscapeJSON) throws Exception {
+    public Set<Long> exportPathwayDiagramJSON(Long pathwayDiagramId, JsonNode cytoscapeJSON) throws Exception {
         this.initGraphConvertObjects();
         RenderablePathway diagram = converter.convert(cytoscapeJSON, pathwayDiagramId);
         diagram.setReactomeDiagramId(pathwayDiagramId); // Just in case this is not set
         // Step 1: Check if there is any need to create an overlay
         PathwayDiagram pathwayDiagram = (PathwayDiagram) curationService.findById(pathwayDiagramId);
         List<Pathway> representedPathways = pathwayDiagram.getRepresentedPathway();
+        Set<Long> renderedInstanceDbIds = new HashSet<>();
+        collectReactomeIds(diagram, renderedInstanceDbIds);
         // Step 2: If this is just a normal diagram (only one representedPathway), save it directly
         if (representedPathways.size() == 1) {
             Pathway pathway = representedPathways.get(0);
@@ -163,8 +165,57 @@ public class PathwayDiagramService {
                                                                                                representedPathways);
             for (Pathway pathway : pathway2diagram.keySet()) {
                 RenderablePathway pDiagram = pathway2diagram.get(pathway);
+                collectReactomeIds(pDiagram, renderedInstanceDbIds);
                 generateDiagramJSON(pDiagram, pathway);
             }
+        }
+        return renderedInstanceDbIds;
+    }
+
+    /**
+     * Computes the set of dbIds actually drawn in the passed Cytoscape JSON, without performing any of the
+     * file-writing side effects of exportPathwayDiagramJSON. Used by the backfill script, and shares the
+     * same conversion logic exportPathwayDiagramJSON uses for the live save path, so the two can never
+     * silently diverge.
+     */
+    public Set<Long> computeRenderedInstanceDbIds(Long pathwayDiagramId, JsonNode cytoscapeJSON) throws Exception {
+        this.initGraphConvertObjects();
+        RenderablePathway diagram = converter.convert(cytoscapeJSON, pathwayDiagramId);
+        diagram.setReactomeDiagramId(pathwayDiagramId);
+        PathwayDiagram pathwayDiagram = (PathwayDiagram) curationService.findById(pathwayDiagramId);
+        List<Pathway> representedPathways = pathwayDiagram.getRepresentedPathway();
+
+        Set<Long> dbIds = new HashSet<>();
+        collectReactomeIds(diagram, dbIds);
+        if (representedPathways.size() > 1) {
+            Map<Pathway, RenderablePathway> pathway2diagram = diagramOverlayer.overlayDiagrams(diagram, representedPathways);
+            for (RenderablePathway pDiagram : pathway2diagram.values())
+                collectReactomeIds(pDiagram, dbIds);
+        }
+        return dbIds;
+    }
+
+    /**
+     * Computes the set of dbIds drawn in an already-built RenderablePathway - e.g. one parsed from the
+     * legacy diagram XML stored in the relational database's storedATXML attribute (see
+     * org.gk.persistence.DiagramGKBReader#openDiagram(String)) for a PathwayDiagram that has never been
+     * edited through this tool and so has no Cytoscape JSON file. Shares the same classification logic
+     * as the other overloads.
+     */
+    public Set<Long> computeRenderedInstanceDbIds(RenderablePathway diagram) {
+        Set<Long> dbIds = new HashSet<>();
+        collectReactomeIds(diagram, dbIds);
+        return dbIds;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void collectReactomeIds(RenderablePathway diagram, Set<Long> dbIds) {
+        if (diagram.getComponents() == null)
+            return;
+        for (Renderable r : (List<Renderable>) diagram.getComponents()) {
+            Long dbId = r.getReactomeId();
+            if (dbId != null)
+                dbIds.add(dbId);
         }
     }
     
