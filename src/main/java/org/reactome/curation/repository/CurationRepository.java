@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -339,6 +340,7 @@ public class CurationRepository {
         // Commit the deletion
         neo4jClient.query(query.getCypher()).run(); // This may return something. But for the time being, we don't care
         // as long as no exception is thrown.
+        invalidateEventTreeCache();
         return true;
     }
     
@@ -401,6 +403,7 @@ public class CurationRepository {
                 // Don't forget to copy the dbId there. It is not in the above loop.
                 proxyNode.setDbId(obj.getDbId());
                 neo4jTemplate.save(proxyNode);
+                invalidateEventTreeCache();
                 return obj;
             }
             catch (DataIntegrityViolationException e) {
@@ -1457,11 +1460,41 @@ public class CurationRepository {
         }
     }
 
+    // getEventTree() traverses the hasEvent graph for the whole database (getAllEvents() has no
+    // species filter) and rebuilds the tree from scratch on every call, which is expensive and
+    // almost always returns the same result: the pathway hierarchy only changes when a commit/
+    // delete/storeShell happens in this app, and each of those explicitly calls
+    // invalidateEventTreeCache(). The TTL below is just a safety net for writes made outside this
+    // app (e.g. a separate import/batch process touching the same database).
+    private static final long EVENT_TREE_CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+
+    private static class CachedEventTree {
+        final List<SimpleInstance> tree;
+        final long cachedAtMs;
+        CachedEventTree(List<SimpleInstance> tree, long cachedAtMs) {
+            this.tree = tree;
+            this.cachedAtMs = cachedAtMs;
+        }
+    }
+
+    // Keyed by the speciesName parameter (the frontend always passes "all" today, but this stays
+    // correct if per-species requests are ever added).
+    private final Map<String, CachedEventTree> eventTreeCache = new ConcurrentHashMap<>();
+
+    public void invalidateEventTreeCache() {
+        eventTreeCache.clear();
+    }
+
     /**
      * This method will return anything listed under TopLevelEvents regardless their species assignment.
      * @return List of top events.
      */
     public List<SimpleInstance> getEventTree(String speciesName) {
+        CachedEventTree cached = eventTreeCache.get(speciesName);
+        if (cached != null && (System.currentTimeMillis() - cached.cachedAtMs) < EVENT_TREE_CACHE_TTL_MS) {
+            logger.debug("Returning cached event tree for species: " + speciesName);
+            return cached.tree;
+        }
         logger.debug("Getting TopLevelPathway events..");
         List<SimpleInstance> topEvents = getTopEvents(speciesName);
         Integer topEventsCount = topEvents.size();
@@ -1473,6 +1506,7 @@ public class CurationRepository {
             populateChildren(inst, parentDbId2DbId2SimpleInstance);
         }
         logger.debug("Events tree is ready.");
+        eventTreeCache.put(speciesName, new CachedEventTree(topEvents, System.currentTimeMillis()));
         return topEvents;
     }
 
@@ -1815,10 +1849,15 @@ public class CurationRepository {
             if (storedSchemaClass != null && !storedSchemaClass.equals(obj.getSchemaClass())) {
                 switchNodeLabels(obj);
             }
-            return update(obj);
+            DatabaseObject result = update(obj);
+            invalidateEventTreeCache();
+            return result;
         }
-        else
-            return store(obj);
+        else {
+            DatabaseObject result = store(obj);
+            invalidateEventTreeCache();
+            return result;
+        }
     }
 
     /**
