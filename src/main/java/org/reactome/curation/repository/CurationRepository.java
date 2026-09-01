@@ -35,7 +35,9 @@ import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.model.CurationAttribute.DefiningAttributeValue;
 import org.reactome.curation.util.CuratorToolWSUtils;
 import org.reactome.curation.model.DbIdDisplayName;
+import org.reactome.curation.model.EwasModifiedResidues;
 import org.reactome.curation.model.InstanceList;
+import org.reactome.curation.model.ModifiedResidueEntry;
 import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.NamedReferrerList;
 import org.reactome.curation.model.ReactionParticipant;
@@ -876,6 +878,42 @@ public class CurationRepository {
             participants.add(new ReactionParticipant(Long.parseLong(dbId.toString()), stoichiometry));
         }
         return participants;
+    }
+
+    /**
+     * Batch-fetches each EWAS's hasModifiedResidue entries (the ModifiedResidue's own dbId
+     * plus its psiMod's label -- the only piece actually drawn as a "node feature" mark on
+     * the pathway diagram) via targeted relationship traversal, not the generic "every
+     * relationship in both directions" pattern findInstances()/findById() use. A residue with
+     * no psiMod/label is excluded, matching what the diagram's own node-feature rendering
+     * (instance-converter.ts's createModificationNodes()) already filters out client-side.
+     */
+    public List<EwasModifiedResidues> findModifiedResiduesByDbIds(List<Long> dbIds) {
+        String cypher = "" +
+                "MATCH (e:DatabaseObject) WHERE e.dbId IN $dbIds " +
+                "OPTIONAL MATCH (e)-[:hasModifiedResidue]->(m:DatabaseObject)-[:psiMod]->(p:DatabaseObject) " +
+                "RETURN e.dbId AS ewasDbId, collect(DISTINCT {dbId: m.dbId, label: p.label}) AS residues";
+        Collection<Map<String, Object>> results = neo4jClient.query(cypher).bind(dbIds).to("dbIds").fetch().all();
+        List<EwasModifiedResidues> list = new ArrayList<>();
+        for (Map<String, Object> row : results) {
+            Long ewasDbId = Long.parseLong(row.get("ewasDbId").toString());
+            List<ModifiedResidueEntry> residues = new ArrayList<>();
+            Object residuesObj = row.get("residues");
+            if (residuesObj instanceof Collection) {
+                for (Object rObj : (Collection<?>) residuesObj) {
+                    if (!(rObj instanceof Map))
+                        continue;
+                    Map<?, ?> rMap = (Map<?, ?>) rObj;
+                    Object dbId = rMap.get("dbId");
+                    Object label = rMap.get("label");
+                    if (dbId == null || label == null)
+                        continue; // No modified residue of this kind, or no psiMod/label to draw
+                    residues.add(new ModifiedResidueEntry(Long.parseLong(dbId.toString()), label.toString()));
+                }
+            }
+            list.add(new EwasModifiedResidues(ewasDbId, residues));
+        }
+        return list;
     }
 
     // GK-schema class names occasionally differ in spelling from graph-core's Java class name

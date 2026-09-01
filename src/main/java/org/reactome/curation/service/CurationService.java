@@ -448,6 +448,18 @@ public class CurationService {
         return curationRepository.findReactionStructuresByDbIds(dbIds);
     }
 
+    /**
+     * Lightweight hasModifiedResidue entries (dbId + psiMod label) for a set of
+     * EntityWithAccessionedSequence instances, for callers that need to compare drawn
+     * "node feature" marks without loading full DatabaseObjects (e.g. the pathway diagram
+     * content validator).
+     * @param dbIds
+     * @return
+     */
+    public List<EwasModifiedResidues> findModifiedResiduesByDbIds(List<Long> dbIds) {
+        return curationRepository.findModifiedResiduesByDbIds(dbIds);
+    }
+
     public Long getNextDbId(){
         return curationRepository.nextDbId();
     }
