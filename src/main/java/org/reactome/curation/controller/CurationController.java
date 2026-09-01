@@ -12,6 +12,7 @@ import org.reactome.curation.exceptions.InstanceDeletionException;
 import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.model.DbIdDisplayName;
 import org.reactome.curation.model.DiagramLock;
+import org.reactome.curation.model.EwasModifiedResidues;
 import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ListOperand;
 import org.reactome.curation.model.NamedReferrerList;
@@ -383,6 +384,25 @@ public class CurationController {
         }
         catch(Exception e) {
             logger.error("CurationController.findReactionStructuresByDbIds: " + e.getMessage(), e);
+            throw new IllegalStateException(e.getMessage());
+        }
+    }
+
+    /**
+     * Lightweight hasModifiedResidue entries (dbId + psiMod label) for a set of
+     * EntityWithAccessionedSequence instances, for callers that need to compare the "node
+     * feature" marks drawn on the diagram without loading full DatabaseObjects (e.g. the
+     * pathway diagram content validator).
+     * @param dbIds
+     * @return
+     */
+    @PostMapping("findModifiedResiduesByDbIds")
+    public List<EwasModifiedResidues> findModifiedResiduesByDbIds(@RequestBody List<Long> dbIds) {
+        try {
+            return service.findModifiedResiduesByDbIds(dbIds);
+        }
+        catch(Exception e) {
+            logger.error("CurationController.findModifiedResiduesByDbIds: " + e.getMessage(), e);
             throw new IllegalStateException(e.getMessage());
         }
     }
