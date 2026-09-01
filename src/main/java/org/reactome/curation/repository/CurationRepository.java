@@ -974,7 +974,8 @@ public class CurationRepository {
                 cypher.append(", ").append(prevAlias);
             cypher.append(", collect(DISTINCT {dbId: ").append(targetVar).append(".dbId, displayName: ")
                     .append(targetVar).append(".displayName, schemaClassName: ").append(targetVar)
-                    .append(".schemaClass, order: coalesce(").append(relVar).append(".order, 0)}) AS ")
+                    .append(".schemaClass, order: coalesce(").append(relVar).append(".order, 0), stoichiometry: coalesce(")
+                    .append(relVar).append(".stoichiometry, 1)}) AS ")
                     .append(alias).append(" ");
             aliases.add(alias);
         }
@@ -1016,13 +1017,22 @@ public class CurationRepository {
     }
 
     /**
-     * Parses the {dbId, displayName, schemaClassName, order} maps collected by
+     * Parses the {dbId, displayName, schemaClassName, order, stoichiometry} maps collected by
      * findInstanceFast() into shell SimpleInstances, sorted by the relationship's own "order"
      * property when it carries one (e.g. Input/Output/HasComponent/RepeatedUnit - see
-     * org.reactome.server.graph.domain.relationship.Has). Relationships without an order
-     * property all coalesce to 0, which is a stable no-op sort that preserves whatever order
-     * Neo4j happened to return them in - the same "no explicit order guarantee" behavior
-     * DatabaseObjectInstanceConverter.convert() already has for those.
+     * org.reactome.server.graph.domain.relationship.Has), then EXPANDED by "stoichiometry" -
+     * a target with stoichiometry 2 appears twice in the returned list - matching
+     * Has.Util.expandStoichiometry(), which CuratorToolWSUtils.getOrderedPhysicalEntities()
+     * (used by the old DatabaseObjectInstanceConverter.convert() path this replaces) already
+     * expands the same way for Reaction input/output, Complex hasComponent, and Polymer
+     * repeatedUnit specifically. Applying it uniformly to every relationship attribute here,
+     * rather than hardcoding that same class/attribute list, is deliberate: stoichiometry
+     * defaults to 1 for every Has<E>-backed relationship, so expansion is a harmless no-op
+     * wherever a target's true cardinality is 1, and automatically covers every current and
+     * future class where it can genuinely exceed 1, not just the three known today.
+     * Relationships without an order property all coalesce to 0, which is a stable no-op sort
+     * that preserves whatever order Neo4j happened to return them in - the same "no explicit
+     * order guarantee" behavior DatabaseObjectInstanceConverter.convert() already has for those.
      */
     private List<SimpleInstance> toShellList(Object collected) {
         if (!(collected instanceof Collection))
@@ -1038,13 +1048,24 @@ public class CurationRepository {
         }));
         List<SimpleInstance> shells = new ArrayList<>();
         for (Map<?, ?> row : rows) {
-            SimpleInstance shell = new SimpleInstance();
-            shell.setDbId(Long.parseLong(row.get("dbId").toString()));
+            Long dbId = Long.parseLong(row.get("dbId").toString());
             Object displayName = row.get("displayName");
-            shell.setDisplayName(displayName == null ? null : displayName.toString());
             Object schemaClassName = row.get("schemaClassName");
-            shell.setSchemaClassName(schemaClassName == null ? null : schemaClassName.toString());
-            shells.add(shell);
+            Object stoi = row.get("stoichiometry");
+            int stoichiometry = stoi == null ? 1 : Integer.parseInt(stoi.toString());
+            // A fresh SimpleInstance per copy, not the same reference reused stoichiometry
+            // times: SimpleInstance inherits DatabaseObject's @JsonIdentityInfo(property =
+            // "dbId"), so Jackson would otherwise serialize the same object reference in full
+            // only the first time it appears in this list and collapse every repeat into a
+            // bare dbId integer instead of a shell object - silently corrupting every
+            // stoichiometry > 1 entry on the wire.
+            for (int i = 0; i < stoichiometry; i++) {
+                SimpleInstance shell = new SimpleInstance();
+                shell.setDbId(dbId);
+                shell.setDisplayName(displayName == null ? null : displayName.toString());
+                shell.setSchemaClassName(schemaClassName == null ? null : schemaClassName.toString());
+                shells.add(shell);
+            }
         }
         return shells;
     }
