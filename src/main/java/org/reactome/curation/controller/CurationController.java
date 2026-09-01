@@ -5,8 +5,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
 import org.reactome.curation.exceptions.DatabaseObjectTypeMismatchException;
 import org.reactome.curation.exceptions.InstanceChangedException;
@@ -63,7 +61,7 @@ import lombok.NoArgsConstructor;
 @CrossOrigin
 public class CurationController {
     private static final Logger logger = LoggerFactory.getLogger(CurationController.class);
-    
+
     @Autowired
     private CurationService service;
     @Autowired
@@ -103,12 +101,12 @@ public class CurationController {
             throw new IllegalStateException(e.getMessage());
         }
     }
-    
+
     @GetMapping("hasDiagram/{dbId}")
     public Boolean hasDiagram(@PathVariable("dbId") Long dbId) throws IOException {
         return diagramService.hasDiagramJson(dbId);
     }
-    
+
     @GetMapping("getCyNetwork/{pathwayId}")
     public JsonNode loadCyNetwork(@PathVariable("pathwayId") Long pathwayId) {
         try {
@@ -142,16 +140,16 @@ public class CurationController {
             throw new IllegalStateException(e.getMessage());
         }
     }
-    
+
     @GetMapping("hasCyNetwork/{pathwayId}")
     public Boolean hasCyNetwork(@PathVariable("pathwayId") Long pathwayId) throws IOException {
         return diagramService.hasCyNetwork(pathwayId);
     }
-    
+
     //NB: This method has not been listed in the test!
     @PostMapping("uploadCyNetwork/{pathwayId}")
     public Boolean saveCyNetwork(@PathVariable("pathwayId") Long pathwayDiagramId,
-                                        @RequestBody JsonNode networkJson) {
+                                 @RequestBody JsonNode networkJson) {
         String username = getUsername();
         try {
             JsonNode defaultPersonNode = networkJson == null ? null : networkJson.get("defaultPersonId");
@@ -195,8 +193,8 @@ public class CurationController {
      */
     @PostMapping("backupCyNetwork/{diagramId}/{lockId}")
     public Boolean backupCyNetwork(@PathVariable("diagramId") Long pathwayDiagramId,
-                                          @PathVariable("lockId") String lockId,
-                                          @RequestBody JsonNode networkJson) {
+                                   @PathVariable("lockId") String lockId,
+                                   @RequestBody JsonNode networkJson) {
         // To backup, the user must be have the lock to avoid overwrite other's changes.
         String username = getUsername();
         DiagramLock lock = diagramLockService.getLock(pathwayDiagramId);
@@ -301,12 +299,12 @@ public class CurationController {
         DatabaseObject obj = service.findById(dbId);
         return obj;
     }
-    
+
     @GetMapping("existsByDbId/{dbId}")
     public Boolean existsByDbId(@PathVariable("dbId") Long dbId) {
         return this.service.existsById(dbId);
     }
-    
+
     @GetMapping("findByDbId/{dbId}")
     public SimpleInstance findByDdIdInInstance(@PathVariable("dbId") Long dbId) {
         try {
@@ -327,7 +325,7 @@ public class CurationController {
             throw new IllegalStateException(e.getMessage());
         }
     }
-    
+
 //    /**
 //     *
 //     * @param dbIds
@@ -404,7 +402,7 @@ public class CurationController {
         catch(Exception e) {
             logger.error("CurationController.fillReference: " + e.getMessage(), e);
             throw new IllegalStateException(e.getMessage());
-        } 
+        }
     }
 
     /**
@@ -455,9 +453,9 @@ public class CurationController {
     }
 
     //TODO: The error handling needs to be updated
-    // See: https://www.toptal.com/java/spring-boot-rest-api-error-handling  
+    // See: https://www.toptal.com/java/spring-boot-rest-api-error-handling
     /**
-     * Call this method to either store a new instance or update an existing 
+     * Call this method to either store a new instance or update an existing
      * instance. The implementation of this method will figure out which approach
      * should be used.
      * @param instance
@@ -492,13 +490,13 @@ public class CurationController {
             }
 
             // Step 1: Store new instances first so that we can have their correct dbIds
-            if (!isUpdate) 
+            if (!isUpdate)
                 service.commitNewInstanceInShell(databaseObject);
             for (DatabaseObject newInstance : newInstances) {
                 service.commitNewInstanceInShell(newInstance);
             }
             // Step 2: Make sure stable identifiers are assigned if needed
-            // We need to do this before the final commit so that the StableIdentifier 
+            // We need to do this before the final commit so that the StableIdentifier
             // instances can be committed together (Note: New StableIdentifier instances
             // have null dbId here).
             this.stableIdentifierGenerator.setStableIdentifier(databaseObject);
@@ -525,7 +523,7 @@ public class CurationController {
             for (DatabaseObject newInstance : newInstances) {
                 commitAndAudit(username, newInstance, true);
             }
-                        
+
             // For the front end, we just need to return a SimpleInstance having attributes that may change
             SimpleInstance rtn = converter.convertInShell(stored);
             if (isStableIdentifierModified)
@@ -552,9 +550,9 @@ public class CurationController {
         }
     }
 
-    
+
     /**
-     * Delete a SimpleInstance object. 
+     * Delete a SimpleInstance object.
      * @param instance
      * @return
      */
@@ -577,7 +575,7 @@ public class CurationController {
             throw new IllegalStateException(e.getMessage());
         }
     }
-    
+
     /**
      * Delete one or more than one instances by parsing the Deleted object from the front end.
      * @param instance
@@ -602,7 +600,7 @@ public class CurationController {
             throw new IllegalStateException(e.getMessage());
         }
     }
-    
+
     @GetMapping("getAttributes/{className}")
     public List<CurationAttribute> getAttributes(@PathVariable("className") String className) {
         try {
@@ -613,11 +611,11 @@ public class CurationController {
             return Collections.EMPTY_LIST;
         }
     }
-    
+
     /**
-     * Fetch a pathway diagram for a given pathway dbId. The returned SimpleInstance 
-     * is a shell object having only dbId, displayName, schemaClass. 
-     * 
+     * Fetch a pathway diagram for a given pathway dbId. The returned SimpleInstance
+     * is a shell object having only dbId, displayName, schemaClass.
+     *
      */
     @GetMapping("fetchPathwayDiagramForPathway/{dbId}")
     public SimpleInstance fetchPathwayDiagramForPathway(@PathVariable("dbId") Long dbId) {
@@ -626,10 +624,10 @@ public class CurationController {
             throw new DatabaseObjectNotFoundException(dbId);
         return instance;
     }
-    
+
     /**
      * This API can accept an optional parameter called query for searching based on display name
-     * in the format like ?query=TP53. 
+     * in the format like ?query=TP53.
      * Note: the query string should be encoded using the standard http way from the front end (e.g. no space, etc).
      * @param className
      * @param skip
@@ -642,28 +640,23 @@ public class CurationController {
                                       @PathVariable("limit") Integer limit,
                                       // Make sure to use Optional so that we can take a URL without query.
                                       @RequestParam("query") Optional<String> query) {
-        return service.listInstances(className, 
-                skip, 
+        return service.listInstances(className,
+                skip,
                 limit,
                 query.isEmpty() ? null : query.get());
     }
-    
+
 
     /**
-     * Search instances for lists of attributes, operands and searckKeys. Basically this is a more 
+     * Search instances for lists of attributes, operands and searckKeys. Basically this is a more
      * powerful listInstances. But to make the API simpler, this method is split from listInstances.
      * The frontend should determine what API should be called.
-     * <p>
-     * Attributes and operands come from fixed vocabularies and are still sent as single
-     * comma-delimited parameters. Search keys are not: a term is whatever the curator typed,
-     * and a REGEX term legitimately contains commas (a quantifier such as a{2,3}). They are
-     * therefore read as repeated searchKeys parameters so each one arrives verbatim.
      * @param className
      * @param skip
      * @param limit
      * @param attributes
      * @param operands
-     * @param request supplies the repeated searchKeys parameters
+     * @param searchKeys
      * @return
      */
     @GetMapping("searchInstances/{className}/{skip}/{limit}")
@@ -672,17 +665,14 @@ public class CurationController {
                                         @PathVariable("limit") Integer limit,
                                         @RequestParam("attributes") Optional<String> attributes,
                                         @RequestParam("operands") Optional<String> operands,
-                                        HttpServletRequest request) {
+                                        @RequestParam("searchKeys") Optional<String> searchKeys) {
         try {
-            // Read searchKeys straight off the request: binding to a List would let Spring
-            // split a single value on commas, which is exactly what has to be avoided here.
-            String[] searchKeys = request.getParameterValues("searchKeys");
             // In any of the following case, we will use listInstances
-            if (attributes.isEmpty() || operands.isEmpty() || searchKeys == null || searchKeys.length == 0)
+            if (attributes.isEmpty() || operands.isEmpty() || searchKeys.isEmpty())
                 return service.listInstances(className, skip, limit, null);
             List<String> attributeList = List.of(attributes.get().split(","));
             List<String> operandList = List.of(operands.get().split(","));
-            List<String> keyList = splitSearchKeys(searchKeys, attributeList.size());
+            List<String> keyList = List.of(searchKeys.get().split(","));
             // Make sure all three lists have the same length
             if ((attributeList.size() != operandList.size()) ||
                     (attributeList.size() != keyList.size())) {
@@ -713,7 +703,7 @@ public class CurationController {
                 listOperandList.add(listOperand);
             }
             return service.listInstances(className,
-                    skip, 
+                    skip,
                     limit,
                     attributeList,
                     attributeTypeList,
@@ -726,23 +716,7 @@ public class CurationController {
         }
     }
 
-    /**
-     * Turn the repeated searchKeys parameters into one key per attribute.
-     * <p>
-     * Older clients (and any bookmarked URL from one) send a single comma-delimited
-     * searchKeys parameter instead, so a lone value covering several attributes is split
-     * the way it used to be. A lone value for a single attribute is never split, which is
-     * what lets a one-condition regex such as a{2,3} through untouched.
-     * @param searchKeys the values supplied for the searchKeys parameter
-     * @param expectedSize how many keys the attribute list calls for
-     */
-    private List<String> splitSearchKeys(String[] searchKeys, int expectedSize) {
-        if (searchKeys.length == 1 && expectedSize > 1)
-            return List.of(searchKeys[0].split(","));
-        return List.of(searchKeys);
-    }
-    
-    
+
     /**
      * This API is used to find an instance based on its displayName in a list of provided class names.
      * @param displayName
@@ -756,7 +730,7 @@ public class CurationController {
         List<String> clsNameList = Stream.of(tokens).map(token -> token.trim()).collect(Collectors.toList());
         return service.findInstance(displayName, clsNameList);
     }
-    
+
     /**
      * This method accepts an optional query as listInstances.
      * @param className
@@ -783,7 +757,7 @@ public class CurationController {
             return new SimpleSchemaClass(); // Just return an empty node
         }
     }
-    
+
     @GetMapping("loadInstances/{account}")
     public UserInstances loadInstances(@PathVariable("account") String account) {
         try {
@@ -852,7 +826,7 @@ public class CurationController {
             logger.error("CurationController.deletePersistedInstances: " + e.getMessage(), e);
         }
     }
-    
+
     @PostMapping("persistInstances/{account}")
     public void persistInstances(@RequestBody UserInstances instances,
                                  @PathVariable("account") String account) {
@@ -920,9 +894,9 @@ public class CurationController {
     public List<SimpleInstance> getEventTree(@PathVariable("speciesName") String speciesName) {
         return service.getEventTree(speciesName);
     }
-    
+
     /**
-     * Fetch all reaction participants so that the reaction can be laid out fully in 
+     * Fetch all reaction participants so that the reaction can be laid out fully in
      * a pathway diagram.
      * @param dbId
      * @return
@@ -1007,7 +981,7 @@ public class CurationController {
     private String getUsername() {
         try {
             org.springframework.security.core.Authentication auth =
-                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+                    org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
             if (auth != null && auth.isAuthenticated()) {
                 return auth.getName();
             }
