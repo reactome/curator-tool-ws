@@ -126,6 +126,10 @@ public class CytoscapJSToRenderableDiagramConverter {
         JsonNode nodes = elements.path("nodes");
         // Keep reaction nodes for later use
         Map<Long, JsonNode> reactionIdToNode = new java.util.HashMap<>();
+        // Keyed by the small internal cytoscape node id (not reactomeId) deliberately: the same
+        // reactomeId can legitimately be drawn more than once in one diagram (e.g. ATP, to avoid
+        // excessive edge-crossing), so only the internal id unambiguously identifies which drawn
+        // occurrence a modification mark (handleModifications() below) belongs to.
         Map<Integer, Renderable> idToRenderable = new java.util.HashMap<>();
         if (nodes.isArray()) {
             // Handle compartments in the second pass.
@@ -371,11 +375,18 @@ public class CytoscapJSToRenderableDiagramConverter {
         return renderable;
     }
     
-    private void handleModifications(List<JsonNode> modifications, Map<Integer, Renderable> id2Renderable) {
+    private void handleModifications(List<JsonNode> modifications, Map<Integer, Renderable> idToRenderable) {
         for (JsonNode modification : modifications) {
             Long modDbId = modification.path("data").path("reactomeId").asLong();
-            Integer nodeId = modification.path("data").path("nodeReactomeId").asInt();
-            Renderable renderable = id2Renderable.get(nodeId);
+            // "nodeId" is the parent's small internal cytoscape node id, NOT its reactomeId -
+            // deliberately, since the same reactomeId can legitimately be drawn more than once in
+            // one diagram (e.g. ATP), and only the internal id unambiguously identifies which
+            // drawn occurrence this modification belongs to. See
+            // instance-converter.ts's createModificationNodes(), which sets this field alongside
+            // the (separate, still reactomeId-based) nodeReactomeId field the diagram content
+            // validator uses for its own database-identity checks.
+            Integer nodeId = modification.path("data").path("nodeId").asInt();
+            Renderable renderable = idToRenderable.get(nodeId);
             if (renderable == null) {
                 logger.error("Cannot find node for modification with dbId: " + modDbId + " and nodeId: " + nodeId);
                 continue;
@@ -542,8 +553,19 @@ public class CytoscapJSToRenderableDiagramConverter {
             Renderable node = idToRenderable.get(nodeId);
 
             if (node != null) {
-                if (isInput) hyperEdge.addInput((Node) node);
-                else hyperEdge.addOutput((Node) node);
+                Integer stoi = edge.path("data").path("stoichiometry").asInt(1);
+                if (isInput) {
+                    hyperEdge.addInput((Node) node);
+                    if (stoi != 1 && hyperEdge instanceof RenderableReaction) {
+                        ((RenderableReaction) hyperEdge).setInputStoichiometry((Node) node, stoi);
+                    }
+                }
+                else {
+                    hyperEdge.addOutput((Node) node);
+                    if (stoi != 1 && hyperEdge instanceof RenderableReaction) {
+                        ((RenderableReaction) hyperEdge).setOutputStoichiometry((Node) node, stoi);
+                    }
+                }
             } else {
                 logger.error("Cannot find {} node for {} edge id: {}",
                         isInput ? "source" : "target",
