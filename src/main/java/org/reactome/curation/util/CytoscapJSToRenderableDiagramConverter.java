@@ -54,6 +54,9 @@ public class CytoscapJSToRenderableDiagramConverter {
     private static final Logger logger = LoggerFactory.getLogger(CytoscapJSToRenderableDiagramConverter.class);
     // Use to check if two points are the same
     private static final double TOLERANCE = 1.5d;
+    // Soft line-break hint the diagram library injects into labels for rendering. See
+    // stripRenderOnlyCharacters().
+    private static final String ZERO_WIDTH_SPACE = "\u200b";
     private Map<String, Long> compartmentNameToIdMap = null;
     // When a diagram is loaded into cytoscape-based angular diagram, it is scaled by 2 for some reason
     // See the code here: https://github.com/reactome/ngx-reactome-base/blob/7c8af600fb9ac56fd3681e6518124ff5e8d5afa4/projects/ngx-reactome-diagram/src/lib/services/diagram.service.ts#L25
@@ -117,7 +120,9 @@ public class CytoscapJSToRenderableDiagramConverter {
         return diagram;
     }
     
-    private void convert(JsonNode cytoscapeNode, RenderablePathway diagram) throws Exception {
+    // Package-private rather than private so tests can exercise the cytoscape -> Renderable mapping
+    // without going through validateDiagram(), which needs an AWT-backed PathwayEditor.
+    void convert(JsonNode cytoscapeNode, RenderablePathway diagram) throws Exception {
         // Implement the logic to convert Cytoscape.js JSON nodes to RenderablePathway elements
         // Elements block has nodes + edges
         JsonNode elements = cytoscapeNode.path("elements");
@@ -127,6 +132,10 @@ public class CytoscapJSToRenderableDiagramConverter {
         // Keep reaction nodes for later use
         Map<Long, JsonNode> reactionIdToNode = new java.util.HashMap<>();
         Map<Integer, Renderable> idToRenderable = new java.util.HashMap<>();
+        // Modification nodes created by the frontend for newly added instances carry only
+        // nodeReactomeId, so we need to be able to resolve a parent by dbId too. See
+        // handleModifications().
+        Map<Long, Renderable> reactomeIdToRenderable = new java.util.HashMap<>();
         if (nodes.isArray()) {
             // Handle compartments in the second pass.
             Map<Integer, List<JsonNode>> id2Compartment = new java.util.HashMap<>();
@@ -173,8 +182,11 @@ public class CytoscapJSToRenderableDiagramConverter {
 
                 renderable.setReactomeId(Long.parseLong(reactomeId));
                 renderable.setID(Integer.parseInt(id));
-                renderable.setDisplayName(displayName);
+                renderable.setDisplayName(stripRenderOnlyCharacters(displayName));
                 idToRenderable.put(renderable.getID(), renderable);
+                // First one wins: a PhysicalEntity may be drawn more than once in a diagram, which is
+                // exactly why nodeId is the preferred key in handleModifications().
+                reactomeIdToRenderable.putIfAbsent(renderable.getReactomeId(), renderable);
                 String label = data.path("label").asText("");
                 String type = data.path("type").asText("");
 
@@ -194,7 +206,7 @@ public class CytoscapJSToRenderableDiagramConverter {
                 diagram.addComponent(renderable);
             }
             handleCompartments(id2Compartment, diagram, cytoscapeNode);
-            handleModifications(modifications, idToRenderable);
+            handleModifications(modifications, idToRenderable, reactomeIdToRenderable);
         }
 
         /* ---- Traverse Edges ---- */
@@ -371,22 +383,56 @@ public class CytoscapJSToRenderableDiagramConverter {
         return renderable;
     }
     
-    private void handleModifications(List<JsonNode> modifications, Map<Integer, Renderable> id2Renderable) {
+    /**
+     * The diagram library injects a zero-width space after every '/', ',', ':', ';' and '-' in a
+     * displayName so long labels get somewhere to wrap. That is a rendering concern only, but the
+     * cytoscape JSON we get back carries the decorated string, and persisting it would write those
+     * characters into the diagram JSON we serve (and hence into the release download). Strip them here,
+     * at the single point where cytoscape labels become model displayNames.
+     */
+    static String stripRenderOnlyCharacters(String displayName) {
+        if (displayName == null)
+            return null;
+        return displayName.replace(ZERO_WIDTH_SPACE, "");
+    }
+
+    /**
+     * Fold cytoscape nodes of class "Modification" back into their parent Node's attachments.
+     * <p>
+     * There are two producers of these nodes and they do not agree on which key identifies the parent:
+     * ngx-reactome-diagram, when it renders an existing diagram, sets both {@code nodeId} (the layout
+     * node id) and {@code nodeReactomeId} (the parent's dbId); the curator tool's own instance-converter,
+     * when the curator adds a new instance, historically set only {@code nodeReactomeId}. Since
+     * {@code id2Renderable} is keyed by layout node id, resolving through {@code nodeReactomeId} alone
+     * silently dropped every attachment on a pre-existing diagram - the two keyspaces are disjoint.
+     * So: prefer {@code nodeId}, fall back to {@code nodeReactomeId}.
+     */
+    private void handleModifications(List<JsonNode> modifications,
+                                     Map<Integer, Renderable> id2Renderable,
+                                     Map<Long, Renderable> reactomeId2Renderable) {
         for (JsonNode modification : modifications) {
-            Long modDbId = modification.path("data").path("reactomeId").asLong();
-            Integer nodeId = modification.path("data").path("nodeReactomeId").asInt();
-            Renderable renderable = id2Renderable.get(nodeId);
+            JsonNode data = modification.path("data");
+            Long modDbId = data.path("reactomeId").asLong();
+            Renderable renderable = null;
+            // asInt()/asLong() return 0 for a missing field, so check for the field itself.
+            if (data.hasNonNull("nodeId"))
+                renderable = id2Renderable.get(data.path("nodeId").asInt());
+            if (renderable == null && data.hasNonNull("nodeReactomeId"))
+                renderable = reactomeId2Renderable.get(data.path("nodeReactomeId").asLong());
             if (renderable == null) {
-                logger.error("Cannot find node for modification with dbId: " + modDbId + " and nodeId: " + nodeId);
+                logger.error("Cannot find node for modification with dbId: " + modDbId +
+                        ", nodeId: " + data.path("nodeId").asText("<none>") +
+                        ", nodeReactomeId: " + data.path("nodeReactomeId").asText("<none>"));
                 continue;
             }
             if (!(renderable instanceof Node)) {
-                logger.error("Modification with dbId: " + modDbId + " is attached to a non-Node Renderable with id: " + nodeId);
+                logger.error("Modification with dbId: " + modDbId +
+                        " is attached to a non-Node Renderable: " + renderable.getID());
                 continue;
             }
             // We will use RenderableFeature to represent modification
             RenderableFeature attachment = new RenderableFeature();
-            String label = modification.path("data").path("displayName").asText("");
+            String label = stripRenderOnlyCharacters(data.path("displayName").asText(""));
             attachment.setLabel(label);
             attachment.setReactomeId(modDbId);
             // Need to get relative position to the top-left corner of the node
@@ -872,7 +918,9 @@ public class CytoscapJSToRenderableDiagramConverter {
             }
             // Handle outer first
             JsonNode data = outerNode.path("data");
-            String displayName = data.path("displayName").asText();
+            // Strip before the map lookup below: a compartment whose name contains '-' (e.g.
+            // "Golgi-associated vesicle") comes back decorated and would not match otherwise.
+            String displayName = stripRenderOnlyCharacters(data.path("displayName").asText());
             Long compartmentDbId = this.compartmentNameToIdMap.get(displayName);
             if (compartmentDbId == null) {
                 logger.error("Skipping compartment with id: " + compartmentId + " and displayName: " + displayName);
