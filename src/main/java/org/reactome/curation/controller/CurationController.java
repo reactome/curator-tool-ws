@@ -13,6 +13,7 @@ import org.reactome.curation.exceptions.InstanceChangedException;
 import org.reactome.curation.exceptions.InstanceDeletionException;
 import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.model.DbIdDisplayName;
+import org.reactome.curation.model.EventTree;
 import org.reactome.curation.model.DiagramLock;
 import org.reactome.curation.model.EwasModifiedResidues;
 import org.reactome.curation.model.InstanceList;
@@ -936,8 +937,13 @@ public class CurationController {
 
 
 
+    /**
+     * The pathway hierarchy, plus any circular hasEvent relationships that had to be dropped to
+     * build it (see EventTree). The curator tool reports those in the event view, which is where a
+     * curator now learns that an edit made in the schema view created one.
+     */
     @GetMapping("getEventTree/{speciesName}")
-    public List<SimpleInstance> getEventTree(@PathVariable("speciesName") String speciesName) {
+    public EventTree getEventTree(@PathVariable("speciesName") String speciesName) {
         return service.getEventTree(speciesName);
     }
     

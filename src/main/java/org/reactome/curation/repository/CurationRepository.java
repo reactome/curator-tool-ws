@@ -35,6 +35,8 @@ import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.model.CurationAttribute.DefiningAttributeValue;
 import org.reactome.curation.util.CuratorToolWSUtils;
 import org.reactome.curation.model.DbIdDisplayName;
+import org.reactome.curation.model.EventTree;
+import org.reactome.curation.model.EventTreeCycle;
 import org.reactome.curation.model.EwasModifiedResidues;
 import org.reactome.curation.model.InstanceList;
 import org.reactome.curation.model.ModifiedResidueEntry;
@@ -1648,13 +1650,40 @@ public class CurationRepository {
      * Populate into hasEvent field of inst the list of children (recursively)
      *
      * @param inst
-     * @param parentDbId2DbId2SimpleInstance
-     * @param recursive
-     * @return flag to indicate that at least one child (recursively) matched
-     *         searchKey (see: getTopEvents() and getAllEvents()
+     * @param parentDbId2DbId2SimpleInstance the child events of each event, keyed by parent dbId
+     *                                       (see getAllEvents())
+     */
+    // Package-private rather than private so CurationRepositoryEventTreeCycleTest can build a
+    // hierarchy by hand and check it against one holding a cycle, without a database.
+    List<EventTreeCycle> populateChildren(SimpleInstance inst,
+                                          Map<Long, Map<Long, SimpleInstance>> parentDbId2DbId2SimpleInstance) {
+        Map<String, EventTreeCycle> cycles = new LinkedHashMap<>();
+        populateChildren(inst, parentDbId2DbId2SimpleInstance, new LinkedHashMap<>(), cycles);
+        return new ArrayList<>(cycles.values());
+    }
+
+    /**
+     * @param ancestors the events this call is nested inside, keyed by dbId in path order so that
+     *                  a cycle can be reported as the containment path the curator has to break. A
+     *                  hasEvent cycle would otherwise recurse until the stack runs out, and since
+     *                  this builds the whole pathway hierarchy in one pass, a single cyclic
+     *                  relationship would fail getEventTree() for every user - leaving the curator
+     *                  tool with no event tree to find and remove that relationship through. The
+     *                  relationship that closes the cycle is dropped from the tree and recorded in
+     *                  {@code cycles} instead, so the rest of the hierarchy still loads and the
+     *                  event view can tell the curator what was dropped.
+     *                  <p>
+     *                  Note that this tracks the current path, not every event seen: the same
+     *                  event legitimately appears under several parents (Cell Cycle Checkpoints,
+     *                  as above), and each of those occurrences must still be populated.
+     * @param cycles    the dropped relationships, keyed by "parentDbId>childDbId" so that a cycle
+     *                  sitting under several top-level pathways is reported once rather than once
+     *                  per route down to it.
      */
     private void populateChildren(SimpleInstance inst,
-                                  Map<Long, Map<Long, SimpleInstance>> parentDbId2DbId2SimpleInstance) {
+                                  Map<Long, Map<Long, SimpleInstance>> parentDbId2DbId2SimpleInstance,
+                                  LinkedHashMap<Long, String> ancestors,
+                                  Map<String, EventTreeCycle> cycles) {
         if (!parentDbId2DbId2SimpleInstance.containsKey(inst.getDbId()))
             return;
         Long dbId = inst.getDbId();
@@ -1664,10 +1693,38 @@ public class CurationRepository {
         List<SimpleInstance> cloned = childEvents.stream().map(child -> child.cloneInstance()).collect(Collectors.toList());
         // Need to sort hasEvent list based on order
         cloned.sort((i1, i2) -> Integer.parseInt(i1.getAttribute("order") + "") - (Integer.parseInt(i2.getAttribute("order") + "")));
+        ancestors.put(dbId, inst.getDisplayName());
+        cloned.removeIf(child -> {
+            if (!ancestors.containsKey(child.getDbId()))
+                return false;
+            logger.warn(String.format("Circular hasEvent: %d (%s) is inside itself via %s. "
+                            + "Dropping that relationship from the event tree; it needs removing in the database.",
+                    child.getDbId(), child.getDisplayName(), ancestors.keySet()));
+            cycles.computeIfAbsent(dbId + ">" + child.getDbId(),
+                    key -> new EventTreeCycle(containmentPath(ancestors, child.getDbId())));
+            return true;
+        });
         inst.setAttribute("hasEvent", cloned);
         for (SimpleInstance childEvent : cloned) {
-            populateChildren(childEvent, parentDbId2DbId2SimpleInstance);
+            populateChildren(childEvent, parentDbId2DbId2SimpleInstance, ancestors, cycles);
         }
+        ancestors.remove(dbId);
+    }
+
+    /**
+     * The cycle itself, as the stretch of the current path that runs from {@code childDbId} - the
+     * event about to be put inside itself - down to the event being populated. Anything above
+     * {@code childDbId} in the path is how the recursion reached the cycle, not part of it, and
+     * would only make the message harder to act on.
+     */
+    private List<DbIdDisplayName> containmentPath(LinkedHashMap<Long, String> ancestors, Long childDbId) {
+        List<DbIdDisplayName> path = new ArrayList<>();
+        for (Map.Entry<Long, String> ancestor : ancestors.entrySet()) {
+            if (path.isEmpty() && !ancestor.getKey().equals(childDbId))
+                continue;
+            path.add(new DbIdDisplayName(ancestor.getKey(), ancestor.getValue()));
+        }
+        return path;
     }
 
     // getEventTree() traverses the hasEvent graph for the whole database (getAllEvents() has no
@@ -1679,9 +1736,9 @@ public class CurationRepository {
     private static final long EVENT_TREE_CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
     private static class CachedEventTree {
-        final List<SimpleInstance> tree;
+        final EventTree tree;
         final long cachedAtMs;
-        CachedEventTree(List<SimpleInstance> tree, long cachedAtMs) {
+        CachedEventTree(EventTree tree, long cachedAtMs) {
             this.tree = tree;
             this.cachedAtMs = cachedAtMs;
         }
@@ -1697,9 +1754,10 @@ public class CurationRepository {
 
     /**
      * This method will return anything listed under TopLevelEvents regardless their species assignment.
-     * @return List of top events.
+     * @return the top events with their hasEvent populated recursively, together with any circular
+     *         hasEvent relationships that had to be dropped to build the hierarchy.
      */
-    public List<SimpleInstance> getEventTree(String speciesName) {
+    public EventTree getEventTree(String speciesName) {
         CachedEventTree cached = eventTreeCache.get(speciesName);
         if (cached != null && (System.currentTimeMillis() - cached.cachedAtMs) < EVENT_TREE_CACHE_TTL_MS) {
             logger.debug("Returning cached event tree for species: " + speciesName);
@@ -1712,12 +1770,20 @@ public class CurationRepository {
         Map<Long, Map<Long, SimpleInstance>> parentDbId2DbId2SimpleInstance = getAllEvents();
         logger.debug(String.format("Retrieved events for %d parents. Building events tree..",
                 parentDbId2DbId2SimpleInstance.keySet().size()));
+        // Deduplicated across the whole hierarchy, not just within one top-level pathway: the same
+        // cyclic relationship is reached once per top event that leads down to it.
+        Map<String, EventTreeCycle> cycles = new LinkedHashMap<>();
         for (SimpleInstance inst : topEvents) {
-            populateChildren(inst, parentDbId2DbId2SimpleInstance);
+            populateChildren(inst, parentDbId2DbId2SimpleInstance, new LinkedHashMap<>(), cycles);
         }
-        logger.debug("Events tree is ready.");
-        eventTreeCache.put(speciesName, new CachedEventTree(topEvents, System.currentTimeMillis()));
-        return topEvents;
+        if (!cycles.isEmpty())
+            logger.warn(String.format("Events tree is ready, with %d circular hasEvent relationship(s)"
+                    + " dropped; they are reported to the curator tool.", cycles.size()));
+        else
+            logger.debug("Events tree is ready.");
+        EventTree tree = new EventTree(topEvents, new ArrayList<>(cycles.values()));
+        eventTreeCache.put(speciesName, new CachedEventTree(tree, System.currentTimeMillis()));
+        return tree;
     }
 
 

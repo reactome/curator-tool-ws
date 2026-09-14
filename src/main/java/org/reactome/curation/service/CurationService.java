@@ -571,7 +571,7 @@ public class CurationService {
     public void deletePersistedInstances(String accountName) throws Exception {
         fileRepository.deleteFile(getFileForPersistedInstances(accountName));
     }
-    public List<SimpleInstance> getEventTree(String speciesName) {
+    public EventTree getEventTree(String speciesName) {
         return curationRepository.getEventTree(speciesName);
     }
 
