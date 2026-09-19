@@ -2,6 +2,8 @@ package org.reactome.curation.repository;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1002,7 +1004,8 @@ public class CurationRepository {
         for (CurationAttribute attribute : scalarAttributes) {
             Object value = props.get(attribute.getName());
             if (value != null)
-                instance.setAttribute(attribute.getName(), value);
+                instance.setAttribute(attribute.getName(),
+                                      coerceToFieldType(cls, attribute.getName(), value));
         }
 
         for (int i = 0; i < relAttributes.size(); i++) {
@@ -1078,15 +1081,70 @@ public class CurationRepository {
      * the field's type instead of its @Relationship annotation.
      */
     private boolean isCollectionField(Class<?> cls, String attrName) {
+        Field field = findField(cls, attrName);
+        return field != null && Collection.class.isAssignableFrom(field.getType());
+    }
+
+    /**
+     * properties(n) hands back raw driver values. The Neo4j type system has a single 64-bit
+     * INTEGER, so every integral property arrives as Long and every fractional one as Double,
+     * regardless of the type declared on the entity. Consumers relying on the declared type --
+     * notably the slicing tool, which validates values against the relational schema where e.g.
+     * LiteratureReference.volume is an int -- otherwise get an InvalidAttributeValueException,
+     * or a ClassCastException for element types such as Deleted.deletedInstanceDbId (List&lt;Integer&gt;).
+     * Narrow the value back to the declared field type so the fast path matches the typed path.
+     */
+    private Object coerceToFieldType(Class<?> cls, String attrName, Object value) {
+        Field field = findField(cls, attrName);
+        if (field == null)
+            return value; // No backing field: leave the raw value alone
+        Class<?> type = field.getType();
+        if (Collection.class.isAssignableFrom(type)) {
+            if (!(value instanceof Collection))
+                return value;
+            Class<?> elementType = null;
+            if (field.getGenericType() instanceof ParameterizedType) {
+                Type[] args = ((ParameterizedType) field.getGenericType()).getActualTypeArguments();
+                if (args.length == 1 && args[0] instanceof Class)
+                    elementType = (Class<?>) args[0];
+            }
+            if (elementType == null)
+                return value;
+            List<Object> rtn = new ArrayList<>();
+            for (Object element : (Collection<?>) value)
+                rtn.add(coerceScalar(element, elementType));
+            return rtn;
+        }
+        return coerceScalar(value, type);
+    }
+
+    private Object coerceScalar(Object value, Class<?> type) {
+        if (!(value instanceof Number))
+            return value;
+        Number number = (Number) value;
+        if (type == Integer.class || type == int.class)
+            return number.intValue();
+        if (type == Long.class || type == long.class)
+            return number.longValue();
+        if (type == Short.class || type == short.class)
+            return number.shortValue();
+        if (type == Float.class || type == float.class)
+            return number.floatValue();
+        if (type == Double.class || type == double.class)
+            return number.doubleValue();
+        return value;
+    }
+
+    private Field findField(Class<?> cls, String attrName) {
         Class<?> _class = cls;
         while (!_class.equals(Object.class)) {
             for (Field field : _class.getDeclaredFields()) {
                 if (field.getName().equals(attrName))
-                    return Collection.class.isAssignableFrom(field.getType());
+                    return field;
             }
             _class = _class.getSuperclass();
         }
-        return false;
+        return null;
     }
 
     /**
