@@ -250,6 +250,15 @@ public class CuratorToolExporter {
                     stIdAtt.setDefiningType(curationAtt.getDefiningType());
                     curationAttributes.add(stIdAtt);
                 }
+                // Assign categories to attributes in InstanceEdit.
+                if (cls.getName().equals(ReactomeJavaConstants.InstanceEdit)) {
+                    if (attName.equals(ReactomeJavaConstants.author))
+                        curationAtt.setCategory(Category.MANDATORY);
+                    else if (attName.equals(ReactomeJavaConstants.dateTime))
+                        curationAtt.setCategory(Category.MANDATORY);
+                    else if (attName.equals(ReactomeJavaConstants.note))
+                        curationAtt.setCategory(Category.OPTIONAL);
+                }
             }
             if (cls.isa(ReactomeJavaConstants.Pathway)) {
                 CurationAttribute hasDiagramAtt = new CurationAttribute();
