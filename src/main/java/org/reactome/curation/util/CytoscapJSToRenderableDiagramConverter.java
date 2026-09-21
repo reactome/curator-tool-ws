@@ -22,7 +22,9 @@ import org.gk.render.Node;
 import org.gk.render.ProcessNode;
 import org.gk.render.ReactionType;
 import org.gk.render.Renderable;
+import org.gk.render.RenderableCell;
 import org.gk.render.RenderableChemical;
+import org.gk.render.RenderableChemicalDrug;
 import org.gk.render.RenderableCompartment;
 import org.gk.render.RenderableComplex;
 import org.gk.render.RenderableEntity;
@@ -344,24 +346,32 @@ public class CytoscapJSToRenderableDiagramConverter {
     
     private Node createNode(String classes, String id) {
         Node renderable = null;
-        if (classes.contains("Drug")) { // To be tested
-            if (classes.contains("Protein")) 
+        // The frontend (ngx-reactome-diagram's nodeTypeMap) tags drug variants with a lowercase
+        // "drug" class, not "Drug" - this used to check the wrong case and therefore never
+        // matched, silently falling through to the generic Protein/Chemical branches below and
+        // losing the drug distinction on every save.
+        if (classes.contains("drug")) {
+            if (classes.contains("Protein"))
                 renderable = new RenderableProteinDrug();
             else if (classes.contains("RNA"))
                 renderable = new RenderableRNADrug();
-            // This is default for drug.
-            renderable = new RenderableChemical();
+            else
+                // Default for drug, e.g. ChemicalDrug.
+                renderable = new RenderableChemicalDrug();
+            return renderable;
         }
-        if (classes.contains("Protein")) 
+        if (classes.contains("Protein"))
             renderable = new RenderableProtein();
         else if (classes.contains("Gene"))
             renderable = new RenderableGene();
         else if (classes.contains("RNA"))
             renderable = new RenderableRNA();
-        else if (classes.contains("EntitySet")) 
+        else if (classes.contains("EntitySet"))
             renderable = new RenderableEntitySet();
-        else if (classes.contains("Molecule")) 
+        else if (classes.contains("Molecule"))
             renderable = new RenderableChemical();
+        else if (classes.contains("Cell"))
+            renderable = new RenderableCell();
         else if (classes.contains("Complex")) {
             renderable = new RenderableComplex();
             ((RenderableComplex)renderable).hideComponents(true);
