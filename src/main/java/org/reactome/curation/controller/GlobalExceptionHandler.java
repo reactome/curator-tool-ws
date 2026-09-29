@@ -3,6 +3,7 @@ package org.reactome.curation.controller;
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
 import org.reactome.curation.exceptions.DatabaseObjectTypeMismatchException;
 import org.reactome.curation.exceptions.DbIdConflictException;
+import org.reactome.curation.exceptions.DbRollbackDetectedException;
 import org.reactome.curation.exceptions.ErrorResponse;
 import org.reactome.curation.exceptions.InstanceChangedException;
 import org.reactome.curation.exceptions.InstanceDeletionException;
@@ -37,6 +38,14 @@ public class GlobalExceptionHandler {
                 ex.getMessage(),
                 System.currentTimeMillis());
         return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(DbRollbackDetectedException.class)
+    public ResponseEntity<ErrorResponse> handleDbRollbackDetectedException(DbRollbackDetectedException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(HttpStatus.SERVICE_UNAVAILABLE.value(),
+                ex.getMessage(),
+                System.currentTimeMillis());
+        return new ResponseEntity<>(errorResponse, HttpStatus.SERVICE_UNAVAILABLE);
     }
 
     @ExceptionHandler(InstanceChangedException.class)

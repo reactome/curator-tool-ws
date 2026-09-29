@@ -33,6 +33,7 @@ import org.neo4j.cypherdsl.core.StatementBuilder.OngoingUpdate;
 import org.reactome.curation.exceptions.DatabaseObjectNotFoundException;
 import org.reactome.curation.exceptions.DatabaseObjectTypeMismatchException;
 import org.reactome.curation.exceptions.DbIdConflictException;
+import org.reactome.curation.exceptions.DbRollbackDetectedException;
 import org.reactome.curation.model.CurationAttribute;
 import org.reactome.curation.model.CurationAttribute.DefiningAttributeValue;
 import org.reactome.curation.util.CuratorToolWSUtils;
@@ -101,6 +102,7 @@ public class CurationRepository {
     private Neo4jTemplate neo4jTemplate;
 //    @Autowired
     private CypherQueryUtilities queryUtilities;
+    private DbIdWatermarkStore watermark;
 
     // We will handle dbId at the Java layer for performance reason and easy
     // control.
@@ -110,13 +112,56 @@ public class CurationRepository {
     // Cache this for performance
     private Map<String, Map<String, Relationship>> cls2field2rel = new HashMap<>();
 
-    public CurationRepository(Neo4jClient neo4jClient, Neo4jTemplate neo4jTemplate, CypherQueryUtilities queryUtilities) {
+    // Set by reconcileDbIdWatermark() at construction time if the graph's own MAX(dbId) is lower
+    // than the durable H2 watermark - i.e. the Neo4j store looks like it was rolled back or
+    // replaced after dbIds were already handed out. See nextDbId() and storeShell().
+    private volatile boolean writesDisabled = false;
+
+    public CurationRepository(Neo4jClient neo4jClient, Neo4jTemplate neo4jTemplate, CypherQueryUtilities queryUtilities,
+                               DbIdWatermarkStore watermark) {
         this.neo4jClient = neo4jClient;
         this.neo4jTemplate = neo4jTemplate;
         this.queryUtilities = queryUtilities;
+        this.watermark = watermark;
         // Some house keeping when the repository starts
         createDbIdIndex();
         maxDbId = getMaxDbId();
+        // Deliberately synchronous, in the constructor, rather than deferred to an
+        // ApplicationReadyEvent listener: this runs during singleton bean creation, strictly
+        // before Spring finishes wiring the controller beans that depend on this repository (and
+        // therefore before the DispatcherServlet can route any request into one), so writesDisabled
+        // is guaranteed to be settled before any caller can reach nextDbId()/storeShell().
+        reconcileDbIdWatermark();
+    }
+
+    /**
+     * Reconcile the in-memory dbId cache against the durable H2 watermark. This is the actual
+     * fix for the 2026-09-24 incident: graph.db was restored from a stale dump, MAX(n.dbId) went
+     * backwards, and this app happily reissued 43 dbIds that had already been used by curated (and
+     * now invisible) instances - because maxDbId was seeded purely from the (rolled-back) graph.
+     *
+     * The watermark in H2 is untouched by a graph.db restore, so if it is higher than the graph's
+     * own MAX(dbId), the graph is behind where it should be. maxDbId is raised to the watermark
+     * regardless (this alone prevents any duplicate dbId from being handed out), and further writes
+     * are blocked until an administrator investigates - since a store that went backwards may be
+     * missing more than just a few dbIds.
+     */
+    private void reconcileDbIdWatermark() {
+        long graphMax = maxDbId == null ? 0L : maxDbId;
+        Long mark = watermark.current();
+        if (mark == null) {
+            // First-ever boot with this watermark: nothing to reconcile against yet, just seed it.
+            watermark.reserve(graphMax);
+            maxDbId = graphMax;
+            return;
+        }
+        if (graphMax < mark) {
+            logger.error("dbId watermark {} exceeds graph MAX(dbId) {} - the Neo4j store appears to " +
+                    "have been rolled back or replaced. Refusing to assign new dbIds until resolved.",
+                    mark, graphMax);
+            writesDisabled = true;
+        }
+        maxDbId = Math.max(graphMax, mark);
     }
 
     private Map<String, Relationship> getField2rel(Class<?> cls) {
@@ -231,10 +276,18 @@ public class CurationRepository {
      * @return
      */
     public synchronized Long nextDbId() {
+        if (writesDisabled)
+            throw new DbRollbackDetectedException();
         Long currentDbMaxDbId = getMaxDbId();
         if (currentDbMaxDbId != null && currentDbMaxDbId > maxDbId)
-            maxDbId = currentDbMaxDbId;
-        return ++maxDbId;
+            maxDbId = currentDbMaxDbId;              // keep: still covers a live external writer
+        long candidate = maxDbId + 1;
+        // Durably commit to H2 before returning the candidate to the caller - see
+        // DbIdWatermarkStore.reserve(). A crash or rollback after this point can only burn a
+        // dbId (a harmless gap), never reissue one that was already committed here.
+        watermark.reserve(candidate);
+        maxDbId = candidate;
+        return candidate;
     }
 
     private Long getMaxDbId() {
@@ -395,6 +448,11 @@ public class CurationRepository {
      */
     @Transactional
     public DatabaseObject storeShell(DatabaseObject obj) throws Exception {
+        // nextDbId() already refuses to hand out a dbId once writesDisabled is set, but a caller
+        // may supply its own positive dbId and skip nextDbId() entirely - check here too so a
+        // detected rollback blocks every path that can create a new node, not just the common one.
+        if (writesDisabled)
+            throw new DbRollbackDetectedException();
         // Only instance that has not been in the database can be stored
         if (obj.getDbId() != null && existsById(obj.getDbId())) {
             throw new IllegalStateException(obj + " is in the database and cannot be stored. Call update instead.");

@@ -38,7 +38,8 @@ public class CurationRepositoryFindInvalidReferenceTest {
     void setUp() {
         Neo4jClient neo4jClient = mock(Neo4jClient.class, org.mockito.Answers.RETURNS_DEEP_STUBS);
         when(neo4jClient.query(anyString()).fetchAs(Long.class).one()).thenReturn(Optional.of(1L));
-        repository = new CurationRepository(neo4jClient, null, new CypherQueryUtilities());
+        repository = new CurationRepository(neo4jClient, null, new CypherQueryUtilities(),
+                mock(DbIdWatermarkStore.class));
     }
 
     @Test
