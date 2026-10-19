@@ -64,6 +64,8 @@ public class CytoscapJSToRenderableDiagramConverter {
     // There is this pre-defined compartment offset for text label in compartments
     // https://github.com/reactome/ngx-reactome-base/blob/7c8af600fb9ac56fd3681e6518124ff5e8d5afa4/projects/ngx-reactome-diagram/src/lib/services/diagram.service.ts#L156
     private final int COMPARTMENT_SHIFT = 35;
+    // In cytoscape coordinates (before SCALE); the diagram reaction box is 12 wide after scaling
+    private static final int REACTION_STUB_LENGTH = 30;
     
     @Autowired
     private ObjectMapper objectMapper;
@@ -492,10 +494,65 @@ public class CytoscapJSToRenderableDiagramConverter {
         processHelperEdges(classifiedEdges.get("catalysts"), "catalyst", hyperEdge, reactionNode, idToRenderable);
         processHelperEdges(classifiedEdges.get("inhibitors"), "inhibitor", hyperEdge, reactionNode, idToRenderable);
 
-        if (!backbonePoints.isEmpty())
+        if (!backbonePoints.isEmpty()) {
+            padBackboneAroundPosition(backbonePoints, hyperEdge);
             hyperEdge.setBackbonePoints(backbonePoints);
+        }
 
         return hyperEdge;
+    }
+
+    /**
+     * The diagram converter moves a reaction to the midpoint of a single-segment backbone, which happens when
+     * the reaction has no inputs or no outputs (e.g. BlackBoxEvent). Add a short stub on the missing side so
+     * the reaction position never sits at a backbone end.
+     */
+    private void padBackboneAroundPosition(List<Point> backbone, HyperEdge hyperEdge) {
+        Point position = hyperEdge.getPosition();
+        int index = backbone.indexOf(position);
+        if (index < 0)
+            return;
+        if (index == 0) {
+            Point awayFrom;
+            if (backbone.size() > 1)
+                awayFrom = backbone.get(1);
+            else if (!hyperEdge.getOutputNodes().isEmpty())
+                awayFrom = centroid(hyperEdge.getOutputNodes());
+            else {
+                Point inputCenter = centroid(hyperEdge.getInputNodes());
+                awayFrom = inputCenter == null ? null :
+                    new Point(2 * position.x - inputCenter.x, 2 * position.y - inputCenter.y);
+            }
+            backbone.add(0, createStub(position, awayFrom));
+            index = 1;
+        }
+        if (index == backbone.size() - 1)
+            backbone.add(createStub(position, backbone.get(index - 1)));
+    }
+
+    private Point centroid(List<?> nodes) {
+        if (nodes == null || nodes.isEmpty())
+            return null;
+        double x = 0, y = 0;
+        for (Object obj : nodes) {
+            Point p = ((Node) obj).getPosition();
+            x += p.x;
+            y += p.y;
+        }
+        return new Point((int) Math.round(x / nodes.size()), (int) Math.round(y / nodes.size()));
+    }
+
+    private Point createStub(Point position, Point awayFrom) {
+        double dx = awayFrom == null ? 0 : position.x - awayFrom.x;
+        double dy = awayFrom == null ? 0 : position.y - awayFrom.y;
+        double len = Math.sqrt(dx * dx + dy * dy);
+        if (len == 0) {
+            dx = -1;
+            dy = 0;
+            len = 1;
+        }
+        return new Point((int) Math.round(position.x + dx / len * REACTION_STUB_LENGTH),
+                         (int) Math.round(position.y + dy / len * REACTION_STUB_LENGTH));
     }
     
     private HyperEdge buildHyperEdge(JsonNode reactionNode) {   
@@ -609,10 +666,13 @@ public class CytoscapJSToRenderableDiagramConverter {
                     backbonePoints.addAll(sharedPoints);
                 }
                 else {
-                    backbonePoints.addAll(sharedPoints.subList(1, sharedPoints.size()));
+                    // sharedPoints.get(0) is the reaction position since all output edges start from it
                     if (isEdgePositionNotAssigned(hyperEdge)) {
-                        hyperEdge.setPosition(sharedPoints.get(1));
+                        hyperEdge.setPosition(sharedPoints.get(0));
+                        backbonePoints.addAll(sharedPoints);
                     }
+                    else
+                        backbonePoints.addAll(sharedPoints.subList(1, sharedPoints.size()));
                 }
                 // Need to clean up groupedPoints to remove shared points
                 for (List<Point> pts : groupedPoints) {
