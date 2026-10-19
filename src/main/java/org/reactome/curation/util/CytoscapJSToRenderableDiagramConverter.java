@@ -562,10 +562,13 @@ public class CytoscapJSToRenderableDiagramConverter {
         
         // Need to set position based on the backbone points. No need to set it here.
         
+        // The reaction type is one of the node's classes, e.g. "uncertain reaction". It is not always
+        // the first one (e.g. "reaction uncertain" after the type is changed on the client), so check each.
         String classes = reactionNode.path("classes").asText("");
-        if (!classes.isEmpty()) {
-            String type = classes.split(" ")[0].replace(" ", "_");
-            type = type.toUpperCase();
+        for (String cls : classes.split(" ")) {
+            String type = cls.trim().toUpperCase();
+            if (type.isEmpty())
+                continue;
             // Apparently something has been changed during transition
             if (type.equals("UNCERTAIN"))
                 type = "UNCERTAIN_PROCESS";
@@ -573,8 +576,10 @@ public class CytoscapJSToRenderableDiagramConverter {
                 type = "OMITTED_PROCESS";
             final String type1 = type;
             boolean exists = Arrays.stream(ReactionType.values()).anyMatch(t -> t.name().equals(type1));
-            if (exists)
+            if (exists) {
                 ((RenderableReaction) hyperEdge).setReactionType(ReactionType.valueOf(type));
+                break;
+            }
         }
         return hyperEdge;
     }
