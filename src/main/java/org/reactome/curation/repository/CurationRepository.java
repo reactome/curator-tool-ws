@@ -884,7 +884,7 @@ public class CurationRepository {
                 "OPTIONAL MATCH (r)-[:catalystActivity]->(:DatabaseObject)-[:physicalEntity]->(cat:DatabaseObject) " +
                 "WITH r, inputs, outputs, collect(DISTINCT cat.dbId) AS catalysts " +
                 "OPTIONAL MATCH (r)-[:regulatedBy]->(reg:DatabaseObject)-[:regulator]->(regEntity:DatabaseObject) " +
-                "RETURN r.dbId AS reactionDbId, inputs, outputs, catalysts, " +
+                "RETURN r.dbId AS reactionDbId, r.schemaClass AS schemaClass, inputs, outputs, catalysts, " +
                 "       collect(DISTINCT {dbId: regEntity.dbId, labels: labels(reg)}) AS regulators";
         Collection<Map<String, Object>> results = neo4jClient.query(cypher).bind(dbIds).to("dbIds").fetch().all();
         List<ReactionStructure> list = new ArrayList<>();
@@ -919,7 +919,8 @@ public class CurationRepository {
                     regulators.add(new ReactionRegulator(Long.parseLong(regDbId.toString()), labels));
                 }
             }
-            list.add(new ReactionStructure(reactionDbId, inputs, outputs, catalysts, regulators));
+            list.add(new ReactionStructure(reactionDbId, inputs, outputs, catalysts, regulators,
+                    row.get("schemaClass") == null ? null : row.get("schemaClass").toString()));
         }
         return list;
     }

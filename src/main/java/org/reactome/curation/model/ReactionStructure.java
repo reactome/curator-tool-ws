@@ -22,4 +22,6 @@ public class ReactionStructure {
     private List<ReactionParticipant> outputs;
     private List<Long> catalysts;
     private List<ReactionRegulator> regulators;
+    // The reaction's schema class, e.g. BlackBoxEvent, so the diagram's drawn reaction type can be checked
+    private String schemaClass;
 }
