@@ -7,6 +7,7 @@ import java.util.Map;
 import org.reactome.curation.model.SimpleInstance;
 import org.reactome.curation.qa.model.QACheckResult;
 import org.reactome.curation.qa.model.QAReport;
+import org.reactome.curation.qa.model.ReactionImbalanceReport;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.stereotype.Service;
@@ -47,6 +48,9 @@ public class QAService {
         checker = new CellMarkerReferenceCheck();
         checker.setNeo4jClient(neo4jClient);
         qaName2Checker.put(checker.getCheckName(), checker);
+        checker = new ReactionImbalanceCheck();
+        checker.setNeo4jClient(neo4jClient);
+        qaName2Checker.put(checker.getCheckName(), checker);
     }
 
     
@@ -62,5 +66,14 @@ public class QAService {
         }
         QAReport qaReport = new QAReport(instance, results);
         return qaReport;
+    }
+    
+    /**
+     * Check all Reactions contained by an Event (a Pathway or a Reaction) for input/output imbalance.
+     * @param eventDbId
+     * @return
+     */
+    public ReactionImbalanceReport checkReactionImbalance(Long eventDbId) {
+        return new ReactionImbalanceHelper(neo4jClient).checkEvent(eventDbId);
     }
 }

@@ -26,6 +26,7 @@ import org.reactome.curation.model.UserInstanceBackupSummary;
 import org.reactome.curation.model.UserInstances;
 import org.reactome.curation.qa.QAService;
 import org.reactome.curation.qa.model.QAReport;
+import org.reactome.curation.qa.model.ReactionImbalanceReport;
 import org.reactome.curation.service.CurationService;
 import org.reactome.curation.service.DiagramLockService;
 import org.reactome.curation.service.EventDocxExportService;
@@ -1028,6 +1029,17 @@ public class CurationController {
             logger.error("QAController.qaReport: " + e.getMessage(), e);
             throw new IllegalStateException(e.getMessage());
         }
+    }
+
+    /**
+     * Check all Reactions contained by an Event (a Pathway, or a single Reaction) for input/output imbalance.
+     * Only imbalanced reactions are returned.
+     * @param dbId
+     * @return
+     */
+    @GetMapping("qa/reactionImbalance/{dbId}")
+    public ReactionImbalanceReport checkReactionImbalance(@PathVariable("dbId") Long dbId) {
+        return this.qaService.checkReactionImbalance(dbId);
     }
 
     private String getUsername() {
