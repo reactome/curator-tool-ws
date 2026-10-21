@@ -62,10 +62,12 @@ public class LiteratureReferenceRetractionChecker {
             + "MATCH (r:DatabaseObject)-[rel]->(lr) "
             + "WHERE NOT r:InstanceEdit AND NOT (r:Person AND type(rel) = 'author') "
             + "WITH DISTINCT lr, r "
+            + "OPTIONAL MATCH (lr)-[:retractionStatus]->(rs:RetractionStatus) "
             + "OPTIONAL MATCH (r)-[:stableIdentifier]->(st:StableIdentifier) "
             + "OPTIONAL MATCH (r)-[:literatureReference]->(other:LiteratureReference) "
             + "WHERE other.pubMedIdentifier IS NOT NULL AND other.pubMedIdentifier <> lr.pubMedIdentifier "
             + "RETURN lr.dbId AS lrDbId, lr.displayName AS lrDisplayName, lr.pubMedIdentifier AS pmid, "
+            + "rs.displayName AS retractionStatus, lr.comment AS comment, "
             + "r.dbId AS dbId, r.displayName AS displayName, r.schemaClass AS schemaClass, "
             + "st.released AS released, collect(DISTINCT other.pubMedIdentifier) AS otherPmids "
             + "ORDER BY lrDbId, dbId";
@@ -209,7 +211,8 @@ public class LiteratureReferenceRetractionChecker {
             session.readTransaction(tx -> tx.run(IE_QUERY, Map.of("dbIds", referrerDbIds)).list())
                    .forEach(r -> dbId2IEs.put(r.get("dbId").asLong(), getFirstAndLastCuratorIEs(r)));
 
-            writer.println("LitRef_DBID\tLitRef_DisplayName\tPubMedId\tReferrer_DBID"
+            writer.println("LitRef_DBID\tLitRef_DisplayName\tPubMedId\tRetraction_Status\tComment"
+                    + "\tReferrer_DBID"
                     + "\tReferrer_DisplayName\tReferrer_SchemaClass\tReferer_FirstIE"
                     + "\tReferrer_LastIE\tReferrer_Release_Status\tReferrer_Other_PMIDs");
             for (Record referrer : referrers) {
@@ -218,6 +221,8 @@ public class LiteratureReferenceRetractionChecker {
                 writer.println(referrer.get("lrDbId").asLong() + "\t" +
                         asString(referrer.get("lrDisplayName")) + "\t" +
                         referrer.get("pmid").asLong() + "\t" +
+                        asString(referrer.get("retractionStatus")) + "\t" +
+                        getComment(referrer.get("comment")) + "\t" +
                         dbId + "\t" +
                         asString(referrer.get("displayName")) + "\t" +
                         asString(referrer.get("schemaClass")) + "\t" +
@@ -273,6 +278,19 @@ public class LiteratureReferenceRetractionChecker {
         pmids = new ArrayList<>(pmids);
         Collections.sort(pmids);
         return pmids.stream().map(String::valueOf).collect(Collectors.joining(";"));
+    }
+
+    /**
+     * The comment is free text: flatten it onto one line so it cannot break the tab-delimited report.
+     * A list value is handled too in case comment has been stored as multi-valued.
+     */
+    private String getComment(Value comment) {
+        if (comment == null || comment.isNull())
+            return "";
+        String text = comment.asObject() instanceof List ?
+                comment.asList(Value::asString).stream().collect(Collectors.joining("; ")) :
+                comment.asString();
+        return text.replaceAll("[\\t\\r\\n]+", " ").trim();
     }
 
     private String asString(Value value) {

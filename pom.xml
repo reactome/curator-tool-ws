@@ -18,6 +18,7 @@
 		<app.main.class>org.reactome.curation.CuratorToolWsApplication</app.main.class>
 		<user.manager.main.class>org.reactome.curation.UserManager</user.manager.main.class>
 		<diagram.backfill.main.class>org.reactome.curation.PathwayDiagramRenderedInstanceBackfillRunner</diagram.backfill.main.class>
+		<retraction.checker.main.class>org.reactome.curation.LiteratureReferenceRetractionChecker</retraction.checker.main.class>
 	</properties>
 	<dependencies>
         <dependency>
@@ -69,6 +70,11 @@
 			<groupId>org.apache.poi</groupId>
 			<artifactId>poi-ooxml</artifactId>
 			<version>5.2.5</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-csv</artifactId>
+			<version>1.10.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.jsoup</groupId>
@@ -198,6 +204,16 @@
 							<classifier>diagrambackfill</classifier>
 						</configuration>
 					</execution>
+					<execution>
+						<id>retraction-checker-jar</id>
+						<phase>package</phase>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+						<configuration>
+							<classifier>retractionchecker</classifier>
+						</configuration>
+					</execution>
 				</executions>
 			</plugin>
 			<plugin>
@@ -249,6 +265,16 @@
 						<configuration>
 							<classifier>diagrambackfill</classifier>
 							<mainClass>${diagram.backfill.main.class}</mainClass>
+						</configuration>
+					</execution>
+					<execution>
+						<id>repackage-retraction-checker</id>
+						<goals>
+							<goal>repackage</goal>
+						</goals>
+						<configuration>
+							<classifier>retractionchecker</classifier>
+							<mainClass>${retraction.checker.main.class}</mainClass>
 						</configuration>
 					</execution>
 				</executions>
