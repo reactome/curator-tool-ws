@@ -217,6 +217,15 @@ public class DatabaseObjectInstanceConverter {
     public InstanceEdit createInstanceEdit(Long personId) throws InstanceNotFoundException {
         return this.instanceEditManager.createInstanceEdit(personId);
     }
+
+    /**
+     * Evict the cached InstanceEdit for a person. Call this after a failed write so that an
+     * InstanceEdit that may not have been stored is not reused.
+     */
+    public void clearInstanceEditCache(Long personId) {
+        if (personId != null)
+            this.instanceEditManager.clearCacheForPerson(personId);
+    }
     
     private DatabaseObject convert(SimpleInstance instance,
                                    Map<Long, DatabaseObject> id2object) throws Exception {

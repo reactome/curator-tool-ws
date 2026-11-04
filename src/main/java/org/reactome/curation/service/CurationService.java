@@ -114,6 +114,10 @@ public class CurationService {
     public boolean existsById(Long dbId) {
         return this.curationRepository.existsById(dbId);
     }
+
+    public boolean isInstanceEditStored(Long dbId) {
+        return this.curationRepository.isInstanceEditStored(dbId);
+    }
     
     public DatabaseObject findById(Long dbId) {
        return objectRepository.findById(dbId, 1);

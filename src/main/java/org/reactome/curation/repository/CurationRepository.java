@@ -2356,6 +2356,21 @@ public class CurationRepository {
     }
 
     /**
+     * Check if an InstanceEdit has been fully stored, i.e. its own properties have been written,
+     * not just the bare node created by storeShell(). existsById() can't tell these apart: a commit
+     * that fails after storeShell() leaves a node having only dbId behind.
+     * @param dbId
+     * @return
+     */
+    public boolean isInstanceEditStored(Long dbId) {
+        if (dbId == null)
+            return false;
+        String cypher = "MATCH (n:InstanceEdit {dbId: $dbId}) " +
+                "RETURN n.schemaClass IS NOT NULL AND n.dateTime IS NOT NULL";
+        return neo4jClient.query(cypher).bind(dbId).to("dbId").fetchAs(Boolean.class).one().orElse(false);
+    }
+
+    /**
      * Get the list of class names in the database.
      *
      * @return
