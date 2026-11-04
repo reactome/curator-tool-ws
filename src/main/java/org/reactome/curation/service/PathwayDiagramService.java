@@ -97,6 +97,19 @@ public class PathwayDiagramService {
     }
 
     /**
+     * Load the saved Cytoscape JSON for a PathwayDiagram edited through this tool and convert it into
+     * a RenderablePathway, using the same converter as the save path.
+     * @param pathwayDiagramId
+     * @return null if this diagram has never been saved through this tool
+     */
+    public RenderablePathway loadCyNetworkAsDiagram(Long pathwayDiagramId) throws Exception {
+        if (!diagramRepository.hasCyNetwork(pathwayDiagramId))
+            return null;
+        this.initGraphConvertObjects();
+        return converter.convert(loadCyNetwork(pathwayDiagramId), pathwayDiagramId);
+    }
+
+    /**
      * Only a cytoscape JSON text for a PathwayDiagram, represented by pathwayDiagramId, will be saved.
      * The cytoscape JSON will be saved into the configured cytoscape folder, which contains files named by
      * PathwayDiagram instance dbIds. The JSON text will also be converted and exported to the diagram JSON text

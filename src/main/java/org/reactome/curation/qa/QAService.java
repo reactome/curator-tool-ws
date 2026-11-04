@@ -5,9 +5,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.reactome.curation.model.SimpleInstance;
+import org.reactome.curation.qa.model.DiagramSyncReport;
 import org.reactome.curation.qa.model.QACheckResult;
 import org.reactome.curation.qa.model.QAReport;
 import org.reactome.curation.qa.model.ReactionImbalanceReport;
+import org.reactome.curation.repository.CurationRepository;
+import org.reactome.curation.service.PathwayDiagramService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.stereotype.Service;
@@ -17,6 +20,10 @@ public class QAService {
     
     @Autowired
     private Neo4jClient neo4jClient;
+    @Autowired
+    private CurationRepository curationRepository;
+    @Autowired
+    private PathwayDiagramService pathwayDiagramService;
     
     // Used to control configured QA checkers
     private Map<String, QAChecker> qaName2Checker;
@@ -75,5 +82,15 @@ public class QAService {
      */
     public ReactionImbalanceReport checkReactionImbalance(Long eventDbId) {
         return new ReactionImbalanceHelper(neo4jClient).checkEvent(eventDbId);
+    }
+
+    /**
+     * Check the PathwayDiagrams of an Event and its sub-pathways for drawn reactions and FlowLines
+     * that are out of sync with the database.
+     * @param eventDbId
+     * @return
+     */
+    public DiagramSyncReport checkDiagramSync(Long eventDbId) throws Exception {
+        return new DiagramSyncHelper(neo4jClient, curationRepository, pathwayDiagramService).checkEvent(eventDbId);
     }
 }
