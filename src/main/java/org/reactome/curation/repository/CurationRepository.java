@@ -2175,33 +2175,37 @@ public class CurationRepository {
         Map<String, Relationship> field2rel = getField2rel(obj.getClass());
 
         // Step 1: Build Cypher to delete all relationships and reset primitive attributes
-        StringBuilder sb = new StringBuilder();
-        sb.append("MATCH (n:").append(getNodeLabel(obj)).append(" {dbId: $dbId}) ");
-        int i = 0;
+        // We will try to delete a relationship as long as it is defined in the model
+        // even though it may not exist in the database for this object
+        // By doing this, we don't need to load the object first to find out which relationship exists
+        Set<String> outgoingTypes = new LinkedHashSet<>();
+        Set<String> incomingTypes = new LinkedHashSet<>();
         for (String field : field2rel.keySet()) {
             Relationship rel = field2rel.get(field);
             if (RESET_NODE_EXCLUDED_FIELD_TYPE_KEYS.contains(field + ":" + rel.type()))
                 continue;
-            // We will try to delete a relationship as long as it is defined in the model
-            // even though it may not exist in the database for this object
-            // By doing this, we don't need to load the object first to find out which relationship exists
-            String alias = "r" + (++i);
-            // Use OPTIONAL MATCH to avoid any problem if there is no such relationship just in case
             if (rel.direction() == Relationship.Direction.OUTGOING) {
-                sb.append(String.format("OPTIONAL MATCH (n)-[%s:%s]->() ", alias, rel.type()));
+                outgoingTypes.add(rel.type());
             } else if (rel.direction() == Relationship.Direction.INCOMING) {
-                sb.append(String.format("OPTIONAL MATCH ()-[%s:%s]->(n) ", alias, rel.type()));
+                incomingTypes.add(rel.type());
             }
         }
 
-        // Add DELETE clause if relationships exist
-        if (i > 0) {
-            sb.append("DELETE ");
-            for (int j = 1; j <= i; j++) {
-                if (j > 1) sb.append(", ");
-                sb.append("r" + j);
-            }
-            sb.append(" WITH n ");
+        // One OPTIONAL MATCH per direction, naming all of its types (T1|T2|...), each deleted before the next match.
+        // A separate OPTIONAL MATCH per type, all deleted at the end, would give one row for every combination of the
+        // node's relationships - e.g. 20 modified x 10 literatureReference x 5 input x 5 output = 5,000 rows - so
+        // an instance with many relationships took far longer to reset than it has relationships.
+        // WITH DISTINCT n brings the rows back down to the one node after each DELETE.
+        // Use OPTIONAL MATCH to avoid any problem if there is no such relationship just in case
+        StringBuilder sb = new StringBuilder();
+        sb.append("MATCH (n:").append(getNodeLabel(obj)).append(" {dbId: $dbId}) ");
+        if (!outgoingTypes.isEmpty()) {
+            sb.append(String.format("OPTIONAL MATCH (n)-[ro:%s]->() DELETE ro WITH DISTINCT n ",
+                                    String.join("|", outgoingTypes)));
+        }
+        if (!incomingTypes.isEmpty()) {
+            sb.append(String.format("OPTIONAL MATCH ()-[ri:%s]->(n) DELETE ri WITH DISTINCT n ",
+                                    String.join("|", incomingTypes)));
         }
 
         // Add reset of node properties except dbId
