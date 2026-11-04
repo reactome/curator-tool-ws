@@ -160,6 +160,7 @@ public class CurationController {
     public Boolean saveCyNetwork(@PathVariable("pathwayId") Long pathwayDiagramId,
                                         @RequestBody JsonNode networkJson) {
         String username = getUsername();
+        Long personId = null; // Used to evict the cached InstanceEdit if saving fails
         try {
             JsonNode defaultPersonNode = networkJson == null ? null : networkJson.get("defaultPersonId");
             if (defaultPersonNode == null || !defaultPersonNode.canConvertToLong()) {
@@ -176,6 +177,7 @@ public class CurationController {
                 logger.error("CurationController.saveCyNetwork: Cannot find the PathwayDiagram instance with dbId: {}", pathwayDiagramId);
                 return Boolean.FALSE;
             }
+            personId = dbId;
             InstanceEdit ie = converter.createInstanceEdit(dbId);
             Set<Long> renderedInstanceDbIds = diagramService.saveCyNetwork(pathwayDiagramId, networkJson);
             // Delete the back up if any
@@ -186,6 +188,7 @@ public class CurationController {
         }
         catch(Exception e) {
             logger.error("CurationController.saveCyNetwork: " + e.getMessage(), e);
+            converter.clearInstanceEditCache(personId);
             auditLogger.logDiagramUpdate(username, pathwayDiagramId, false, e.getMessage());
             return Boolean.FALSE;
         }
@@ -583,10 +586,16 @@ public class CurationController {
             // handlers for these two - 404 and 409 respectively, with the real message - see it,
             // instead of it being flattened into a generic 500 "An unexpected error occurred".
             logger.error("CurationController.commit: " + e.getMessage(), e);
+            // A failed commit may leave the cached InstanceEdit with a dbId pointing to an empty shell
+            // node created by storeShell(). Don't let the next commit reuse it.
+            converter.clearInstanceEditCache(instance.getDefaultPersonId());
+            auditLogger.logCommitFailure(username, instance, e.getMessage());
             throw e;
         }
         catch(Exception e) {
             logger.error("CurationController.commit: " + e.getMessage(), e);
+            converter.clearInstanceEditCache(instance.getDefaultPersonId());
+            auditLogger.logCommitFailure(username, instance, e.getMessage());
             throw new IllegalStateException(e.getMessage());
         }
     }
@@ -612,6 +621,7 @@ public class CurationController {
         }
         catch(Exception e) {
             logger.error("CurationController.delete: " + e.getMessage(), e);
+            converter.clearInstanceEditCache(instance.getDefaultPersonId());
             auditLogger.logDelete(username, instance, false, e.getMessage());
             throw new IllegalStateException(e.getMessage());
         }
@@ -637,6 +647,7 @@ public class CurationController {
         }
         catch(Exception e) {
             logger.error("CurationController.deleteByDeleted: " + e.getMessage(), e);
+            converter.clearInstanceEditCache(instance.getDefaultPersonId());
             auditLogger.logBulkDelete(username, instance, 0, false, e.getMessage());
             throw new IllegalStateException(e.getMessage());
         }

@@ -76,6 +76,22 @@ public class CurationAuditLogger {
     }
 
     /**
+     * Log a failed commit request as a whole. Failures inside a single add/update step are already
+     * logged by logAdd()/logUpdate(), but a commit may fail before reaching those steps (e.g. while
+     * converting the instance or storing shells of new instances). This entry covers all of them.
+     *
+     * @param username The curator performing the action
+     * @param obj The instance submitted for commit
+     * @param errorMessage Error message for the failure
+     */
+    public void logCommitFailure(String username, DatabaseObject obj, String errorMessage) {
+        String displayName = obj != null ? obj.getDisplayName() : "N/A";
+        Long dbId = obj != null && obj.getDbId() != null ? obj.getDbId() : -1L;
+        String schemaClassName = getSchemaClassName(obj);
+        logAction(username, dbId, displayName, schemaClassName, "COMMIT", false, errorMessage);
+    }
+
+    /**
      * Log a diagram update action (Cytoscape network).
      *
      * @param username The curator performing the action

@@ -105,8 +105,10 @@ public class InstanceEditManager {
             return false;
         }
         // Just in case there is an error and the instance is not saved
-        // e.g. Due to the transaction management, instanceEdit may get a dbId, but not really saved
-        if (!this.curationService.existsById(instanceEdit.getDbId()))
+        // e.g. Due to the transaction management, instanceEdit may get a dbId, but not really saved.
+        // Don't use existsById(): a failed commit leaves an empty shell node (dbId only) created by
+        // storeShell(), which would pass that check, and the reused IE would then never be stored.
+        if (!this.curationService.isInstanceEditStored(instanceEdit.getDbId()))
             return false;
         String dateTimeStr = instanceEdit.getDateTime();
         if (dateTimeStr == null) {
