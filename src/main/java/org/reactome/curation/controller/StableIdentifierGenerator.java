@@ -75,6 +75,24 @@ public class StableIdentifierGenerator {
     }
 
     public void setStableIdentifier(DatabaseObject instance) throws Exception {
+        setStableIdentifier(instance, false);
+    }
+
+    /**
+     * @param keepExisting if true and the instance already has a StableIdentifier, that StableIdentifier is not
+     *                     renamed; the instance's stId is set to its identifier instead. An instance without a
+     *                     StableIdentifier is given a generated one either way.
+     */
+    public void setStableIdentifier(DatabaseObject instance, boolean keepExisting) throws Exception {
+        if (keepExisting && this.needStid(instance) && instance.getStableIdentifier() != null) {
+            // A StableIdentifier created in this same commit already carries its identifier; its stored copy is
+            // only a shell at this point, so it is not reloaded.
+            String identifier = instance.getStableIdentifier().getIdentifier();
+            if (identifier == null)
+                identifier = loadStableIdentifier(instance).getIdentifier();
+            instance.setStId(identifier);
+            return;
+        }
         if(this.needStid(instance)){
             StableIdentifier stableIdentifier = this.generateStableId(instance);
             if (stableIdentifier == null)
@@ -99,11 +117,7 @@ public class StableIdentifierGenerator {
         // Need to check if there is a need to re-assign stable identifier.
         StableIdentifier existingSI = instance.getStableIdentifier();
         if (existingSI != null) {
-            // Make sure exitingSI is loaded
-            if (!existingSI.isLoaded) {
-                existingSI = (StableIdentifier) curationService.findById(existingSI.getDbId());
-                instance.setStableIdentifier(existingSI); // Need to replace with the loaded one
-            }
+            existingSI = loadStableIdentifier(instance);
             if (id.equals(existingSI.getIdentifier())) {
                 return null; // The identifierVersion will be handled during slicing.
             }
@@ -132,6 +146,19 @@ public class StableIdentifierGenerator {
         rtn.setDisplayName(id + "." + rtn.getIdentifierVersion());
 
         return rtn;
+    }
+
+    /**
+     * Returns the instance's StableIdentifier, loading it first (and putting the loaded one on the instance) if
+     * only a reference to it was passed in.
+     */
+    private StableIdentifier loadStableIdentifier(DatabaseObject instance) throws Exception {
+        StableIdentifier existingSI = instance.getStableIdentifier();
+        if (!existingSI.isLoaded) {
+            existingSI = (StableIdentifier) curationService.findById(existingSI.getDbId());
+            instance.setStableIdentifier(existingSI); // Need to replace with the loaded one
+        }
+        return existingSI;
     }
 
     private InstanceEdit getLastInstanceEdit(DatabaseObject instance) {

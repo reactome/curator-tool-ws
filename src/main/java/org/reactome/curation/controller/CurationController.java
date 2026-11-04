@@ -484,8 +484,22 @@ public class CurationController {
      * @param instance
      * @return
      */
+    public SimpleInstance commit(SimpleInstance instance) {
+        return commit(instance, false);
+    }
+
+    /**
+     * Same as {@link #commit(SimpleInstance)}, except that keepStableIdentifiers controls what happens to a
+     * PhysicalEntity or Event that already has a StableIdentifier. By default its identifier is regenerated as
+     * R-[species]-[the instance's own dbId] and the StableIdentifier is renamed if it differs. With
+     * keepStableIdentifiers, the StableIdentifier is left as it is and the instance's stId is set to match it.
+     * This is for clients such as orthoinference that name the stable identifiers they create themselves.
+     * Instances without a StableIdentifier are given one either way.
+     */
     @PostMapping("commit")
-    public SimpleInstance commit(@RequestBody SimpleInstance instance) {
+    public SimpleInstance commit(@RequestBody SimpleInstance instance,
+                                 @RequestParam(name = "keepStableIdentifiers", defaultValue = "false")
+                                 boolean keepStableIdentifiers) {
         // Check if the passed instance can be committed
         if (this.service.isConflictWithStored(instance))
             throw new InstanceChangedException(instance);
@@ -522,9 +536,9 @@ public class CurationController {
             // We need to do this before the final commit so that the StableIdentifier 
             // instances can be committed together (Note: New StableIdentifier instances
             // have null dbId here).
-            this.stableIdentifierGenerator.setStableIdentifier(databaseObject);
+            this.stableIdentifierGenerator.setStableIdentifier(databaseObject, keepStableIdentifiers);
             for (DatabaseObject newInstance : newInstances) {
-                this.stableIdentifierGenerator.setStableIdentifier(newInstance);
+                this.stableIdentifierGenerator.setStableIdentifier(newInstance, keepStableIdentifiers);
             }
             // Step 3: Commit the stable identifiers
             // Need to see if the referred StableIdentifer needs to be committed
