@@ -92,7 +92,12 @@ public class CurationRepository {
     private static final String ORDER = "order";
 
     // A list of static queries we will use
-    private final String MAX_DB_ID_QUERY = "MATCH (n:DatabaseObject) RETURN MAX(n.dbId)";
+    // Same result as MATCH (n:DatabaseObject) RETURN MAX(n.dbId), but MAX makes Neo4j read every DatabaseObject,
+    // whereas taking the first dbId in descending order lets it read a single entry of the DatabaseObject(dbId)
+    // index (the IS NOT NULL is what lets the planner use the index). This runs for every new node, including the
+    // InstanceEdit of every commit.
+    private final String MAX_DB_ID_QUERY =
+        "MATCH (n:DatabaseObject) WHERE n.dbId IS NOT NULL RETURN n.dbId ORDER BY n.dbId DESC LIMIT 1";
     private final String LIST_CLASSES_QUERY = "MATCH (d:DatabaseObject) RETURN DISTINCT d.schemaClass";
 
     // @Autowired. Don't do here. Let constructor handle it so that we can customize
