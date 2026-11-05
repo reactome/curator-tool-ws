@@ -25,10 +25,7 @@ import org.reactome.curation.model.SimpleSchemaClass;
 import org.reactome.curation.model.UserInstanceBackupSummary;
 import org.reactome.curation.model.UserInstances;
 import org.reactome.curation.qa.QAService;
-import org.reactome.curation.repository.Neo4jTransactionRunner;
-import org.reactome.curation.qa.model.DiagramSyncReport;
 import org.reactome.curation.qa.model.QAReport;
-import org.reactome.curation.qa.model.ReactionImbalanceReport;
 import org.reactome.curation.service.CurationService;
 import org.reactome.curation.service.DiagramLockService;
 import org.reactome.curation.service.EventDocxExportService;
@@ -87,8 +84,6 @@ public class CurationController {
     private EventDocxExportService eventDocxExportService;
     @Autowired
     private DiagramLockService diagramLockService;
-    @Autowired
-    private Neo4jTransactionRunner transactionRunner;
 
     /**
      * This method basically provides as a delegate to load the pathway JSON files.
@@ -520,53 +515,40 @@ public class CurationController {
                 }
             }
 
-            // Steps 1 - 5 run in one Neo4j transaction: if any of them fails, nothing is written. Otherwise
-            // the shells created in step 1 would be left behind, possibly already referenced by instances
-            // committed in step 4 (see Neo4jTransactionRunner).
-            // Successful writes are only audited once the transaction has committed.
-            List<Runnable> pendingAudits = new ArrayList<>();
-            boolean[] isStableIdentifierModifiedHolder = {false};
-            DatabaseObject stored = transactionRunner.inTransaction(() -> {
-                // Step 1: Store new instances first so that we can have their correct dbIds
-                if (!isUpdate) 
-                    service.commitNewInstanceInShell(databaseObject);
-                for (DatabaseObject newInstance : newInstances) {
-                    service.commitNewInstanceInShell(newInstance);
+            // Step 1: Store new instances first so that we can have their correct dbIds
+            if (!isUpdate) 
+                service.commitNewInstanceInShell(databaseObject);
+            for (DatabaseObject newInstance : newInstances) {
+                service.commitNewInstanceInShell(newInstance);
+            }
+            // Step 2: Make sure stable identifiers are assigned if needed
+            // We need to do this before the final commit so that the StableIdentifier 
+            // instances can be committed together (Note: New StableIdentifier instances
+            // have null dbId here).
+            this.stableIdentifierGenerator.setStableIdentifier(databaseObject);
+            for (DatabaseObject newInstance : newInstances) {
+                this.stableIdentifierGenerator.setStableIdentifier(newInstance);
+            }
+            // Step 3: Commit the stable identifiers
+            // Need to see if the referred StableIdentifer needs to be committed
+            // And commit it first if needed
+            // The reason we do this here is to ensure the StableIdenrifier is updated at the server-side without
+            // the user's intervention due to the fact that the front-end may not have the complete information.
+            boolean isStableIdentifierModified = false;
+            if (databaseObject.getStableIdentifier() != null && isUpdate) {
+                // Means the existing StableIdentifier has been modified
+                if (databaseObject.getModified() == databaseObject.getStableIdentifier().getModified()) {
+                    commitAndAudit(username, databaseObject.getStableIdentifier(), isAdd(databaseObject.getStableIdentifier()));
+                    isStableIdentifierModified = true;
                 }
-                // Step 2: Make sure stable identifiers are assigned if needed
-                // We need to do this before the final commit so that the StableIdentifier 
-                // instances can be committed together (Note: New StableIdentifier instances
-                // have null dbId here).
-                this.stableIdentifierGenerator.setStableIdentifier(databaseObject);
-                for (DatabaseObject newInstance : newInstances) {
-                    this.stableIdentifierGenerator.setStableIdentifier(newInstance);
-                }
-                // Step 3: Commit the stable identifiers
-                // Need to see if the referred StableIdentifer needs to be committed
-                // And commit it first if needed
-                // The reason we do this here is to ensure the StableIdenrifier is updated at the server-side without
-                // the user's intervention due to the fact that the front-end may not have the complete information.
-                if (databaseObject.getStableIdentifier() != null && isUpdate) {
-                    // Means the existing StableIdentifier has been modified
-                    if (databaseObject.getModified() == databaseObject.getStableIdentifier().getModified()) {
-                        commitAndAudit(username, databaseObject.getStableIdentifier(), isAdd(databaseObject.getStableIdentifier()), pendingAudits);
-                        isStableIdentifierModifiedHolder[0] = true;
-                    }
-                }
-                // Step 4: Now commit the instance itself
-                // All new instances will not here due to step 2.
-                DatabaseObject committed = commitAndAudit(username, databaseObject, !isUpdate, pendingAudits);
-                // Step 5: Commit all other new instances too.
-                for (DatabaseObject newInstance : newInstances) {
-                    commitAndAudit(username, newInstance, true, pendingAudits);
-                }
-                return committed;
-            });
-            pendingAudits.forEach(Runnable::run);
-            // The repository clears this cache as it writes, but a concurrent request could have
-            // rebuilt it from the not-yet-committed state. Clear it again now that the commit is visible.
-            service.getCurationRepository().invalidateEventTreeCache();
-            boolean isStableIdentifierModified = isStableIdentifierModifiedHolder[0];
+            }
+            // Step 4: Now commit the instance itself
+            // All new instances will not here due to step 2.
+            DatabaseObject stored = commitAndAudit(username, databaseObject, !isUpdate);
+            // Step 5: Commit all other new instances too.
+            for (DatabaseObject newInstance : newInstances) {
+                commitAndAudit(username, newInstance, true);
+            }
                         
             // For the front end, we just need to return a SimpleInstance having attributes that may change
             SimpleInstance rtn = converter.convertInShell(stored);
@@ -1059,37 +1041,6 @@ public class CurationController {
         }
     }
 
-    /**
-     * Check all Reactions contained by an Event (a Pathway, or a single Reaction) for input/output imbalance.
-     * Only imbalanced reactions are returned.
-     * @param dbId
-     * @return
-     */
-    @GetMapping("qa/reactionImbalance/{dbId}")
-    public ReactionImbalanceReport checkReactionImbalance(@PathVariable("dbId") Long dbId) {
-        return this.qaService.checkReactionImbalance(dbId);
-    }
-
-    /**
-     * Check the PathwayDiagrams of an Event (normally a Pathway) and all of its sub-pathways for drawn
-     * reactions and FlowLines that are out of sync with the database. Only out of sync Events are returned.
-     * @param dbId
-     * @return
-     */
-    @GetMapping("qa/diagramSync/{dbId}")
-    public DiagramSyncReport checkDiagramSync(@PathVariable("dbId") Long dbId) {
-        try {
-            return this.qaService.checkDiagramSync(dbId);
-        }
-        catch (DatabaseObjectNotFoundException e) {
-            throw e;
-        }
-        catch (Exception e) {
-            logger.error("CurationController.checkDiagramSync: " + e.getMessage(), e);
-            throw new IllegalStateException(e.getMessage());
-        }
-    }
-
     private String getUsername() {
         try {
             org.springframework.security.core.Authentication auth =
@@ -1103,20 +1054,13 @@ public class CurationController {
         return "UNKNOWN";
     }
 
-    /**
-     * Commit an instance. A failure is audited right away. A success is added to pendingAudits, to be
-     * audited only once the enclosing transaction has committed.
-     */
-    private DatabaseObject commitAndAudit(String username,
-                                          DatabaseObject obj,
-                                          boolean isAdd,
-                                          List<Runnable> pendingAudits) throws Exception {
+    private DatabaseObject commitAndAudit(String username, DatabaseObject obj, boolean isAdd) throws Exception {
         try {
             DatabaseObject saved = service.commit(obj);
             if (isAdd)
-                pendingAudits.add(() -> auditLogger.logAdd(username, saved, true, null));
+                auditLogger.logAdd(username, saved, true, null);
             else
-                pendingAudits.add(() -> auditLogger.logUpdate(username, saved, true, null));
+                auditLogger.logUpdate(username, saved, true, null);
             return saved;
         }
         catch (Exception e) {
