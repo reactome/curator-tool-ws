@@ -74,11 +74,6 @@ public class EventDocxExportService {
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final int REACTION_IMAGE_WIDTH_PX = 420;
     private static final int REACTION_IMAGE_HEIGHT_PX = 173;
-    private static final String REACTION_SYMBOL_KEY_RESOURCE = "/docx/reaction_symbol_key.png";
-    // Fits the full text width of a Letter/A4 page with 1" margins (6.5" at 96 dpi).
-    private static final int REACTION_SYMBOL_KEY_WIDTH_PX = 620;
-    private static final int REACTION_SYMBOL_KEY_HEIGHT_PX = 800;
-    private static final String PATHWAY_BROWSER_GUIDE_URL = "https://reactome.org/userguide/pathway-browser";
 
     private static final String FONT = "Times New Roman";
     // Explicit, rather than relying on Word/Google Docs' own (differing) unset-spacing defaults -
@@ -108,9 +103,6 @@ public class EventDocxExportService {
 
             // --- 1. Title (Perl: generate_prolog + generate_header depth=0) ---
             addHeader(document, 0, "Reactome Event Export");
-
-            // Standard reviewer introduction, naming the top-most event covered by this report.
-            addReviewerIntroduction(document, event);
 
             // --- 2. Metadata table ---
 //            createMetadataTable(document, event);
@@ -1999,65 +1991,6 @@ public class EventDocxExportService {
         } catch (Exception ignored) {
             return displayPath;
         }
-    }
-
-    /**
-     * Adds the fixed introductory text historically given to pathway reviewers. Only the event
-     * name (shown in red) varies between reports. The reaction symbol key image is loaded from
-     * the classpath (REACTION_SYMBOL_KEY_RESOURCE) and silently omitted if it isn't present.
-     */
-    private void addReviewerIntroduction(XWPFDocument document, Event event) throws IOException {
-        XWPFParagraph intro = newParagraph(document);
-        addIntroRun(intro, "This report is intended for reviewers of the pathway \"");
-        addIntroRun(intro, valueOrNA(event.getDisplayName())).setColor("FF0000");
-        addIntroRun(intro, "\".");
-
-        addIntroRun(newParagraph(document), "Please Note:").setBold(true);
-        addBulletText(document, "Each reaction (pathway event) is represented here by a simple diagram; "
-                + "a key to the symbols is shown below. In brief, inputs are on the left, outputs on the right, "
-                + "and catalysts and regulators are connected to the central reaction node from above or below.");
-        try (InputStream keyImage = getClass().getResourceAsStream(REACTION_SYMBOL_KEY_RESOURCE)) {
-            if (keyImage != null) {
-                addImageFromBytes(document, keyImage.readAllBytes(), "reaction_symbol_key.png",
-                        REACTION_SYMBOL_KEY_WIDTH_PX, REACTION_SYMBOL_KEY_HEIGHT_PX, XWPFDocument.PICTURE_TYPE_PNG);
-            }
-        }
-        addBulletText(document, "Summary text may appear to be overlapping or redundant. Please remember that "
-                + "this document is extracted from multiple pages on the Reactome website, this redundancy is useful "
-                + "to provide context for users who might first arrive at a mid-point in the pathway. "
-                + "Suggestions for improvement are welcome.");
-        addBulletText(document, "Reactome represents human biology. Literature references that demonstrate the "
-                + "occurrence of the reaction in humans are given preference but they are not intended to provide "
-                + "a historical record. Unfortunately, we do not have the resources to identify all relevant "
-                + "references, but we are happy to cite any that you feel should be included.");
-
-        addHeader(document, 2, "Review of text document");
-        addIntroRun(newParagraph(document), "In your review, we would appreciate it if you could verify that the "
-                + "events that we describe (pathways and reactions) are annotated clearly and that the molecular "
-                + "details of the reactions are accurate.");
-
-        addHeader(document, 2, "Review of Website Pathway Browser");
-        XWPFParagraph browser = newParagraph(document);
-        addIntroRun(browser, "A more detailed representation of the pathway as a diagram can be found on our "
-                + "website. We would appreciate your feedback on the content and navigability of the website. "
-                + "A short guide to navigating the Pathway Browser can be found ");
-        XWPFHyperlinkRun guideLink = browser.createHyperlinkRun(PATHWAY_BROWSER_GUIDE_URL);
-        guideLink.setFontFamily(FONT);
-        guideLink.setColor("0000FF");
-        guideLink.setUnderline(UnderlinePatterns.SINGLE);
-        guideLink.setText("here");
-        addIntroRun(browser, ". The zoomable pathway diagram is interactive. Text descriptions are revealed in "
-                + "the panel below the diagram under the overview tab. To view a text description, select a "
-                + "participating molecule or reaction node in the diagram. Clicking on an event in the hierarchy "
-                + "in the left panel will highlight the event(s) in the diagram and a text description will be "
-                + "displayed in the panel below.");
-    }
-
-    private XWPFRun addIntroRun(XWPFParagraph paragraph, String text) {
-        XWPFRun run = paragraph.createRun();
-        run.setFontFamily(FONT);
-        run.setText(text);
-        return run;
     }
 
     private void addPathwayBrowserLink(XWPFDocument document, Event event) {
