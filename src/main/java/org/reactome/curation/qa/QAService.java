@@ -47,6 +47,9 @@ public class QAService {
         checker = new CellMarkerReferenceCheck();
         checker.setNeo4jClient(neo4jClient);
         qaName2Checker.put(checker.getCheckName(), checker);
+        checker = new ReactionImbalanceCheck();
+        checker.setNeo4jClient(neo4jClient);
+        qaName2Checker.put(checker.getCheckName(), checker);
     }
 
     
