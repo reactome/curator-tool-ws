@@ -25,6 +25,7 @@ import org.reactome.curation.model.SimpleSchemaClass;
 import org.reactome.curation.model.UserInstanceBackupSummary;
 import org.reactome.curation.model.UserInstances;
 import org.reactome.curation.qa.QAService;
+import org.reactome.curation.qa.model.DiagramSyncReport;
 import org.reactome.curation.qa.model.QAReport;
 import org.reactome.curation.service.CurationService;
 import org.reactome.curation.service.DiagramLockService;
@@ -1037,6 +1038,26 @@ public class CurationController {
         }
         catch(Exception e) {
             logger.error("QAController.qaReport: " + e.getMessage(), e);
+            throw new IllegalStateException(e.getMessage());
+        }
+    }
+
+    /**
+     * Check the PathwayDiagrams of an Event (normally a Pathway) and all of its sub-pathways for drawn
+     * reactions and FlowLines that are out of sync with the database. Only out of sync Events are returned.
+     * @param dbId
+     * @return
+     */
+    @GetMapping("qa/diagramSync/{dbId}")
+    public DiagramSyncReport checkDiagramSync(@PathVariable("dbId") Long dbId) {
+        try {
+            return this.qaService.checkDiagramSync(dbId);
+        }
+        catch (DatabaseObjectNotFoundException e) {
+            throw e;
+        }
+        catch (Exception e) {
+            logger.error("CurationController.checkDiagramSync: " + e.getMessage(), e);
             throw new IllegalStateException(e.getMessage());
         }
     }
