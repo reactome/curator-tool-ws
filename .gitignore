@@ -8,7 +8,11 @@ target/
 .env
 .env.local
 .env.*.local
+.env.prod
 secrets/
+# Environment-specific Spring configs holding credentials
+src/main/resources/application.properties.local
+src/main/resources/application.properties.server
 
 ### STS ###
 .apt_generated
