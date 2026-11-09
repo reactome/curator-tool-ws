@@ -413,9 +413,32 @@ public class EventDocxExportService {
         return source;
     }
 
+    /**
+     * The species of an event, from its species relationship. The speciesName property is only a
+     * fallback: it is filled in by the release graph-importer, not by curation, so it is null for
+     * events created or edited in this tool.
+     */
+    private String getSpeciesName(Event event) {
+        try {
+            List<Species> speciesList = event.getSpecies();
+            if (speciesList != null && !speciesList.isEmpty()) {
+                String names = speciesList.stream()
+                        .map(Species::getDisplayName)
+                        .filter(this::hasText)
+                        .collect(java.util.stream.Collectors.joining(", "));
+                if (hasText(names))
+                    return names;
+            }
+        } catch (Exception ignored) {
+        }
+        return event.getSpeciesName();
+    }
+
     private void addInferredFromSource(XWPFDocument document, String typeLabel, Event source, ExportContext context) {
         String displayName = valueOrNA(source.getDisplayName());
-        String speciesName = hasText(source.getSpeciesName()) ? source.getSpeciesName() : "an unspecified species";
+        String speciesName = getSpeciesName(source);
+        if (!hasText(speciesName))
+            speciesName = "an unspecified species";
         String intro = String.format("This %s was inferred from the corresponding %s \"%s\" in species %s.",
                 typeLabel, typeLabel, displayName, speciesName);
         Map<String, Object> fmt = Map.of("font", FONT, "font_size", 11);
