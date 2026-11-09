@@ -17,6 +17,7 @@ import java.util.Set;
 import org.gk.model.ReactomeJavaConstants;
 import org.reactome.server.graph.domain.model.Complex;
 import org.reactome.server.graph.domain.model.DatabaseObject;
+import org.reactome.server.graph.domain.model.EntityWithAccessionedSequence;
 import org.reactome.server.graph.domain.model.PhysicalEntity;
 import org.reactome.server.graph.domain.model.Polymer;
 import org.reactome.server.graph.domain.model.ReactionLikeEvent;
@@ -71,19 +72,29 @@ public class CuratorToolWSUtils {
             if (field2value.containsKey(ReactomeJavaConstants.repeatedUnit))
                 field2value.put(ReactomeJavaConstants.repeatedUnit, getOrderedStoichiometry(polymer.getRepeatedUnits()));
         }
+        // EntityWithAccessionedSequence.hasModifiedResidue is also backed by relationship entities
+        // carrying stoichiometry, but DatabaseObjectUtils.getAllFields() reads it through
+        // getHasModifiedResidue(), which expands each residue once per stoichiometry. Left as is,
+        // CurationRepository.store() would write one relationship per duplicate (with no
+        // stoichiometry) instead of a single relationship with the stoichiometry set.
+        else if (obj instanceof EntityWithAccessionedSequence) {
+            EntityWithAccessionedSequence ewas = (EntityWithAccessionedSequence) obj;
+            if (field2value.containsKey(ReactomeJavaConstants.hasModifiedResidue))
+                field2value.put(ReactomeJavaConstants.hasModifiedResidue, getOrderedStoichiometry(ewas.getModifiedResidues()));
+        }
         return field2value;
     }
 
     /**
      * Sorts a relationship-entity collection (ReactionLikeEvent.input/output, Complex.hasComponent,
-     * Polymer.repeatedUnit) by its curator-defined "order" property, as a StoichiometryObject list
-     * ready to substitute for the displayName-sorted list their respective fetchXxx() methods
-     * (Has.Util.simplifiedSort()) would otherwise produce - used when writing, via getAllFields()
-     * above.
+     * Polymer.repeatedUnit, EntityWithAccessionedSequence.hasModifiedResidue) by its curator-defined
+     * "order" property, as a StoichiometryObject list (one per distinct element, carrying its
+     * stoichiometry) ready to substitute for the list DatabaseObjectUtils.getAllFields() would
+     * otherwise produce - used when writing, via getAllFields() above.
      */
-    private static List<StoichiometryObject> getOrderedStoichiometry(Collection<? extends Has<PhysicalEntity>> relationshipEntities) {
+    private static <T extends DatabaseObject> List<StoichiometryObject> getOrderedStoichiometry(Collection<? extends Has<T>> relationshipEntities) {
         List<StoichiometryObject> result = new ArrayList<>();
-        for (Has<PhysicalEntity> has : sortByOrder(relationshipEntities))
+        for (Has<T> has : sortByOrder(relationshipEntities))
             result.add(has.toStoichiometryObject());
         return result;
     }
@@ -102,8 +113,8 @@ public class CuratorToolWSUtils {
         return Has.Util.expandStoichiometry(sortByOrder(relationshipEntities));
     }
 
-    private static List<Has<PhysicalEntity>> sortByOrder(Collection<? extends Has<PhysicalEntity>> relationshipEntities) {
-        List<Has<PhysicalEntity>> sorted = new ArrayList<>();
+    private static <T extends DatabaseObject> List<Has<T>> sortByOrder(Collection<? extends Has<T>> relationshipEntities) {
+        List<Has<T>> sorted = new ArrayList<>();
         if (relationshipEntities != null)
             sorted.addAll(relationshipEntities);
         sorted.sort(Comparator.comparingInt(Has::getOrder));

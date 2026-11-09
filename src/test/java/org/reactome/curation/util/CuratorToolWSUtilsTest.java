@@ -8,7 +8,10 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.junit.jupiter.api.Test;
+import org.reactome.server.graph.domain.model.AbstractModifiedResidue;
 import org.reactome.server.graph.domain.model.Complex;
+import org.reactome.server.graph.domain.model.EntityWithAccessionedSequence;
+import org.reactome.server.graph.domain.model.ModifiedResidue;
 import org.reactome.server.graph.domain.model.PhysicalEntity;
 import org.reactome.server.graph.domain.model.Polymer;
 import org.reactome.server.graph.domain.model.Reaction;
@@ -169,5 +172,35 @@ public class CuratorToolWSUtilsTest {
         List<StoichiometryObject> orderedRepeatedUnits = (List<StoichiometryObject>) field2value.get("repeatedUnit");
         assertThat(orderedRepeatedUnits).extracting(so -> so.<PhysicalEntity>getObject().getDisplayName())
                 .containsExactly("Zeta", "Alpha");
+    }
+
+    private static ModifiedResidue newModifiedResidue(long dbId, String displayName) {
+        ModifiedResidue residue = new ModifiedResidue(dbId);
+        residue.setDisplayName(displayName);
+        return residue;
+    }
+
+    @Test
+    void getAllFieldsShouldAggregateEwasHasModifiedResidueStoichiometry() {
+        // DisplayName order is the reverse of the order the residues are added in.
+        ModifiedResidue zeta = newModifiedResidue(1L, "Zeta");
+        ModifiedResidue alpha = newModifiedResidue(2L, "Alpha");
+
+        EntityWithAccessionedSequence ewas = new EntityWithAccessionedSequence(400L);
+        ewas.setDisplayName("Test EWAS");
+        // The flattened setter aggregates the repeated residue into one relationship with
+        // stoichiometry 3, as happens when a client sends the residue list for a new instance.
+        ewas.setHasModifiedResidue(List.of(zeta, alpha, alpha, alpha));
+
+        Map<String, Object> field2value = CuratorToolWSUtils.getAllFields(ewas, false);
+
+        // Without the override, getHasModifiedResidue() would expand this to four residues, and
+        // CurationRepository.store() would write four relationships with no stoichiometry.
+        @SuppressWarnings("unchecked")
+        List<StoichiometryObject> residues = (List<StoichiometryObject>) field2value.get("hasModifiedResidue");
+        assertThat(residues).extracting(so -> so.<AbstractModifiedResidue>getObject().getDisplayName())
+                .containsExactly("Zeta", "Alpha");
+        assertThat(residues).extracting(StoichiometryObject::getStoichiometry)
+                .containsExactly(1, 3);
     }
 }
