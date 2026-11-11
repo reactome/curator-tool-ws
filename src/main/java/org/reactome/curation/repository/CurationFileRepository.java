@@ -11,6 +11,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.reactome.curation.model.UserInstanceBackupSummary;
 import org.reactome.curation.model.UserInstances;
@@ -35,6 +37,11 @@ public class CurationFileRepository {
     @Value("${staged-file.backup.max-count:25}")
     private int maxBackupCount;
     
+    // One lock per user's file. The front-end may send several saves for the same user at once
+    // (e.g. retrying queued saves after a token refresh). Without the lock, their backups collide
+    // and cleanupOldBackups() deletes backups that other saves are still writing.
+    private final Map<String, Object> file2lock = new ConcurrentHashMap<>();
+    
     public CurationFileRepository() {
     }
 
@@ -45,21 +52,33 @@ public class CurationFileRepository {
 
     private void persistObject(Object payload,
                                String fileName) throws Exception {
-        File file = new File(fileName);
-        
-        // Backup the existing file before overwriting
-        if (file.exists()) {
-            backupFile(fileName);
+        synchronized (getLock(fileName)) {
+            File file = new File(fileName);
+
+            // Backup the existing file before overwriting. A failed backup should not lose the
+            // user's newer changes, so only warn about it.
+            if (file.exists()) {
+                try {
+                    backupFile(fileName);
+                }
+                catch (IOException e) {
+                    logger.warn("Failed to back up " + file.getAbsolutePath() + ", saving it anyway: " + e, e);
+                }
+            }
+
+            if (!ensureDirectoryExists(file)) {
+                throw new IOException("Failed to create directory for file: " + file.getAbsolutePath());
+            }
+
+            ObjectMapper mapper = getObjectMapper();
+            // Give it some format
+            mapper.writerWithDefaultPrettyPrinter().writeValue(file, payload);
+            logger.info("Saved instances to " + file.getAbsolutePath());
         }
-        
-        if (!ensureDirectoryExists(file)) {
-            throw new IOException("Failed to create directory for file: " + file.getAbsolutePath());
-        }
-        
-        ObjectMapper mapper = getObjectMapper();
-        // Give it some format
-        mapper.writerWithDefaultPrettyPrinter().writeValue(file, payload);
-        logger.info("Saved instances to " + file.getAbsolutePath());
+    }
+    
+    private Object getLock(String fileName) {
+        return file2lock.computeIfAbsent(new File(fileName).getAbsolutePath(), key -> new Object());
     }
     
     private boolean ensureDirectoryExists(File file) {
@@ -83,8 +102,9 @@ public class CurationFileRepository {
             return;
         }
         
-        // Create backup filename with timestamp
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
+        // Create backup filename with timestamp. Milliseconds so that saves within the same
+        // second get their own backups.
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss_SSS");
         String timestamp = dateFormat.format(new Date());
 
         // Get the base name and extension
@@ -160,6 +180,12 @@ public class CurationFileRepository {
      * @param fileName the canonical (non-backup) file whose backups should be listed
      */
     public List<UserInstanceBackupSummary> listBackups(String fileName) {
+        synchronized (getLock(fileName)) {
+            return _listBackups(fileName);
+        }
+    }
+
+    private List<UserInstanceBackupSummary> _listBackups(String fileName) {
         File originalFile = new File(fileName);
         File parentDir = originalFile.getParentFile();
         if (parentDir == null || !parentDir.exists())
@@ -188,6 +214,12 @@ public class CurationFileRepository {
      * @throws Exception if backupFileName is invalid or the backup cannot be read
      */
     public UserInstances loadBackup(String fileName, String backupFileName) throws Exception {
+        synchronized (getLock(fileName)) {
+            return _loadBackup(fileName, backupFileName);
+        }
+    }
+
+    private UserInstances _loadBackup(String fileName, String backupFileName) throws Exception {
         File originalFile = new File(fileName);
         File parentDir = originalFile.getParentFile();
         if (parentDir == null)
@@ -220,20 +252,25 @@ public class CurationFileRepository {
      * @throws Exception
      */
     public void deleteFile(String fileName) throws Exception {
-        File file = new File(fileName);
-        if (file.exists())
-            file.delete();
+        synchronized (getLock(fileName)) {
+            File file = new File(fileName);
+            if (file.exists())
+                file.delete();
+        }
     }
   
     public UserInstances load(String fileName) throws Exception {
-        File file = new File(fileName);
-        // In case nothing there
-        if (!file.exists())
-            return new UserInstances();
-        ObjectMapper mapper = getObjectMapper();
-        TypeReference<UserInstances> typeRef = new TypeReference<>(){};
-        UserInstances userInstances = mapper.readValue(file, typeRef);
-        return userInstances;
+        // Locked so that it doesn't read a file that a save is half way through writing
+        synchronized (getLock(fileName)) {
+            File file = new File(fileName);
+            // In case nothing there
+            if (!file.exists())
+                return new UserInstances();
+            ObjectMapper mapper = getObjectMapper();
+            TypeReference<UserInstances> typeRef = new TypeReference<>(){};
+            UserInstances userInstances = mapper.readValue(file, typeRef);
+            return userInstances;
+        }
     }
     
     private ObjectMapper getObjectMapper() {
