@@ -397,14 +397,31 @@ public class CytoscapJSToRenderableDiagramConverter {
             // instance-converter.ts's createModificationNodes(), which sets this field alongside
             // the (separate, still reactomeId-based) nodeReactomeId field the diagram content
             // validator uses for its own database-identity checks.
-            Integer nodeId = modification.path("data").path("nodeId").asInt();
-            Renderable renderable = idToRenderable.get(nodeId);
+            double x = modification.path("position").path("x").asDouble();
+            double y = modification.path("position").path("y").asDouble();
+            JsonNode nodeIdField = modification.path("data").path("nodeId");
+            Renderable renderable = null;
+            if (!nodeIdField.isMissingNode() && !nodeIdField.isNull())
+                renderable = idToRenderable.get(nodeIdField.asInt());
             if (renderable == null) {
-                logger.error("Cannot find node for modification with dbId: " + modDbId + " and nodeId: " + nodeId);
+                // Older marks have no nodeId: the front end only started writing it later, and a
+                // diagram saved before that keeps its marks without one (for example the three
+                // phosphorylation marks on p-S14,S17,S18-MX2, 9962717, in "MX antiviral
+                // response", 9958598). asInt() on the missing field gave 0, no node has id 0, so
+                // every such mark was silently dropped on upload while the editor, which falls
+                // back to nodeReactomeId, still showed it. Fall back the same way here.
+                renderable = findNodeByReactomeId(modification.path("data").path("nodeReactomeId"),
+                                                  x, y,
+                                                  idToRenderable);
+            }
+            if (renderable == null) {
+                logger.error("Cannot find node for modification with dbId: " + modDbId +
+                             " and nodeId: " + nodeIdField.asText("") +
+                             " (nodeReactomeId: " + modification.path("data").path("nodeReactomeId").asText("") + ")");
                 continue;
             }
             if (!(renderable instanceof Node)) {
-                logger.error("Modification with dbId: " + modDbId + " is attached to a non-Node Renderable with id: " + nodeId);
+                logger.error("Modification with dbId: " + modDbId + " is attached to a non-Node Renderable with id: " + renderable.getID());
                 continue;
             }
             // We will use RenderableFeature to represent modification
@@ -413,8 +430,6 @@ public class CytoscapJSToRenderableDiagramConverter {
             attachment.setLabel(label);
             attachment.setReactomeId(modDbId);
             // Need to get relative position to the top-left corner of the node
-            double x = modification.path("position").path("x").asDouble();
-            double y = modification.path("position").path("y").asDouble();
             Node node = (Node) renderable;
             Rectangle nodeBounds = node.getBounds();
             double relativeX = (x - nodeBounds.x) / nodeBounds.width;
@@ -423,6 +438,38 @@ public class CytoscapJSToRenderableDiagramConverter {
             
             node.addFeatureLocally(attachment);
         }
+    }
+
+    /**
+     * The parent of a modification mark that has no nodeId, found by the parent's reactomeId
+     * (nodeReactomeId). The same entity may be drawn more than once, and nodeReactomeId can't
+     * tell those copies apart, so the copy whose center is nearest the mark is taken: a mark sits
+     * on its own node's border.
+     */
+    private Node findNodeByReactomeId(JsonNode nodeReactomeIdField,
+                                      double x,
+                                      double y,
+                                      Map<Integer, Renderable> idToRenderable) {
+        if (nodeReactomeIdField.isMissingNode() || nodeReactomeIdField.isNull())
+            return null;
+        long nodeReactomeId = nodeReactomeIdField.asLong();
+        Node nearest = null;
+        double nearestDist = Double.MAX_VALUE;
+        for (Renderable r : idToRenderable.values()) {
+            if (!(r instanceof Node) || r.getReactomeId() == null || r.getReactomeId() != nodeReactomeId)
+                continue;
+            Rectangle bounds = ((Node) r).getBounds();
+            if (bounds == null)
+                continue;
+            double dx = bounds.getCenterX() - x;
+            double dy = bounds.getCenterY() - y;
+            double dist = dx * dx + dy * dy;
+            if (dist < nearestDist) {
+                nearestDist = dist;
+                nearest = (Node) r;
+            }
+        }
+        return nearest;
     }
     
     private Point existPoint(Point p, Collection<Point> points) {
