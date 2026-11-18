@@ -56,6 +56,7 @@ import org.reactome.server.graph.domain.model.DatabaseObject;
 import org.reactome.server.graph.domain.model.Deleted;
 import org.reactome.server.graph.domain.model.DeletedInstance;
 import org.reactome.server.graph.domain.model.InstanceEdit;
+import org.reactome.server.graph.domain.model.Publication;
 import org.reactome.server.graph.domain.model.Taxon;
 import org.reactome.server.graph.service.helper.StoichiometryObject;
 import org.reactome.server.graph.service.util.DatabaseObjectUtils;
@@ -1077,7 +1078,30 @@ public class CurationRepository {
             else
                 instance.setAttribute(attribute.getName(), shells.get(0));
         }
+        fillAuthorNameFromAuthors(cls, instance);
         return instance;
+    }
+
+    /**
+     * Older Publications have no authorName property: it only exists since July 2026.
+     * Publication.getAuthorName(), which the full OGM load (DatabaseObjectInstanceConverter)
+     * calls, falls back to the display names of the author Persons in that case, but this fast
+     * load reads the raw node property, so authorName came back empty for those Publications.
+     * Do the same fallback here, using the author shells already loaded in curator order.
+     */
+    private void fillAuthorNameFromAuthors(Class<?> cls, SimpleInstance instance) {
+        if (!Publication.class.isAssignableFrom(cls) || instance.getAttribute("authorName") != null)
+            return;
+        Object authors = instance.getAttribute("author");
+        if (!(authors instanceof List) || ((List<?>) authors).isEmpty())
+            return;
+        List<String> authorNames = new ArrayList<>();
+        for (Object author : (List<?>) authors) {
+            if (author instanceof SimpleInstance && ((SimpleInstance) author).getDisplayName() != null)
+                authorNames.add(((SimpleInstance) author).getDisplayName());
+        }
+        if (!authorNames.isEmpty())
+            instance.setAttribute("authorName", authorNames);
     }
 
     /**
